@@ -17,4 +17,7 @@ export const ORCA_WHIRPOOLS_CONFIG_DEVNET: WhirlpoolsConfig = {
   rewardEmissionsSuperAuthority: PublicKey.default,
 };
 
+/**
+ * Number of ticks contained in a single tick array
+ */
 export const NUM_TICKS_IN_ARRAY = 1000;
