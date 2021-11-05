@@ -16,3 +16,5 @@ export const ORCA_WHIRPOOLS_CONFIG_DEVNET: WhirlpoolsConfig = {
   feeRateAuthority: PublicKey.default,
   rewardEmissionsSuperAuthority: PublicKey.default,
 };
+
+export const NUM_TICKS_IN_ARRAY = 1000;

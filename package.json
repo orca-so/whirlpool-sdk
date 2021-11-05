@@ -11,7 +11,8 @@
     "@solana/spl-token": "^0.1.5",
     "@solana/spl-token-swap": "^0.1.2",
     "@solana/web3.js": "^1.24.1",
-    "decimal.js": "^10.3.1"
+    "decimal.js": "^10.3.1",
+    "tiny-invariant": "^1.2.0"
   },
   "devDependencies": {
     "@types/bn.js": "^4.11.6",
