@@ -5,12 +5,10 @@ import { Percentage } from "../utils/models/percentage";
 import { OrcaU256 } from "../utils/numbers/orca-u256";
 import { Owner } from "../utils/web3/key-utils";
 
-export type WhirlpoolsConfig = {
-  protocolFeeAuthority: PublicKey;
-  collectProtocolFeeAuthority: PublicKey;
-  feeRateAuthority: PublicKey;
-  rewardEmissionsSuperAuthority: PublicKey;
-};
+export enum Network {
+  MAINNET = "mainnet",
+  DEVNET = "devnet",
+}
 
 export enum FeeTier {
   LOW = 1,

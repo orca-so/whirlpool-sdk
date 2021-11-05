@@ -1,17 +1,17 @@
 import invariant from "tiny-invariant";
 import { NUM_TICKS_IN_ARRAY } from "../../../../public/whirlpools/constants";
 
+const MIN_TICK: number = 0;
+const MAX_TICK: number = NUM_TICKS_IN_ARRAY - 1;
+
 export interface TickConstructorArgs {
-  initialized: any;
+  initialized: number;
   liquidityGross: any;
   liquidityNet: any;
 }
 
-const MIN_TICK = 0;
-const MAX_TICK = NUM_TICKS_IN_ARRAY - 1;
-
 export class Tick {
-  public readonly initialized: any;
+  public readonly initialized: number;
   public readonly liquidityGross: any;
   public readonly liquidityNet: any;
 
@@ -21,4 +21,10 @@ export class Tick {
     this.liquidityGross = liquidityGross;
     this.liquidityNet = liquidityNet;
   }
+
+  // fee_growth_outside_a
+  // fee_growth_outside_b
+  // reward_growth_outside_0
+  // reward_growth_outside_1
+  // reward_growth_outside_2
 }

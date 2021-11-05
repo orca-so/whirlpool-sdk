@@ -1,21 +1,29 @@
 import { PublicKey } from "@solana/web3.js";
-import { WhirlpoolsConfig } from ".";
+import { Network } from ".";
 
 // TODO - update once we have actual contract addresses
-export const ORCA_WHIRPOOLS_CONFIG_MAINNET: WhirlpoolsConfig = {
-  protocolFeeAuthority: PublicKey.default,
-  collectProtocolFeeAuthority: PublicKey.default,
-  feeRateAuthority: PublicKey.default,
-  rewardEmissionsSuperAuthority: PublicKey.default,
-};
+export function getWhirlpoolsConfig(network: Network): PublicKey {
+  switch (network) {
+    case Network.MAINNET:
+      return PublicKey.default;
+    case Network.DEVNET:
+      return PublicKey.default;
+    default:
+      throw new Error("Unknown network");
+  }
+}
 
 // TODO - update once we have actual contract addresses
-export const ORCA_WHIRPOOLS_CONFIG_DEVNET: WhirlpoolsConfig = {
-  protocolFeeAuthority: PublicKey.default,
-  collectProtocolFeeAuthority: PublicKey.default,
-  feeRateAuthority: PublicKey.default,
-  rewardEmissionsSuperAuthority: PublicKey.default,
-};
+export function getWhirlpoolProgramId(network: Network): PublicKey {
+  switch (network) {
+    case Network.MAINNET:
+      return PublicKey.default;
+    case Network.DEVNET:
+      return PublicKey.default;
+    default:
+      throw new Error("Unknown network");
+  }
+}
 
 /**
  * Number of ticks contained in a single tick array
