@@ -16,56 +16,57 @@ export enum FeeTier {
   HIGH = 3,
 }
 
-/**
- * TODO
- * very unstable, depends on the caching mechanism
- * will update when we have the whirlpool entities completed and have caching ready
- */
-export interface OrcaWhirlpool<A extends OrcaToken, B extends OrcaToken, FeeTier> {
-  getMintPositionQuoteByTick: (
-    token: A | B,
+export type OrcaWhirlpoolArgs = {
+  tokenMintA: PublicKey;
+  tokenMintB: PublicKey;
+  feeTier: FeeTier;
+};
+
+export interface OrcaWhirlpool {
+  getOpenPositionQuote: (
+    token: PublicKey,
     tokenAmount: OrcaU64, // should we just use u64?
     tickLowerIndex: number,
     tickUpperIndex: number,
     slippageTolerence?: Percentage
-  ) => Promise<any>; // { maxTokenA, maxTokenB, liquidity }
+  ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
 
-  getMintPositionQuoteByPrice: (
-    token: A | B,
-    tokenAmount: OrcaU64,
-    priceLower: OrcaU256,
-    priceUpper: OrcaU256,
-    slippageTolerence?: Percentage
-  ) => Promise<any>; // { maxTokenA, maxTokenB, liquidity }
+  // getMintPositionQuoteByPrice: (
+  //   token: A | B,
+  //   tokenAmount: OrcaU64,
+  //   priceLower: OrcaU256,
+  //   priceUpper: OrcaU256,
+  //   slippageTolerence?: Percentage
+  // ) => Promise<any>; // { maxTokenA, maxTokenB, liquidity }
 
-  // create lp position
-  getMintPositionTransaction: (
-    owner: Owner,
-    tokenAccountA: AccountInfo,
-    tokenAccountB: AccountInfo,
-    token: any,
-    tokenAmount: OrcaU64,
-    tickLowerIndex: number,
-    tickUpperIndex: number,
-    slippageTolerence?: Percentage
-  ) => Promise<any>;
+  // // create lp position
+  // getMintPositionTransaction: (
+  //   owner: Owner,
+  //   tokenAccountA: AccountInfo,
+  //   tokenAccountB: AccountInfo,
+  //   token: any,
+  //   tokenAmount: OrcaU64,
+  //   tickLowerIndex: number,
+  //   tickUpperIndex: number,
+  //   slippageTolerence?: Percentage
+  // ) => Promise<any>;
 
-  getSwapQuote: (token: any, amount: OrcaU64, slippageTolerence?: Percentage) => Promise<any>;
+  // getSwapQuote: (token: any, amount: OrcaU64, slippageTolerence?: Percentage) => Promise<any>;
 
-  getSwapTransaction: (
-    owner: Owner,
-    tokenAccountA: AccountInfo,
-    tokenAccountB: AccountInfo,
-    amount: OrcaU64,
-    slippageTolerence?: Percentage
-  ) => Promise<any>;
+  // getSwapTransaction: (
+  //   owner: Owner,
+  //   tokenAccountA: AccountInfo,
+  //   tokenAccountB: AccountInfo,
+  //   amount: OrcaU64,
+  //   slippageTolerence?: Percentage
+  // ) => Promise<any>;
 
-  loadTickArray: (ticketIndex: number) => Promise<any>;
+  // loadTickArray: (ticketIndex: number) => Promise<any>;
 
-  // return distribution of liquidity
-  // required to visualize liquidity in UI
-  getLiquidityDistribution: () => Promise<any>;
+  // // return distribution of liquidity
+  // // required to visualize liquidity in UI
+  // getLiquidityDistribution: () => Promise<any>;
 
-  // return the suggested price range
-  getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
+  // // return the suggested price range
+  // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
 }

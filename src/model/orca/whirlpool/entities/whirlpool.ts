@@ -1,4 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
+import invariant from "tiny-invariant";
 import { FeeTier } from "../../../../public/whirlpools";
 
 interface WhirlpoolConstructorArgs {
@@ -24,6 +25,8 @@ export class Whirlpool {
     feeTier,
     programId,
   }: WhirlpoolConstructorArgs) {
+    invariant(!tokenMintA.equals(tokenMintB), "Whirlpool");
+
     this.whirlpoolsConfig = whirlpoolsConfig;
     this.tokenMintA = tokenMintA;
     this.tokenMintB = tokenMintB;
