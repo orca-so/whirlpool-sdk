@@ -1,7 +1,14 @@
+import _ from "lodash";
 import { PublicKey } from "@solana/web3.js";
 import { OrcaU64, Percentage } from "../../../public";
-import { FeeTier, Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
-import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../../public/whirlpools/constants";
+import { OrcaU256 } from "../../../public/utils/numbers/orca-u256";
+import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
+import {
+  getWhirlpoolProgramId,
+  getWhirlpoolsConfig,
+  NUM_TICKS_IN_ARRAY,
+} from "../../../public/whirlpools/constants";
+import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
 
 interface OrcaWhirpoolImplConstructorArgs {
   network: Network;
@@ -9,34 +16,71 @@ interface OrcaWhirpoolImplConstructorArgs {
 }
 
 export class OrcaWhirpoolImpl implements OrcaWhirlpool {
-  private programId: PublicKey;
-  private whirlpoolsConfig: PublicKey;
-
-  private feeTier: FeeTier;
-  private tokenMintA: PublicKey;
-  private tokenMintB: PublicKey;
+  private whirlpool: Whirlpool;
 
   constructor({
     network,
     args: { tokenMintA, tokenMintB, feeTier },
   }: OrcaWhirpoolImplConstructorArgs) {
-    this.programId = getWhirlpoolProgramId(network);
-    this.whirlpoolsConfig = getWhirlpoolsConfig(network);
-    this.feeTier = feeTier;
-
     // consistent ordering of tokenA and tokenB
     const inOrder = tokenMintA.toBase58() < tokenMintB.toBase58();
-    this.tokenMintA = inOrder ? tokenMintA : tokenMintB;
-    this.tokenMintB = inOrder ? tokenMintB : tokenMintA;
+    const _tokenMintA = inOrder ? tokenMintA : tokenMintB;
+    const _tokenMintB = inOrder ? tokenMintB : tokenMintA;
+
+    this.whirlpool = new Whirlpool({
+      whirlpoolsConfig: getWhirlpoolsConfig(network),
+      tokenMintA: _tokenMintA,
+      tokenMintB: _tokenMintB,
+      feeTier: feeTier,
+      programId: getWhirlpoolProgramId(network),
+    });
   }
 
   async getOpenPositionQuote(
-    token: PublicKey,
+    tokenMint: PublicKey,
     tokenAmount: OrcaU64,
     tickLowerIndex: number,
     tickUpperIndex: number,
-    slippageTolerence?: Percentage | undefined
+    slippageTolerence?: Percentage
   ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+    // find tick_array account(s) with ticks
+    const tickArrayLower = await this.loadTickArray(tickLowerIndex);
+    const tickArrayUpper = await this.loadTickArray(tickUpperIndex);
+
+    // find ticks within the tick_array account(s)
+    const tickLower = tickArrayLower.getTick(tickLowerIndex);
+    const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
+
+    // calculate open position quote
+
     return { maxTokenA: 0, maxTokenB: 0, liquidity: 0 };
+  }
+
+  async getOpenPositionQuoteByPrice(
+    tokenMint: PublicKey,
+    tokenAmount: OrcaU64,
+    priceLower: OrcaU256,
+    priceUpper: OrcaU256,
+    slippageTolerence?: Percentage
+  ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+    // const lowerTickIndex = nearestTickIndexAbove(priceLower);
+    // const upperTickIndex = nearestTickIndexAbove(priceUpper);
+    return this.getOpenPositionQuote(tokenMint, tokenAmount, 0, 0, slippageTolerence);
+  }
+
+  async getSwapQuote(
+    tokenMint: PublicKey,
+    amount: OrcaU64,
+    slippageTolerence?: Percentage
+  ): Promise<any> {}
+
+  async loadTickArray(tickIndex: number): Promise<TickArray> {
+    const tickStart = this.whirlpool.getTickArrayStart();
+
+    const delta = Math.floor(Math.abs(tickIndex - tickStart) / NUM_TICKS_IN_ARRAY);
+    const direction = tickIndex - tickStart > 0 ? 1 : -1;
+    const targetTickStart = tickStart + direction * delta * NUM_TICKS_IN_ARRAY;
+
+    return TickArray.fetchTickArray(this.whirlpool, targetTickStart);
   }
 }

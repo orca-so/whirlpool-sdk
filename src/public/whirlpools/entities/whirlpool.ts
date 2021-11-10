@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { FeeTier } from "../../../../public/whirlpools";
+import { FeeTier } from "..";
 
 interface WhirlpoolConstructorArgs {
   whirlpoolsConfig: PublicKey;
@@ -32,6 +32,26 @@ export class Whirlpool {
     this.tokenMintB = tokenMintB;
     this.feeTier = feeTier;
     this.programId = programId;
+  }
+
+  // TODO
+  getLiquidity(): number {
+    return -1; // u64
+  }
+
+  // TODO
+  getSqrtPrice(): number {
+    return -1; // u256
+  }
+
+  // TODO
+  getTickArrayStart(): number {
+    return -1; // i32
+  }
+
+  // TODO
+  getCurrentTick(): number {
+    return -1; // i32
   }
 
   /**
