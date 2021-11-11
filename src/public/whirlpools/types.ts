@@ -33,8 +33,8 @@ export interface OrcaWhirlpool {
   getOpenPositionQuoteByPrice: (
     tokenMint: PublicKey,
     tokenAmount: OrcaU64,
-    priceLower: OrcaU256,
-    priceUpper: OrcaU256,
+    priceLower: number, // OrcaU256
+    priceUpper: number, // OrcaU256
     slippageTolerence?: Percentage
   ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
 
