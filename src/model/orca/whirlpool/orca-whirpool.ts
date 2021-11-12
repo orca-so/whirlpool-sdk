@@ -1,4 +1,4 @@
-import _ from "lodash";
+import JSBI from "jsbi";
 import { PublicKey } from "@solana/web3.js";
 import { OrcaU64, Percentage } from "../../../public";
 import { OrcaU256 } from "../../../public/utils/numbers/orca-u256";
@@ -18,10 +18,7 @@ interface OrcaWhirpoolImplConstructorArgs {
 export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   private whirlpool: Whirlpool;
 
-  constructor({
-    network,
-    args: { tokenMintA, tokenMintB, feeTier },
-  }: OrcaWhirpoolImplConstructorArgs) {
+  constructor({ network, args: { tokenMintA, tokenMintB } }: OrcaWhirpoolImplConstructorArgs) {
     // consistent ordering of tokenA and tokenB
     const inOrder = tokenMintA.toBase58() < tokenMintB.toBase58();
     const _tokenMintA = inOrder ? tokenMintA : tokenMintB;
@@ -31,7 +28,6 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
       whirlpoolsConfig: getWhirlpoolsConfig(network),
       tokenMintA: _tokenMintA,
       tokenMintB: _tokenMintB,
-      feeTier: feeTier,
       programId: getWhirlpoolProgramId(network),
     });
   }
@@ -52,27 +48,31 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
 
     // calculate open position quote
+    const virtualLiquidity = JSBI.add(
+      JSBI.subtract(this.whirlpool.liquidity, tickLower.liquidityGross),
+      tickUpper.liquidityGross
+    );
 
     return { maxTokenA: 0, maxTokenB: 0, liquidity: 0 };
   }
 
-  async getOpenPositionQuoteByPrice(
-    tokenMint: PublicKey,
-    tokenAmount: OrcaU64,
-    priceLower: number,
-    priceUpper: number,
-    slippageTolerence?: Percentage
-  ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
-    const lowerTickIndex = this._nearestTickIndexAbove(priceLower);
-    const upperTickIndex = this._nearestTickIndexBelow(priceUpper);
-    return this.getOpenPositionQuote(
-      tokenMint,
-      tokenAmount,
-      lowerTickIndex,
-      upperTickIndex,
-      slippageTolerence
-    );
-  }
+  // async getOpenPositionQuoteByPrice(
+  //   tokenMint: PublicKey,
+  //   tokenAmount: OrcaU64,
+  //   priceLower: OrcaU256,
+  //   priceUpper: OrcaU256,
+  //   slippageTolerence?: Percentage
+  // ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+  //   const lowerTickIndex = this._nearestTickIndexAbove(priceLower);
+  //   const upperTickIndex = this._nearestTickIndexBelow(priceUpper);
+  //   return this.getOpenPositionQuote(
+  //     tokenMint,
+  //     tokenAmount,
+  //     lowerTickIndex,
+  //     upperTickIndex,
+  //     slippageTolerence
+  //   );
+  // }
 
   async getSwapQuote(
     tokenMint: PublicKey,
@@ -81,26 +81,21 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   ): Promise<any> {}
 
   async loadTickArray(tickIndex: number): Promise<TickArray> {
-    const tickStart = this.whirlpool.getTickArrayStart();
+    const tickArrayStart = this.whirlpool.tickArrayStart;
 
-    const delta = Math.floor(Math.abs(tickIndex - tickStart) / NUM_TICKS_IN_ARRAY);
-    const direction = tickIndex - tickStart > 0 ? 1 : -1;
-    const targetTickStart = tickStart + direction * delta * NUM_TICKS_IN_ARRAY;
+    const delta = Math.floor(Math.abs(tickIndex - tickArrayStart) / NUM_TICKS_IN_ARRAY);
+    const direction = tickIndex - tickArrayStart > 0 ? 1 : -1;
+    const targetTickArrayStart = tickArrayStart + direction * delta * NUM_TICKS_IN_ARRAY;
 
-    return TickArray.fetchTickArray(this.whirlpool, targetTickStart);
+    return TickArray.fetchTickArray(this.whirlpool, targetTickArrayStart);
   }
 
-  private _nearestTickIndexAbove(price: number): number {
-    const currentPrice = this.whirlpool.getSqrtPrice() ** 2;
-    const ticks = Math.ceil(Math.abs(price - currentPrice) / 1.0001); // TODO
-    const direction = price - currentPrice > 0 ? 1 : -1;
-    return this.whirlpool.getCurrentTick() + direction * ticks;
-  }
+  async getInitPoolTransaction(initialSqrtPrice: OrcaU256): Promise<any> {}
 
-  private _nearestTickIndexBelow(price: number): number {
-    const currentPrice = this.whirlpool.getSqrtPrice() ** 2;
-    const ticks = Math.floor(Math.abs(price - currentPrice) / 1.0001); // TODO
-    const direction = price - currentPrice > 0 ? 1 : -1;
-    return this.whirlpool.getCurrentTick() + direction * ticks;
-  }
+  // private _nearestTickIndexBelow(price: OrcaU256): number {
+  //   const currentPrice = this.whirlpool.getSqrtPrice() ** 2;
+  //   const ticks = Math.floor(Math.abs(price - currentPrice) / 1.0001); // TODO
+  //   const direction = price - currentPrice > 0 ? 1 : -1;
+  //   return this.whirlpool.getCurrentTick() + direction * ticks;
+  // }
 }

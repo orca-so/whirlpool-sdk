@@ -18,25 +18,24 @@ export enum FeeTier {
 export type OrcaWhirlpoolArgs = {
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
-  feeTier: FeeTier;
 };
 
 export interface OrcaWhirlpool {
   getOpenPositionQuote: (
     tokenMint: PublicKey,
-    tokenAmount: OrcaU64,
+    tokenAmount: any,
     tickLowerIndex: number,
     tickUpperIndex: number,
     slippageTolerence?: Percentage
   ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
 
-  getOpenPositionQuoteByPrice: (
-    tokenMint: PublicKey,
-    tokenAmount: OrcaU64,
-    priceLower: number, // OrcaU256
-    priceUpper: number, // OrcaU256
-    slippageTolerence?: Percentage
-  ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
+  // getOpenPositionQuoteByPrice: (
+  //   tokenMint: PublicKey,
+  //   tokenAmount: OrcaU64,
+  //   priceLower: OrcaU256,
+  //   priceUpper: OrcaU256,
+  //   slippageTolerence?: Percentage
+  // ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
 
   // // create lp position
   // getOpenPositionTransaction: (
@@ -50,11 +49,7 @@ export interface OrcaWhirlpool {
   //   slippageTolerence?: Percentage
   // ) => Promise<any>;
 
-  getSwapQuote: (
-    tokenMint: PublicKey,
-    amount: OrcaU64,
-    slippageTolerence?: Percentage
-  ) => Promise<any>;
+  getSwapQuote: (tokenMint: PublicKey, amount: any, slippageTolerence?: Percentage) => Promise<any>;
 
   // getSwapTransaction: (
   //   owner: Owner,
@@ -72,4 +67,6 @@ export interface OrcaWhirlpool {
 
   // // return the suggested price range
   // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
+
+  getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
 }

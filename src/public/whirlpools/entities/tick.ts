@@ -1,19 +1,20 @@
+import JSBI from "jsbi";
 import invariant from "tiny-invariant";
-import { NUM_TICKS_IN_ARRAY } from "../constants";
+import { BigintIsh, NUM_TICKS_IN_ARRAY } from "../constants";
 
 const MIN_TICK: number = 0;
 const MAX_TICK: number = NUM_TICKS_IN_ARRAY - 1;
 
 export interface TickConstructorArgs {
   initialized: number;
-  liquidityGross: any;
-  liquidityNet: any;
+  liquidityNet: BigintIsh;
+  liquidityGross: BigintIsh;
 }
 
 export class Tick {
   public readonly initialized: number;
-  public readonly liquidityGross: any;
-  public readonly liquidityNet: any;
+  public readonly liquidityNet: JSBI;
+  public readonly liquidityGross: JSBI;
 
   // fee_growth_outside_a
   // fee_growth_outside_b
@@ -24,7 +25,7 @@ export class Tick {
   constructor({ initialized, liquidityGross, liquidityNet }: TickConstructorArgs) {
     invariant(initialized >= MIN_TICK && initialized <= MAX_TICK, "TICK");
     this.initialized = initialized;
-    this.liquidityGross = liquidityGross;
-    this.liquidityNet = liquidityNet;
+    this.liquidityGross = JSBI.BigInt(liquidityGross);
+    this.liquidityNet = JSBI.BigInt(liquidityNet);
   }
 }

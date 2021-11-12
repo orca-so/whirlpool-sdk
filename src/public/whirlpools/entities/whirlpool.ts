@@ -1,12 +1,13 @@
+import JSBI from "jsbi";
+import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { FeeTier } from "..";
+import { u256 } from "../../utils/numbers/u256";
 
 interface WhirlpoolConstructorArgs {
   whirlpoolsConfig: PublicKey;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
-  feeTier: FeeTier;
   programId: PublicKey;
 }
 
@@ -15,43 +16,25 @@ export class Whirlpool {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly tokenMintA: PublicKey;
   public readonly tokenMintB: PublicKey;
-  public readonly feeTier: FeeTier;
   public readonly programId: PublicKey;
 
-  constructor({
-    whirlpoolsConfig,
-    tokenMintA,
-    tokenMintB,
-    feeTier,
-    programId,
-  }: WhirlpoolConstructorArgs) {
+  public readonly liquidity: JSBI;
+  public readonly sqrtPrice: JSBI;
+  public readonly tickArrayStart: number; // i32
+  public readonly currentTick: number; // i32
+
+  constructor({ whirlpoolsConfig, tokenMintA, tokenMintB, programId }: WhirlpoolConstructorArgs) {
     invariant(!tokenMintA.equals(tokenMintB), "Whirlpool");
 
     this.whirlpoolsConfig = whirlpoolsConfig;
     this.tokenMintA = tokenMintA;
     this.tokenMintB = tokenMintB;
-    this.feeTier = feeTier;
     this.programId = programId;
-  }
 
-  // TODO
-  getLiquidity(): number {
-    return -1; // u64
-  }
-
-  // TODO
-  getSqrtPrice(): number {
-    return -1; // u256
-  }
-
-  // TODO
-  getTickArrayStart(): number {
-    return -1; // i32
-  }
-
-  // TODO
-  getCurrentTick(): number {
-    return -1; // i32
+    this.liquidity = JSBI.BigInt("1");
+    this.sqrtPrice = JSBI.BigInt("1");
+    this.tickArrayStart = 1;
+    this.currentTick = 1;
   }
 
   /**
