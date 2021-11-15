@@ -40,6 +40,7 @@ export abstract class TickMath {
    * Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as sqrt(1.0001)^tick
    * @param tick the tick for which to compute the sqrt ratio
    */
+  // TODO
   public static getSqrtRatioAtTick(tick: number): JSBI {
     invariant(
       tick >= TickMath.MIN_TICK && tick <= TickMath.MAX_TICK && Number.isInteger(tick),
@@ -84,6 +85,7 @@ export abstract class TickMath {
    * and #getSqrtRatioAtTick(tick + 1) > sqrtRatioX96
    * @param sqrtRatioX96 the sqrt ratio as a Q64.96 for which to compute the tick
    */
+  // TODO
   public static getTickAtSqrtRatio(sqrtRatioX96: JSBI): number {
     invariant(
       JSBI.greaterThanOrEqual(sqrtRatioX96, TickMath.MIN_SQRT_RATIO) &&

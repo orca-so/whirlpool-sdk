@@ -48,10 +48,7 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
 
     // calculate open position quote
-    const virtualLiquidity = JSBI.add(
-      JSBI.subtract(this.whirlpool.liquidity, tickLower.liquidityGross),
-      tickUpper.liquidityGross
-    );
+    // 3.3.3
 
     return { maxTokenA: 0, maxTokenB: 0, liquidity: 0 };
   }
