@@ -3,54 +3,42 @@ import invariant from "tiny-invariant";
 import { Tick, Whirlpool } from ".";
 import { getWhirlpoolProgramId, NUM_TICKS_IN_ARRAY } from "../constants";
 
-interface TickArrayConstructorArgs {
-  whirlpool: Whirlpool;
-  startTick: number;
-  ticks: Tick[];
+export interface TickArrayAccount {
+  readonly whirlpool: PublicKey;
+  readonly startTick: number; // i32
+  readonly ticks: Tick[];
 }
 
-// account
 export class TickArray {
-  private whirlpool: Whirlpool;
-  private startTick: number;
-  private ticks: Tick[];
+  public readonly account: TickArrayAccount;
 
-  constructor({ whirlpool, startTick, ticks }: TickArrayConstructorArgs) {
-    invariant(ticks.length === NUM_TICKS_IN_ARRAY, "TICK_ARRAY");
-    this.whirlpool = whirlpool;
-    this.startTick = startTick;
-    this.ticks = ticks;
-  }
-
-  static async deriveAddress(
-    whirlpoolAddress: PublicKey,
-    startTick: number,
-    programId: PublicKey
-  ): Promise<PublicKey> {
-    return (
-      await PublicKey.findProgramAddress([whirlpoolAddress.toBuffer() /* startTick */], programId)
-    )[0];
-  }
-
-  static async fetchTickArray(whirlpool: Whirlpool, startTick: number): Promise<any> {
-    const whirlpoolAddress = await whirlpool.getAddress();
-    const address = TickArray.deriveAddress(whirlpoolAddress, startTick, whirlpool.programId);
-    // TODO get acccount with address
-    // TODO deserialize using anchor
-    return {}; // TickArray
-  }
-
-  async getAddress(): Promise<PublicKey> {
-    const whirlpoolAddress = await this.whirlpool.getAddress();
-    return TickArray.deriveAddress(whirlpoolAddress, this.startTick, this.whirlpool.programId);
+  constructor(account: TickArrayAccount) {
+    invariant(account.ticks.length === NUM_TICKS_IN_ARRAY, "TICK_ARRAY");
+    this.account = account;
   }
 
   getTick(tickIndex: number): Tick {
-    invariant(
-      tickIndex >= this.startTick && tickIndex < this.startTick + NUM_TICKS_IN_ARRAY,
-      "getTick"
-    );
-    const localIndex = (tickIndex - this.startTick) % NUM_TICKS_IN_ARRAY; // check
-    return this.ticks[localIndex];
+    invariant(tickIndex >= this.account.startTick, "tickIndex is too small");
+    invariant(tickIndex < this.account.startTick + NUM_TICKS_IN_ARRAY, "tickIndex is too large");
+    const localIndex = (tickIndex - this.account.startTick) % NUM_TICKS_IN_ARRAY; // ??
+    return this.account.ticks[localIndex];
+  }
+
+  public static async fetch(
+    whirlpool: PublicKey,
+    startTick: number,
+    programId: PublicKey
+  ): Promise<TickArray> {
+    const address = await TickArray.getAddress(whirlpool, startTick, programId);
+    throw new Error("TODO - fetch, then deserialize the account data into TickArray object");
+  }
+
+  public static async getAddress(
+    whirlpool: PublicKey,
+    startTick: number,
+    programId: PublicKey
+  ): Promise<PublicKey> {
+    const buffers = [whirlpool.toBuffer()]; // TODO startTick to buffer
+    return (await PublicKey.findProgramAddress(buffers, programId))[0];
   }
 }

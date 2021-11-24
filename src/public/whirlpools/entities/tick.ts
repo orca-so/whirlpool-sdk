@@ -1,31 +1,18 @@
 import JSBI from "jsbi";
-import invariant from "tiny-invariant";
-import { BigintIsh, NUM_TICKS_IN_ARRAY } from "../constants";
+import { NUM_TICKS_IN_ARRAY } from "../constants";
 
-const MIN_TICK: number = 0;
-const MAX_TICK: number = NUM_TICKS_IN_ARRAY - 1;
+export const TickMin = 0;
+export const TickMax = NUM_TICKS_IN_ARRAY - 1;
 
-export interface TickConstructorArgs {
-  initialized: number;
-  liquidityNet: BigintIsh;
-  liquidityGross: BigintIsh;
-}
+export interface Tick {
+  readonly initialized: number; // u8
+  readonly liquidityNet: JSBI; // i64
+  readonly liquidity_gross: JSBI; // u64
 
-export class Tick {
-  public readonly initialized: number;
-  public readonly liquidityNet: JSBI;
-  public readonly liquidityGross: JSBI;
+  readonly feeGrowthOutsideA: JSBI; // u256
+  readonly feeGrowthOutsideB: JSBI; // u256
 
-  // fee_growth_outside_a
-  // fee_growth_outside_b
-  // reward_growth_outside_0
-  // reward_growth_outside_1
-  // reward_growth_outside_2
-
-  constructor({ initialized, liquidityGross, liquidityNet }: TickConstructorArgs) {
-    invariant(initialized >= MIN_TICK && initialized <= MAX_TICK, "TICK");
-    this.initialized = initialized;
-    this.liquidityGross = JSBI.BigInt(liquidityGross);
-    this.liquidityNet = JSBI.BigInt(liquidityNet);
-  }
+  readonly rewardGrowthOutside0: JSBI; // u256
+  readonly rewardGrowthOutside1: JSBI; // u256
+  readonly rewardGrowthOutside2: JSBI; // u256
 }

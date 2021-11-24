@@ -4,37 +4,46 @@ import { BigintIsh } from "../constants";
 import { Whirlpool } from "./whirlpool";
 import invariant from "tiny-invariant";
 
-interface PositionConstructorArgs {
-  whirlpool: Whirlpool;
-  tickLower: number;
-  tickUpper: number;
-  liquidity: BigintIsh;
+export interface PositionAccount {
+  whirlpool: PublicKey;
+
   mint: PublicKey;
+  liquidity: JSBI; // u64
+  tickLower: number; // i32
+  tickUpper: number; // i32
+
+  feeGrowthCheckpointA: JSBI; // u256
+  feeOwedA: JSBI; // u64
+
+  feeGrowthCheckpointB: JSBI; // u256
+  feeOwedB: JSBI; // u64
+
+  rewardGrowthCheckpoint0: JSBI; // u256
+  rewardOwed0: JSBI; // u64
+
+  rewardGrowthCheckpoint1: JSBI; // u256
+  rewardOwed1: JSBI; // u64
+
+  rewardGrowthCheckpoint2: JSBI; // u256
+  rewardOwed2: JSBI; // u64
 }
 
-// account
 export class Position {
-  public readonly whirlpool: Whirlpool;
-  public readonly tickLower: number;
-  public readonly tickUpper: number;
-  public readonly liquidity: JSBI;
-  public readonly mint: PublicKey;
+  public readonly account: PositionAccount;
 
-  constructor({ whirlpool, tickLower, tickUpper, liquidity, mint }: PositionConstructorArgs) {
-    invariant(tickLower < tickUpper, "TICK_ORDER");
+  constructor(account: PositionAccount) {
+    invariant(account.tickLower < account.tickUpper, "TICK_ORDER");
 
-    this.whirlpool = whirlpool;
-    this.tickLower = tickLower;
-    this.tickUpper = tickUpper;
-    this.liquidity = JSBI.BigInt(liquidity);
-    this.mint = mint;
+    this.account = account;
   }
 
-  async getAddress(): Promise<PublicKey> {
-    return (
-      await PublicKey.findProgramAddress([this.mint.toBuffer()], this.whirlpool.programId)
-    )[0];
+  public static async fetch(mint: PublicKey, programId: PublicKey): Promise<Position> {
+    const address = await Position.getAddress(mint, programId);
+    throw new Error("TODO - fetch, then deserialize the account data into Position object");
   }
 
-  // static createOpenPositionIx() {}
+  public static async getAddress(mint: PublicKey, programId: PublicKey): Promise<PublicKey> {
+    const buffers = [mint.toBuffer()];
+    return (await PublicKey.findProgramAddress(buffers, programId))[0];
+  }
 }

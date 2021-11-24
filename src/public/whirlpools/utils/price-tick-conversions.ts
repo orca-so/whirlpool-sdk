@@ -13,13 +13,7 @@ export function tickToPrice(
   quoteToken: Token,
   tick: number
 ): Price<Token, Token> {
-  const sqrtRatioX96 = TickMath.getSqrtRatioAtTick(tick);
-
-  const ratioX192 = JSBI.multiply(sqrtRatioX96, sqrtRatioX96);
-
-  return baseToken.sortsBefore(quoteToken)
-    ? new Price(baseToken, quoteToken, Q192, ratioX192)
-    : new Price(baseToken, quoteToken, ratioX192, Q192);
+  throw new Error("TODO - implement");
 }
 
 /**
@@ -28,22 +22,5 @@ export function tickToPrice(
  * i.e. the price of the returned tick is less than or equal to the input price
  */
 export function priceToClosestTick(price: Price<Token, Token>): number {
-  const sorted = price.baseCurrency.sortsBefore(price.quoteCurrency);
-
-  const sqrtRatioX96 = sorted
-    ? encodeSqrtRatioX96(price.numerator, price.denominator)
-    : encodeSqrtRatioX96(price.denominator, price.numerator);
-
-  let tick = TickMath.getTickAtSqrtRatio(sqrtRatioX96);
-  const nextTickPrice = tickToPrice(price.baseCurrency, price.quoteCurrency, tick + 1);
-  if (sorted) {
-    if (!price.lessThan(nextTickPrice)) {
-      tick++;
-    }
-  } else {
-    if (!price.greaterThan(nextTickPrice)) {
-      tick++;
-    }
-  }
-  return tick;
+  throw new Error("TODO - implement");
 }
