@@ -3,10 +3,9 @@ import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { u256 } from "../../utils/numbers/u256";
+import { TickArray } from ".";
 
 export interface WhirlpoolAccount {
-  readonly programId: PublicKey;
-
   readonly whirlpoolsConfig: PublicKey;
   readonly whirlpoolBump: number; // u8
 
@@ -48,6 +47,8 @@ export interface WhirlpoolAccount {
   readonly rewardEmissionsAuthority2: PublicKey;
   readonly rewardEmissionsPerSecond2: JSBI; // u256
   readonly rewardGrowthGlobal2: JSBI; // u256
+
+  readonly programId: PublicKey;
 }
 
 export class Whirlpool {
@@ -61,6 +62,27 @@ export class Whirlpool {
   public async getAddress(): Promise<PublicKey> {
     const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
     return Whirlpool.getAddress(whirlpoolsConfig, tokenMintA, tokenMintB, programId);
+  }
+
+  public async getCurrentTickArray(): Promise<TickArray> {
+    const whirlpoolAddress = await this.getAddress();
+    return TickArray.fetch(whirlpoolAddress, this.account.tickArrayStart, this.account.programId);
+  }
+
+  public async equals(whirlpool: Whirlpool): Promise<boolean> {
+    const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
+    const {
+      whirlpoolsConfig: otherWhirlpoolsConfig,
+      tokenMintA: otherTokenMintA,
+      tokenMintB: otherTokenMintB,
+      programId: otherProgramId,
+    } = whirlpool.account;
+    return (
+      whirlpoolsConfig.equals(otherWhirlpoolsConfig) &&
+      tokenMintA.equals(otherTokenMintA) &&
+      tokenMintB.equals(otherTokenMintB) &&
+      programId.equals(otherProgramId)
+    );
   }
 
   public static async fetch(

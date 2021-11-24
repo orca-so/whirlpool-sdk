@@ -26,15 +26,27 @@ export interface PositionAccount {
 
   rewardGrowthCheckpoint2: JSBI; // u256
   rewardOwed2: JSBI; // u64
+
+  programId: PublicKey;
 }
 
 export class Position {
   public readonly account: PositionAccount;
 
   constructor(account: PositionAccount) {
-    invariant(account.tickLower < account.tickUpper, "TICK_ORDER");
-
+    invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
     this.account = account;
+  }
+
+  public async getAddress(): Promise<PublicKey> {
+    const { mint, programId } = this.account;
+    return Position.getAddress(mint, programId);
+  }
+
+  public async equals(position: Position): Promise<boolean> {
+    const { mint, programId } = this.account;
+    const { mint: otherMint, programId: otherProgramId } = position.account;
+    return mint.equals(otherMint) && programId.equals(otherProgramId);
   }
 
   public static async fetch(mint: PublicKey, programId: PublicKey): Promise<Position> {
