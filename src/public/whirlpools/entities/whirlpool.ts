@@ -58,6 +58,11 @@ export class Whirlpool {
     this.account = account;
   }
 
+  public async getAddress(): Promise<PublicKey> {
+    const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
+    return Whirlpool.getAddress(whirlpoolsConfig, tokenMintA, tokenMintB, programId);
+  }
+
   public static async fetch(
     whirlpoolsConfig: PublicKey,
     tokenMintA: PublicKey,

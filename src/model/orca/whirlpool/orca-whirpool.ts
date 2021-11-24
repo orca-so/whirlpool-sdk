@@ -17,22 +17,32 @@ interface OrcaWhirpoolImplConstructorArgs {
 }
 
 export class OrcaWhirpoolImpl implements OrcaWhirlpool {
-  private whirlpool: Whirlpool;
+  private whirlpoolsConfig: PublicKey;
+  private programId: PublicKey;
+  private tokenMintA: PublicKey;
+  private tokenMintB: PublicKey;
+  private whirlpool?: Whirlpool;
 
   constructor({ network, args: { tokenMintA, tokenMintB } }: OrcaWhirpoolImplConstructorArgs) {
-    invariant(!tokenMintA.equals(tokenMintB), "Whirlpool");
+    invariant(!tokenMintA.equals(tokenMintB), "tokens must be different");
 
-    // consistent ordering of tokenA and tokenB
     const inOrder = tokenMintA.toBase58() < tokenMintB.toBase58();
     const _tokenMintA = inOrder ? tokenMintA : tokenMintB;
     const _tokenMintB = inOrder ? tokenMintB : tokenMintA;
 
-    this.whirlpool = new Whirlpool({
-      whirlpoolsConfig: getWhirlpoolsConfig(network),
-      tokenMintA: _tokenMintA,
-      tokenMintB: _tokenMintB,
-      programId: getWhirlpoolProgramId(network),
-    });
+    this.whirlpoolsConfig = getWhirlpoolsConfig(network);
+    this.programId = getWhirlpoolProgramId(network);
+    this.tokenMintA = _tokenMintA;
+    this.tokenMintB = _tokenMintB;
+  }
+
+  async init(): Promise<void> {
+    this.whirlpool = await Whirlpool.fetch(
+      this.whirlpoolsConfig,
+      this.tokenMintA,
+      this.tokenMintB,
+      this.programId
+    );
   }
 
   async getOpenPositionQuote(
@@ -82,13 +92,19 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   ): Promise<any> {}
 
   async loadTickArray(tickIndex: number): Promise<TickArray> {
-    const tickArrayStart = this.whirlpool.tickArrayStart;
+    if (!this.whirlpool) {
+      throw new Error("");
+    }
+
+    const tickArrayStart = this.whirlpool.account.tickArrayStart;
 
     const delta = Math.floor(Math.abs(tickIndex - tickArrayStart) / NUM_TICKS_IN_ARRAY);
     const direction = tickIndex - tickArrayStart > 0 ? 1 : -1;
     const targetTickArrayStart = tickArrayStart + direction * delta * NUM_TICKS_IN_ARRAY;
 
-    return TickArray.fetchTickArray(this.whirlpool, targetTickArrayStart);
+    const whirlpoolAddress = await this.whirlpool.getAddress();
+
+    return TickArray.fetch(whirlpoolAddress, targetTickArrayStart, this.programId);
   }
 
   async getInitPoolTransaction(initialSqrtPrice: OrcaU256): Promise<any> {
