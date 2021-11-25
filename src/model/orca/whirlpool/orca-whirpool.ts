@@ -10,6 +10,7 @@ import {
 } from "../../../public/whirlpools/constants";
 import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
 import invariant from "tiny-invariant";
+import { TickMath } from "../../../public/whirlpools/utils/tick-math";
 
 interface OrcaWhirpoolImplConstructorArgs {
   network: Network;
@@ -37,21 +38,24 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   }
 
   async init(): Promise<void> {
-    this.whirlpool = await Whirlpool.fetch(
+    const address = await Whirlpool.getAddress(
       this.whirlpoolsConfig,
       this.tokenMintA,
       this.tokenMintB,
       this.programId
     );
+    this.whirlpool = await Whirlpool.fetch(address);
   }
 
   async getOpenPositionQuote(
-    tokenMint: PublicKey,
+    tokenMint: PublicKey, // TODO - create type constraint for tokenMint
     tokenAmount: OrcaU64,
     tickLowerIndex: number,
     tickUpperIndex: number,
     slippageTolerence?: Percentage
   ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+    invariant(!!this.whirlpool, "whirlpool has not been initialized");
+
     // find tick_array account(s) with ticks
     const tickArrayLower = await this.loadTickArray(tickLowerIndex);
     const tickArrayUpper = await this.loadTickArray(tickUpperIndex);
@@ -60,7 +64,14 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     const tickLower = tickArrayLower.getTick(tickLowerIndex);
     const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
 
-    // calculate open position quote
+    const sqrtPrice = this.whirlpool.account.sqrtPrice;
+    const sqrtPriceLower = TickMath.getSqrtPriceAtTick(tickLowerIndex);
+    const sqrtPriceUpper = TickMath.getSqrtPriceAtTick(tickUpperIndex);
+
+    // 3.2.1 Example 1: Amount of assets from a range
+    // Lx = tokenAmount * sqrtPrice * sqrtPriceUpper / (sqrtPriceUpper - sqrtPrice)
+    // y = Lx * (sqrtPrice - sqrtPriceLower)
+    // return y
 
     throw new Error("TODO - implement");
   }
@@ -92,19 +103,13 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   ): Promise<any> {}
 
   async loadTickArray(tickIndex: number): Promise<TickArray> {
-    if (!this.whirlpool) {
-      throw new Error("");
-    }
-
-    const tickArrayStart = this.whirlpool.account.tickArrayStart;
-
-    const delta = Math.floor(Math.abs(tickIndex - tickArrayStart) / NUM_TICKS_IN_ARRAY);
-    const direction = tickIndex - tickArrayStart > 0 ? 1 : -1;
-    const targetTickArrayStart = tickArrayStart + direction * delta * NUM_TICKS_IN_ARRAY;
+    invariant(!!this.whirlpool, "whirlpool has not been initialized");
 
     const whirlpoolAddress = await this.whirlpool.getAddress();
+    const startTick = TickArray.findStartTick(tickIndex, this.whirlpool.account.tickArrayStart);
+    const address = await TickArray.getAddress(whirlpoolAddress, startTick, this.programId);
 
-    return TickArray.fetch(whirlpoolAddress, targetTickArrayStart, this.programId);
+    return TickArray.fetch(address);
   }
 
   async getInitPoolTransaction(initialSqrtPrice: OrcaU256): Promise<any> {

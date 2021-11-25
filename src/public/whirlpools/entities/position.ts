@@ -1,5 +1,5 @@
 import JSBI from "jsbi";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { BigintIsh } from "../constants";
 import { Whirlpool } from "./whirlpool";
 import invariant from "tiny-invariant";
@@ -33,14 +33,19 @@ export interface PositionAccount {
 export class Position {
   public readonly account: PositionAccount;
 
+  private _address: PublicKey | null = null;
+
   constructor(account: PositionAccount) {
     invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
     this.account = account;
   }
 
   public async getAddress(): Promise<PublicKey> {
-    const { mint, programId } = this.account;
-    return Position.getAddress(mint, programId);
+    if (!this._address) {
+      const { mint, programId } = this.account;
+      this._address = await Position.getAddress(mint, programId);
+    }
+    return this._address;
   }
 
   public async equals(position: Position): Promise<boolean> {
@@ -49,8 +54,7 @@ export class Position {
     return mint.equals(otherMint) && programId.equals(otherProgramId);
   }
 
-  public static async fetch(mint: PublicKey, programId: PublicKey): Promise<Position> {
-    const address = await Position.getAddress(mint, programId);
+  public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
     throw new Error("TODO - fetch, then deserialize the account data into Position object");
   }
 

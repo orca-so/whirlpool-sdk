@@ -32,7 +32,7 @@ export function getWhirlpoolProgramId(network: Network): PublicKey {
 export const NUM_TICKS_IN_ARRAY = 1000;
 
 /**
- * Tick size
+ * Tick spacing
  */
 export const TICK_SIZE = 5;
 

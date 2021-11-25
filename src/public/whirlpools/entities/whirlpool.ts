@@ -1,6 +1,6 @@
 import JSBI from "jsbi";
 import { u64 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { u256 } from "../../utils/numbers/u256";
 import { TickArray } from ".";
@@ -54,19 +54,32 @@ export interface WhirlpoolAccount {
 export class Whirlpool {
   public readonly account: WhirlpoolAccount;
 
+  private _address: PublicKey | null = null;
+
   constructor(account: WhirlpoolAccount) {
     invariant(account.tokenMintA !== account.tokenMintB, "TOKEN_MINT");
     this.account = account;
   }
 
   public async getAddress(): Promise<PublicKey> {
-    const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
-    return Whirlpool.getAddress(whirlpoolsConfig, tokenMintA, tokenMintB, programId);
+    if (!this._address) {
+      const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
+      this._address = await Whirlpool.getAddress(
+        whirlpoolsConfig,
+        tokenMintA,
+        tokenMintB,
+        programId
+      );
+    }
+    return this._address;
   }
 
-  public async getCurrentTickArray(): Promise<TickArray> {
-    const whirlpoolAddress = await this.getAddress();
-    return TickArray.fetch(whirlpoolAddress, this.account.tickArrayStart, this.account.programId);
+  public async getCurrentTickArrayAddress(): Promise<PublicKey> {
+    return TickArray.getAddress(
+      await this.getAddress(),
+      this.account.tickArrayStart,
+      this.account.programId
+    );
   }
 
   public async equals(whirlpool: Whirlpool): Promise<boolean> {
@@ -85,13 +98,8 @@ export class Whirlpool {
     );
   }
 
-  public static async fetch(
-    whirlpoolsConfig: PublicKey,
-    tokenMintA: PublicKey,
-    tokenMintB: PublicKey,
-    programId: PublicKey
-  ): Promise<Whirlpool> {
-    const address = Whirlpool.getAddress(whirlpoolsConfig, tokenMintA, tokenMintB, programId);
+  // TODO - connection: Connection
+  public static async fetch(address: PublicKey): Promise<Whirlpool> {
     throw new Error("TODO - fetch, then deserialize the account data into Whirlpool object");
   }
 
