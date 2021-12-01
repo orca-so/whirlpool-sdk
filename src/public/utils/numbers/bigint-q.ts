@@ -1,30 +1,40 @@
 import JSBI from "jsbi";
 
+const TEN = JSBI.BigInt("10");
+
 export class BigIntQ {
-  private _value: JSBI;
-  private _left: number;
-  private _right: number;
+  public readonly value: JSBI;
+  public readonly left: number;
+  public readonly right: number;
 
   constructor(value: JSBI, left: number, right: number) {
-    this._value = value;
-    this._left = left;
-    this._right = right;
+    this.value = value;
+    this.left = left;
+    this.right = right;
   }
 
-  public add(n: BigIntQ): BigIntQ {
-    throw new Error("TODO - implement");
+  public add(other: BigIntQ): BigIntQ {
+    const { x, y } = lineUpQNumbers(this, other);
+    const z = JSBI.add(x.value, y.value);
+    return new BigIntQ(z, z.toString().length - x.right, x.right);
   }
 
-  public sub(n: BigIntQ): BigIntQ {
-    throw new Error("TODO - implement");
+  public sub(other: BigIntQ): BigIntQ {
+    const { x, y } = lineUpQNumbers(this, other);
+    const z = JSBI.subtract(x.value, y.value);
+    return new BigIntQ(z, z.toString().length - x.right, x.right);
   }
 
-  public mul(n: BigIntQ): BigIntQ {
-    throw new Error("TODO - implement");
+  public mul(other: BigIntQ): BigIntQ {
+    const { x, y } = lineUpQNumbers(this, other);
+    const z = JSBI.multiply(x.value, y.value);
+    return new BigIntQ(z, z.toString().length - x.right, x.right);
   }
 
-  public div(n: BigIntQ): BigIntQ {
-    throw new Error("TODO - implement");
+  public div(other: BigIntQ): BigIntQ {
+    const { x, y } = lineUpQNumbers(this, other);
+    const z = JSBI.divide(x.value, y.value);
+    return new BigIntQ(z, z.toString().length - x.right, x.right);
   }
 
   public resize(left: number, right: number): BigIntQ {
@@ -32,11 +42,11 @@ export class BigIntQ {
   }
 
   public copy() {
-    return new BigIntQ(this._value, this._left, this._right);
+    return new BigIntQ(this.value, this.left, this.right);
   }
 
   public get size(): number {
-    return this._left + this._right;
+    return this.left + this.right;
   }
 
   public toBuffer(): Buffer {
@@ -46,4 +56,18 @@ export class BigIntQ {
   public static fromBuffer(buffer: Buffer): BigIntQ {
     throw new Error("TODO - implement");
   }
+}
+
+function lineUpQNumbers(x: BigIntQ, y: BigIntQ): { x: BigIntQ; y: BigIntQ } {
+  if (x.right > y.right) {
+    const delta = x.right - y.right;
+    const value = JSBI.multiply(y.value, JSBI.exponentiate(TEN, JSBI.BigInt(delta)));
+
+    return { x, y: new BigIntQ(value, y.left, x.right) };
+  }
+
+  const delta = y.right - x.right;
+  const value = JSBI.multiply(x.value, JSBI.exponentiate(TEN, JSBI.BigInt(delta)));
+
+  return { x: new BigIntQ(value, x.left, y.right), y };
 }
