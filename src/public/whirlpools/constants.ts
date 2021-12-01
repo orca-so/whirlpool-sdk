@@ -1,4 +1,3 @@
-import JSBI from "jsbi";
 import { PublicKey } from "@solana/web3.js";
 import { Network } from ".";
 
@@ -36,8 +35,8 @@ export const NUM_TICKS_IN_ARRAY = 1000;
  */
 export const TICK_SIZE = 5;
 
-export type BigintIsh = JSBI | string | number;
+// export type BigintIsh = JSBI | string | number;
 
-export const MaxUint256 = JSBI.BigInt(
-  "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
-);
+// export const MaxUint256 = JSBI.BigInt(
+//   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+// );

@@ -1,6 +1,5 @@
-import JSBI from "jsbi";
+import BN from "bn.js";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { BigintIsh } from "../constants";
 import { Whirlpool } from "./whirlpool";
 import invariant from "tiny-invariant";
 
@@ -8,24 +7,24 @@ export interface PositionAccount {
   whirlpool: PublicKey;
 
   mint: PublicKey;
-  liquidity: JSBI; // u64
+  liquidity: BN; // u64
   tickLower: number; // i32
   tickUpper: number; // i32
 
-  feeGrowthCheckpointA: JSBI; // u256
-  feeOwedA: JSBI; // u64
+  feeGrowthCheckpointA: BN; // u256
+  feeOwedA: BN; // u64
 
-  feeGrowthCheckpointB: JSBI; // u256
-  feeOwedB: JSBI; // u64
+  feeGrowthCheckpointB: BN; // u256
+  feeOwedB: BN; // u64
 
-  rewardGrowthCheckpoint0: JSBI; // u256
-  rewardOwed0: JSBI; // u64
+  rewardGrowthCheckpoint0: BN; // u256
+  rewardOwed0: BN; // u64
 
-  rewardGrowthCheckpoint1: JSBI; // u256
-  rewardOwed1: JSBI; // u64
+  rewardGrowthCheckpoint1: BN; // u256
+  rewardOwed1: BN; // u64
 
-  rewardGrowthCheckpoint2: JSBI; // u256
-  rewardOwed2: JSBI; // u64
+  rewardGrowthCheckpoint2: BN; // u256
+  rewardOwed2: BN; // u64
 
   programId: PublicKey;
 }

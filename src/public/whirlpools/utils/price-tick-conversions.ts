@@ -1,4 +1,3 @@
-import JSBI from "jsbi";
 import { TickMath } from "./tick-math";
 
 /**

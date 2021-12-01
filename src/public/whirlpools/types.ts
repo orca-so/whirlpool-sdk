@@ -69,4 +69,7 @@ export interface OrcaWhirlpool {
   // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
 
   getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
+
+  // fetch whitelist from zp
+  // getWhitelist: () => Promise<any | null>;
 }

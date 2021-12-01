@@ -1,4 +1,4 @@
-import JSBI from "jsbi";
+import BN from "bn.js";
 import { u64 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -12,41 +12,41 @@ export interface WhirlpoolAccount {
   readonly feeRate: number; // u16
   readonly protocolFeeRate: number; // u16
 
-  readonly liquidity: JSBI; // u64
-  readonly sqrtPrice: JSBI; // u256
+  readonly liquidity: BN; // u64
+  readonly sqrtPrice: BN; // q64.64
   readonly tickArrayStart: number; // i32
   readonly currentTick: number; // i32
 
-  readonly protocolFeeOwedA: JSBI; // u64
-  readonly protocolFeeOwedB: JSBI; // u64
+  readonly protocolFeeOwedA: BN; // u64
+  readonly protocolFeeOwedB: BN; // u64
 
   readonly tokenMintA: PublicKey;
   readonly tokenVaultA: PublicKey;
-  readonly feeGrowthGlobalA: JSBI; // u256
+  readonly feeGrowthGlobalA: BN; // q64.64
 
   readonly tokenMintB: PublicKey;
   readonly tokenVaultB: PublicKey;
-  readonly feeGrowthGlobalB: JSBI; // u256
+  readonly feeGrowthGlobalB: BN; // q64.64
 
-  readonly secondsSinceLastUpdate: JSBI; // u64
+  readonly secondsSinceLastUpdate: BN; // u64
 
   readonly rewardMint0: PublicKey;
   readonly rewardVault0: PublicKey;
   readonly rewardEmissionsAuthority0: PublicKey;
-  readonly rewardEmissionsPerSecond0: JSBI; // u256
-  readonly rewardGrowthGlobal0: JSBI; // u256
+  readonly rewardEmissionsPerSecond0: BN; // u256
+  readonly rewardGrowthGlobal0: BN; // u256
 
   readonly rewardMint1: PublicKey;
   readonly rewardVault1: PublicKey;
   readonly rewardEmissionsAuthority1: PublicKey;
-  readonly rewardEmissionsPerSecond1: JSBI; // u256
-  readonly rewardGrowthGlobal1: JSBI; // u256
+  readonly rewardEmissionsPerSecond1: BN; // u256
+  readonly rewardGrowthGlobal1: BN; // u256
 
   readonly rewardMint2: PublicKey;
   readonly rewardVault2: PublicKey;
   readonly rewardEmissionsAuthority2: PublicKey;
-  readonly rewardEmissionsPerSecond2: JSBI; // u256
-  readonly rewardGrowthGlobal2: JSBI; // u256
+  readonly rewardEmissionsPerSecond2: BN; // u256
+  readonly rewardGrowthGlobal2: BN; // u256
 
   readonly programId: PublicKey;
 }

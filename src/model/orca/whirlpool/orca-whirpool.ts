@@ -1,4 +1,3 @@
-import JSBI from "jsbi";
 import { PublicKey } from "@solana/web3.js";
 import { OrcaU64, Percentage } from "../../../public";
 import { OrcaU256 } from "../../../public/utils/numbers/orca-u256";
@@ -17,6 +16,9 @@ interface OrcaWhirpoolImplConstructorArgs {
   args: OrcaWhirlpoolArgs;
 }
 
+/**
+ * Random notes: nft represents the authority to a specific position
+ */
 export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   private whirlpoolsConfig: PublicKey;
   private programId: PublicKey;
@@ -112,6 +114,7 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     return TickArray.fetch(address);
   }
 
+  // create whirlpool, create tickarray, open position, add liquidity
   async getInitPoolTransaction(initialSqrtPrice: OrcaU256): Promise<any> {
     throw new Error("TODO - implement");
   }
