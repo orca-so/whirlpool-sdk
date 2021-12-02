@@ -1,8 +1,6 @@
 import BN from "bn.js";
-import { u64 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { u256 } from "../../utils/numbers/u256";
 import { TickArray } from ".";
 
 export interface WhirlpoolAccount {
@@ -33,20 +31,20 @@ export interface WhirlpoolAccount {
   readonly rewardMint0: PublicKey;
   readonly rewardVault0: PublicKey;
   readonly rewardEmissionsAuthority0: PublicKey;
-  readonly rewardEmissionsPerSecond0: BN; // u256
-  readonly rewardGrowthGlobal0: BN; // u256
+  readonly rewardEmissionsPerSecond0: BN; // u128
+  readonly rewardGrowthGlobal0: BN; // u128
 
   readonly rewardMint1: PublicKey;
   readonly rewardVault1: PublicKey;
   readonly rewardEmissionsAuthority1: PublicKey;
-  readonly rewardEmissionsPerSecond1: BN; // u256
-  readonly rewardGrowthGlobal1: BN; // u256
+  readonly rewardEmissionsPerSecond1: BN; // u128
+  readonly rewardGrowthGlobal1: BN; // u128
 
   readonly rewardMint2: PublicKey;
   readonly rewardVault2: PublicKey;
   readonly rewardEmissionsAuthority2: PublicKey;
-  readonly rewardEmissionsPerSecond2: BN; // u256
-  readonly rewardGrowthGlobal2: BN; // u256
+  readonly rewardEmissionsPerSecond2: BN; // u128
+  readonly rewardGrowthGlobal2: BN; // u128
 
   readonly programId: PublicKey;
 }

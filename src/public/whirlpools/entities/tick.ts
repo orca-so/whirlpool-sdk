@@ -9,10 +9,10 @@ export interface Tick {
   readonly liquidityNet: BN; // i64
   readonly liquidity_gross: BN; // u64
 
-  readonly feeGrowthOutsideA: BN; // u256
-  readonly feeGrowthOutsideB: BN; // u256
+  readonly feeGrowthOutsideA: BN; // u128
+  readonly feeGrowthOutsideB: BN; // u128
 
-  readonly rewardGrowthOutside0: BN; // u256
-  readonly rewardGrowthOutside1: BN; // u256
-  readonly rewardGrowthOutside2: BN; // u256
+  readonly rewardGrowthOutside0: BN; // u128
+  readonly rewardGrowthOutside1: BN; // u128
+  readonly rewardGrowthOutside2: BN; // u128
 }

@@ -1,5 +1,5 @@
-import { PublicKey } from "@solana/web3.js";
-import { OrcaU64, Percentage } from "../../../public";
+import { Account, PublicKey } from "@solana/web3.js";
+import { OrcaToken, OrcaU64, Percentage } from "../../../public";
 import { OrcaU256 } from "../../../public/utils/numbers/orca-u256";
 import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
 import {
@@ -10,6 +10,8 @@ import {
 import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
 import invariant from "tiny-invariant";
 import { TickMath } from "../../../public/whirlpools/utils/tick-math";
+import { u64 } from "@solana/spl-token";
+import { Q } from "../../../public/utils/numbers/fixed-point";
 
 interface OrcaWhirpoolImplConstructorArgs {
   network: Network;
@@ -19,72 +21,82 @@ interface OrcaWhirpoolImplConstructorArgs {
 /**
  * Random notes: nft represents the authority to a specific position
  */
-export class OrcaWhirpoolImpl implements OrcaWhirlpool {
+export class OrcaWhirpoolImpl<A extends OrcaToken, B extends OrcaToken>
+  implements OrcaWhirlpool<A, B>
+{
   private whirlpoolsConfig: PublicKey;
   private programId: PublicKey;
-  private tokenMintA: PublicKey;
-  private tokenMintB: PublicKey;
+  private tokenA: A;
+  private tokenB: B;
   private whirlpool?: Whirlpool;
 
-  constructor({ network, args: { tokenMintA, tokenMintB } }: OrcaWhirpoolImplConstructorArgs) {
-    invariant(!tokenMintA.equals(tokenMintB), "tokens must be different");
+  constructor({ network, args: { tokenA, tokenB } }: OrcaWhirpoolImplConstructorArgs) {
+    invariant(!tokenA.mint.equals(tokenB.mint), "tokens must be different");
 
-    const inOrder = tokenMintA.toBase58() < tokenMintB.toBase58();
-    const _tokenMintA = inOrder ? tokenMintA : tokenMintB;
-    const _tokenMintB = inOrder ? tokenMintB : tokenMintA;
+    const inOrder = tokenA.mint.toBase58() < tokenB.mint.toBase58();
+    const _tokenA = inOrder ? tokenA : tokenB;
+    const _tokenB = inOrder ? tokenB : tokenA;
 
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
-    this.tokenMintA = _tokenMintA;
-    this.tokenMintB = _tokenMintB;
+    this.tokenA = _tokenA;
+    this.tokenB = _tokenB;
   }
 
   async init(): Promise<void> {
     const address = await Whirlpool.getAddress(
       this.whirlpoolsConfig,
-      this.tokenMintA,
-      this.tokenMintB,
+      this.tokenA.mint,
+      this.tokenB.mint,
       this.programId
     );
     this.whirlpool = await Whirlpool.fetch(address);
   }
 
   async getOpenPositionQuote(
-    tokenMint: PublicKey, // TODO - create type constraint for tokenMint
-    tokenAmount: OrcaU64,
+    token: A | B,
+    tokenAmount: u64,
     tickLowerIndex: number,
     tickUpperIndex: number,
     slippageTolerence?: Percentage
-  ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+  ): Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }> {
     invariant(!!this.whirlpool, "whirlpool has not been initialized");
-
-    // find tick_array account(s) with ticks
-    const tickArrayLower = await this.loadTickArray(tickLowerIndex);
-    const tickArrayUpper = await this.loadTickArray(tickUpperIndex);
-
-    // find ticks within the tick_array account(s)
-    const tickLower = tickArrayLower.getTick(tickLowerIndex);
-    const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
+    invariant(
+      token.mint.equals(this.tokenA.mint) || token.mint.equals(this.tokenB.mint),
+      "invalid mint"
+    );
 
     const sqrtPrice = this.whirlpool.account.sqrtPrice;
     const sqrtPriceLower = TickMath.getSqrtPriceAtTick(tickLowerIndex);
     const sqrtPriceUpper = TickMath.getSqrtPriceAtTick(tickUpperIndex);
 
+    const qTokenAmount = Q.fromU64(tokenAmount);
+    const qSqrtPrice = new Q(sqrtPrice, 64);
+    const qSqrtPriceLower = new Q(sqrtPriceLower, 64);
+    const qSqrtPriceUpper = new Q(sqrtPriceUpper, 64);
+
     // 3.2.1 Example 1: Amount of assets from a range
-    // Lx = tokenAmount * sqrtPrice * sqrtPriceUpper / (sqrtPriceUpper - sqrtPrice)
-    // y = Lx * (sqrtPrice - sqrtPriceLower)
-    // return y
+    const Lx = qTokenAmount
+      .mul(qSqrtPrice)
+      .mul(qSqrtPriceUpper)
+      .div(qSqrtPriceUpper.sub(qSqrtPrice));
+    const y = Lx.mul(qSqrtPrice.sub(qSqrtPriceLower));
 
     throw new Error("TODO - implement");
   }
 
   async getOpenPositionQuoteByPrice(
-    tokenMint: PublicKey,
+    token: A | B,
     tokenAmount: OrcaU64,
     priceLower: OrcaU256,
     priceUpper: OrcaU256,
     slippageTolerence?: Percentage
   ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
+    invariant(!!this.whirlpool, "whirlpool has not been initialized");
+    invariant(
+      token.mint.equals(this.tokenA.mint) || token.mint.equals(this.tokenB.mint),
+      "invalid mint"
+    );
     throw new Error("TODO - implement");
     // const lowerTickIndex = this._nearestTickIndexAbove(priceLower);
     // const upperTickIndex = this._nearestTickIndexBelow(priceUpper);

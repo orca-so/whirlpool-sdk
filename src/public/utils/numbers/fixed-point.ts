@@ -1,5 +1,7 @@
+import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
 import invariant from "tiny-invariant";
+import { OrcaU64 } from ".";
 
 // TODO bit shift, exponent, logarithms
 
@@ -8,50 +10,43 @@ import invariant from "tiny-invariant";
  */
 export class Q {
   public readonly value: BN;
-  public readonly left: number; // integar part bit length
-  public readonly right: number; // fraction part bit length
+  public readonly precision: number; // fraction part bit length
 
-  constructor(value: BN, left: number, right = 0) {
-    invariant(value.bitLength() === left + right, "Q bitLength match");
+  constructor(value: BN, precision = 0) {
     this.value = value;
-    this.left = left;
-    this.right = right;
+    this.precision = precision;
   }
 
   public get integar(): BN {
-    return this.value.shrn(this.right);
+    return this.value.shrn(this.precision);
   }
 
   public add(other: Q): Q {
     const { x, y } = lineUpFixedPointNumbers(this, other);
     const z = x.value.add(y.value);
-    return new Q(z, z.bitLength() - x.right, x.right);
+    return new Q(z, x.precision);
   }
 
   public sub(other: Q): Q {
     const { x, y } = lineUpFixedPointNumbers(this, other);
     const z = x.value.sub(y.value);
-    return new Q(z, z.bitLength() - x.right, x.right);
+    return new Q(z, x.precision);
   }
 
   public mul(other: Q): Q {
     const { x, y } = lineUpFixedPointNumbers(this, other);
     const z = x.value.mul(y.value);
-    return new Q(z, z.bitLength() - x.right, x.right);
+    return new Q(z, x.precision);
   }
 
   public div(other: Q): Q {
     const { x, y } = lineUpFixedPointNumbers(this, other);
     const z = x.value.div(y.value);
-    return new Q(z, z.bitLength() - x.right, x.right);
-  }
-
-  public resize(left: number, right: number): Q {
-    throw new Error("TODO - implement");
+    return new Q(z, x.precision);
   }
 
   public copy() {
-    return new Q(this.value.clone(), this.left, this.right);
+    return new Q(this.value.clone(), this.precision);
   }
 
   public toBuffer(): Buffer {
@@ -63,17 +58,20 @@ export class Q {
     throw new Error("TODO - implement");
   }
 
-  public static fromIntNumber(int: number): Q {
-    const n = new BN(Math.floor(int));
-    return new Q(n, n.bitLength(), 0);
+  public static fromIntNumber(value: number): Q {
+    return new Q(new BN(Math.floor(value)), 0);
+  }
+
+  public static fromU64(value: u64): Q {
+    return new Q(value, 0);
   }
 }
 
 function lineUpFixedPointNumbers(x: Q, y: Q): { x: Q; y: Q } {
-  if (x.right > y.right) {
-    y = new Q(y.value.shln(x.right - y.right), y.left, x.right);
+  if (x.precision > y.precision) {
+    y = new Q(y.value.shln(x.precision - y.precision), x.precision);
   } else {
-    x = new Q(x.value.shln(y.right - x.right), x.left, y.right);
+    x = new Q(x.value.shln(y.precision - x.precision), y.precision);
   }
   return { x, y };
 }

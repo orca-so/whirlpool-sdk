@@ -11,19 +11,19 @@ export interface PositionAccount {
   tickLower: number; // i32
   tickUpper: number; // i32
 
-  feeGrowthCheckpointA: BN; // u256
+  feeGrowthCheckpointA: BN; // u128
   feeOwedA: BN; // u64
 
-  feeGrowthCheckpointB: BN; // u256
+  feeGrowthCheckpointB: BN; // u128
   feeOwedB: BN; // u64
 
-  rewardGrowthCheckpoint0: BN; // u256
+  rewardGrowthCheckpoint0: BN; // u128
   rewardOwed0: BN; // u64
 
-  rewardGrowthCheckpoint1: BN; // u256
+  rewardGrowthCheckpoint1: BN; // u128
   rewardOwed1: BN; // u64
 
-  rewardGrowthCheckpoint2: BN; // u256
+  rewardGrowthCheckpoint2: BN; // u128
   rewardOwed2: BN; // u64
 
   programId: PublicKey;
