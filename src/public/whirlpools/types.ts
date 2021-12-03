@@ -15,9 +15,9 @@ export enum FeeTier {
   HIGH = 3,
 }
 
-export type OrcaWhirlpoolArgs = {
-  tokenA: OrcaToken;
-  tokenB: OrcaToken;
+export type OrcaWhirlpoolArgs<A extends OrcaToken, B extends OrcaToken> = {
+  tokenA: A;
+  tokenB: B;
 };
 
 export interface OrcaWhirlpool<A extends OrcaToken, B extends OrcaToken> {

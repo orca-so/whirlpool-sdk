@@ -13,9 +13,9 @@ import { TickMath } from "../../../public/whirlpools/utils/tick-math";
 import { u64 } from "@solana/spl-token";
 import { Q } from "../../../public/utils/numbers/fixed-point";
 
-interface OrcaWhirpoolImplConstructorArgs {
+interface OrcaWhirpoolImplConstructorArgs<A extends OrcaToken, B extends OrcaToken> {
   network: Network;
-  args: OrcaWhirlpoolArgs;
+  args: OrcaWhirlpoolArgs<A, B>;
 }
 
 /**
@@ -26,11 +26,11 @@ export class OrcaWhirpoolImpl<A extends OrcaToken, B extends OrcaToken>
 {
   private whirlpoolsConfig: PublicKey;
   private programId: PublicKey;
-  private tokenA: A;
-  private tokenB: B;
+  private tokenA: A | B;
+  private tokenB: A | B;
   private whirlpool?: Whirlpool;
 
-  constructor({ network, args: { tokenA, tokenB } }: OrcaWhirpoolImplConstructorArgs) {
+  constructor({ network, args: { tokenA, tokenB } }: OrcaWhirpoolImplConstructorArgs<A, B>) {
     invariant(!tokenA.mint.equals(tokenB.mint), "tokens must be different");
 
     const inOrder = tokenA.mint.toBase58() < tokenB.mint.toBase58();

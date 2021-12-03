@@ -1,30 +1,30 @@
-import BN from "bn.js";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { Whirlpool } from "./whirlpool";
 import invariant from "tiny-invariant";
+import { u64 } from "@solana/spl-token";
+import { q64 } from "../../utils/numbers/q64";
 
 export interface PositionAccount {
   whirlpool: PublicKey;
 
   mint: PublicKey;
-  liquidity: BN; // u64
-  tickLower: number; // i32
-  tickUpper: number; // i32
+  liquidity: u64;
+  tickLower: number;
+  tickUpper: number;
 
-  feeGrowthCheckpointA: BN; // u128
-  feeOwedA: BN; // u64
+  feeGrowthCheckpointA: q64;
+  feeOwedA: u64;
 
-  feeGrowthCheckpointB: BN; // u128
-  feeOwedB: BN; // u64
+  feeGrowthCheckpointB: q64;
+  feeOwedB: u64;
 
-  rewardGrowthCheckpoint0: BN; // u128
-  rewardOwed0: BN; // u64
+  rewardGrowthCheckpoint0: q64;
+  rewardOwed0: u64;
 
-  rewardGrowthCheckpoint1: BN; // u128
-  rewardOwed1: BN; // u64
+  rewardGrowthCheckpoint1: q64;
+  rewardOwed1: u64;
 
-  rewardGrowthCheckpoint2: BN; // u128
-  rewardOwed2: BN; // u64
+  rewardGrowthCheckpoint2: q64;
+  rewardOwed2: u64;
 
   programId: PublicKey;
 }
