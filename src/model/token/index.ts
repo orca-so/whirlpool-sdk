@@ -10,13 +10,7 @@ export class Token {
   public readonly symbol?: string;
   public readonly name?: string;
 
-  public constructor(
-    mint: PublicKey,
-    decimals: number,
-    symbol?: string,
-    name?: string,
-    connection?: Connection
-  ) {
+  public constructor(mint: PublicKey, decimals: number, symbol?: string, name?: string) {
     this.mint = mint;
     this.decimals = decimals;
     this.symbol = symbol;

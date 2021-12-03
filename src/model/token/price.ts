@@ -18,12 +18,15 @@ export class TokenPrice {
     this.price = price;
   }
 
-  public static fromAmounts(baseAmount: TokenAmount, quoteAmount: TokenAmount): TokenPrice {
+  public static fromBaseAndQuoteAmounts(
+    baseAmount: TokenAmount,
+    quoteAmount: TokenAmount
+  ): TokenPrice {
     const oneBaseTokenInQuoteTokens = quoteAmount.div(baseAmount);
-    return TokenPrice.fromBaseAndQuoteAmount(baseAmount.token, oneBaseTokenInQuoteTokens);
+    return TokenPrice.fromBaseTokenAndQuoteAmount(baseAmount.token, oneBaseTokenInQuoteTokens);
   }
 
-  public static fromBaseAndQuoteAmount(base: Token, quoteAmount: TokenAmount): TokenPrice {
+  public static fromBaseTokenAndQuoteAmount(base: Token, quoteAmount: TokenAmount): TokenPrice {
     return new TokenPrice(base, quoteAmount.token, quoteAmount.toBN());
   }
 
@@ -36,7 +39,7 @@ export class TokenPrice {
   }
 
   public invert(): TokenPrice {
-    return TokenPrice.fromAmounts(
+    return TokenPrice.fromBaseAndQuoteAmounts(
       TokenAmount.from(this.quoteToken, this.price),
       TokenAmount.one(this.baseToken)
     );
