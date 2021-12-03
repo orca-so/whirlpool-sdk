@@ -47,9 +47,26 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
   }
 
   // create whirlpool and tickarray accounts
-  async getInitPoolTransaction(initialPrice: TokenPrice<A, B>): Promise<any> {
+  async getInitPoolTransaction(initialPrice: TokenPrice<A, B> | TokenPrice<B, A>): Promise<any> {
     // TODO(atamari): Confirm that token A is base and token B is quote always
     const normalizedInitialPrice = initialPrice.matchBaseAndQuote(this.tokenA, this.tokenB);
+
+    const whirlpoolAccount = await Whirlpool.getAddress(
+      this.whirlpoolsConfig,
+      this.tokenA.mint,
+      this.tokenB.mint,
+      this.programId
+    );
+
+    // TODO: compute the initial sqrt price from initial price
+    // TODO: get all accounts (pubkeys) needed to init this pool
+    // TODO: build the init pool ix
+
+    // TODO: compute initial tick array params
+    // TODO: get all accounts (pubkeys) needed to init the tick array
+    // TODO: build the init tick array ix
+
+    // TODO: Return one tx to init pool + init tick array
 
     throw new Error("TODO - implement");
   }
