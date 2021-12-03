@@ -6,6 +6,7 @@ import invariant from "tiny-invariant";
 export class q64 extends u128 {
   public static toU64(value: q64): u64 {
     const u64Value = value.shrn(64);
+    invariant(!value.isNeg(), "value is negative");
     invariant(u64Value.bitLength() <= 64, "value exeeds u64");
     return u64Value;
   }
