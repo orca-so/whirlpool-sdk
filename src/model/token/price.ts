@@ -41,4 +41,14 @@ export class TokenPrice {
       TokenAmount.one(this.baseToken)
     );
   }
+
+  public match(base: Token, quote: Token): TokenPrice {
+    if (this.baseToken.equals(base) && this.quoteToken.equals(quote)) {
+      return this;
+    } else if (this.baseToken.equals(quote) && this.quoteToken.equals(base)) {
+      return this.invert();
+    }
+
+    throw new Error("Incompatiable base/quote provided");
+  }
 }

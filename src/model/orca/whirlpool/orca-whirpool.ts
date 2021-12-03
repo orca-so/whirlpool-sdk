@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { OrcaU64, Percentage } from "../../../public";
 import { OrcaU256 } from "../../../public/utils/numbers/orca-u256";
 import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
@@ -10,9 +10,12 @@ import {
 import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
 import invariant from "tiny-invariant";
 import { TickMath } from "../../../public/whirlpools/utils/tick-math";
+import { TokenPrice } from "../../token/price";
+import { Token } from "../../token";
 
 interface OrcaWhirpoolImplConstructorArgs {
   network: Network;
+  connection: Connection;
   args: OrcaWhirlpoolArgs;
 }
 
@@ -24,9 +27,16 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
   private programId: PublicKey;
   private tokenMintA: PublicKey;
   private tokenMintB: PublicKey;
-  private whirlpool?: Whirlpool;
+  private connection: Connection;
+  private _tokenA?: Token;
+  private _tokenB?: Token;
+  private _whirlpool?: Whirlpool;
 
-  constructor({ network, args: { tokenMintA, tokenMintB } }: OrcaWhirpoolImplConstructorArgs) {
+  constructor({
+    network,
+    connection,
+    args: { tokenMintA, tokenMintB },
+  }: OrcaWhirpoolImplConstructorArgs) {
     invariant(!tokenMintA.equals(tokenMintB), "tokens must be different");
 
     const inOrder = tokenMintA.toBase58() < tokenMintB.toBase58();
@@ -37,6 +47,25 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     this.programId = getWhirlpoolProgramId(network);
     this.tokenMintA = _tokenMintA;
     this.tokenMintB = _tokenMintB;
+    this.connection = connection;
+  }
+
+  private get tokenA() {
+    invariant(!!this._tokenA, "whirlpool has not been initialized");
+
+    return this._tokenA;
+  }
+
+  private get tokenB() {
+    invariant(!!this._tokenB, "whirlpool has not been initialized");
+
+    return this._tokenB;
+  }
+
+  private get whirlpool() {
+    invariant(!!this._whirlpool, "whirlpool has not been initialized");
+
+    return this._whirlpool;
   }
 
   async init(): Promise<void> {
@@ -46,7 +75,17 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
       this.tokenMintB,
       this.programId
     );
-    this.whirlpool = await Whirlpool.fetch(address);
+    this._whirlpool = await Whirlpool.fetch(address);
+    this._tokenA = await Token.fromMintAccount(this.tokenMintA, this.connection);
+    this._tokenB = await Token.fromMintAccount(this.tokenMintB, this.connection);
+  }
+
+  // create whirlpool and tickarray accounts
+  async getInitPoolTransaction(initialPrice: TokenPrice): Promise<any> {
+    // TODO(atamari): Confirm that token A is base and token B is quote always
+    const normalizedInitialPrice = initialPrice.match(this.tokenA, this.tokenB);
+
+    throw new Error("TODO - implement");
   }
 
   async getOpenPositionQuote(
@@ -112,10 +151,5 @@ export class OrcaWhirpoolImpl implements OrcaWhirlpool {
     const address = await TickArray.getAddress(whirlpoolAddress, startTick, this.programId);
 
     return TickArray.fetch(address);
-  }
-
-  // create whirlpool, create tickarray, open position, add liquidity
-  async getInitPoolTransaction(initialSqrtPrice: OrcaU256): Promise<any> {
-    throw new Error("TODO - implement");
   }
 }
