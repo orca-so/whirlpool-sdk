@@ -1,14 +1,14 @@
-import BN from "bn.js";
+import { u64 } from "@solana/spl-token";
 import Decimal from "decimal.js";
 import { Token } from ".";
 import { TokenAmount } from "./amount";
 
-export class TokenPrice {
-  public readonly baseToken: Token;
-  public readonly quoteToken: Token;
-  private readonly price: BN;
+export class TokenPrice<Base extends Token, Quote extends Token> {
+  public readonly baseToken: Base;
+  public readonly quoteToken: Quote;
+  private readonly price: u64;
 
-  private constructor(base: Token, quote: Token, price: BN) {
+  private constructor(base: Base, quote: Quote, price: u64) {
     if (base.equals(quote)) {
       throw new Error("Base and Quote tokens cannot be the same");
     }
@@ -18,19 +18,22 @@ export class TokenPrice {
     this.price = price;
   }
 
-  public static fromBaseAndQuoteAmounts(
-    baseAmount: TokenAmount,
-    quoteAmount: TokenAmount
-  ): TokenPrice {
+  public static fromBaseAndQuoteAmounts<Base extends Token, Quote extends Token>(
+    baseAmount: TokenAmount<Base>,
+    quoteAmount: TokenAmount<Quote>
+  ): TokenPrice<Base, Quote> {
     const oneBaseTokenInQuoteTokens = quoteAmount.div(baseAmount);
     return TokenPrice.fromBaseTokenAndQuoteAmount(baseAmount.token, oneBaseTokenInQuoteTokens);
   }
 
-  public static fromBaseTokenAndQuoteAmount(base: Token, quoteAmount: TokenAmount): TokenPrice {
-    return new TokenPrice(base, quoteAmount.token, quoteAmount.toBN());
+  public static fromBaseTokenAndQuoteAmount<Base extends Token, Quote extends Token>(
+    base: Base,
+    quoteAmount: TokenAmount<Quote>
+  ): TokenPrice<Base, Quote> {
+    return new TokenPrice(base, quoteAmount.token, quoteAmount.toU64());
   }
 
-  public toBN(): BN {
+  public toU64(): u64 {
     return this.price;
   }
 
@@ -38,14 +41,17 @@ export class TokenPrice {
     return new Decimal(this.price.toString()).div(new Decimal(10).pow(this.quoteToken.decimals));
   }
 
-  public invert(): TokenPrice {
+  public invert(): TokenPrice<Quote, Base> {
     return TokenPrice.fromBaseAndQuoteAmounts(
       TokenAmount.from(this.quoteToken, this.price),
       TokenAmount.one(this.baseToken)
     );
   }
 
-  public match(base: Token, quote: Token): TokenPrice {
+  public matchBaseAndQuote(
+    base: Base | Quote,
+    quote: Quote | Base
+  ): TokenPrice<Base, Quote> | TokenPrice<Quote, Base> {
     if (this.baseToken.equals(base) && this.quoteToken.equals(quote)) {
       return this;
     } else if (this.baseToken.equals(quote) && this.quoteToken.equals(base)) {

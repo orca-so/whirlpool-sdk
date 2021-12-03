@@ -1,16 +1,16 @@
 import { u64 } from "@solana/spl-token";
-import BN, { isBN } from "bn.js";
+import { isBN } from "bn.js";
 import Decimal from "decimal.js";
 import { Token } from ".";
 
 const TEN_DECIMAL = new Decimal(10);
-const TEN_BN = new u64(10);
+const TEN_U64 = new u64(10);
 
-export class TokenAmount {
-  public readonly token: Token;
-  private readonly amount: BN;
+export class TokenAmount<T extends Token> {
+  public readonly token: T;
+  private readonly amount: u64;
 
-  private constructor(token: Token, amount: BN) {
+  private constructor(token: T, amount: u64) {
     this.token = token;
     this.amount = amount;
   }
@@ -19,12 +19,12 @@ export class TokenAmount {
    * Create a TokenAmount instance from a Token and an amount
    *
    * @param token The token
-   * @param amount The amount in either BN or Decimal. If its a BN, it will be scaled accordingly and if its a Decimal, it will be taken at face value.
+   * @param amount The amount in either u64 or Decimal. If its a u64, it will be scaled accordingly (using token.decimals) and if its a Decimal, it will be taken at face value.
    * @return The TokenAmount instance
    */
-  public static from(token: Token, amount: BN | Decimal): TokenAmount {
+  public static from<T extends Token>(token: T, amount: u64 | Decimal): TokenAmount<T> {
     if (isBN(amount)) {
-      return TokenAmount.fromBN(token, amount);
+      return TokenAmount.fromU64(token, amount);
     } else if (Decimal.isDecimal(amount)) {
       return TokenAmount.fromDecimal(token, amount as Decimal);
     }
@@ -38,15 +38,15 @@ export class TokenAmount {
    * @param token The Token instance
    * @return The TokenAmount instance that represents a single unit of the Token
    */
-  public static one(token: Token): TokenAmount {
-    return TokenAmount.fromBN(token, TEN_BN.pow(new u64(token.decimals)));
+  public static one<T extends Token>(token: T): TokenAmount<T> {
+    return TokenAmount.fromU64(token, TEN_U64.pow(new u64(token.decimals)));
   }
 
-  public equals(other: TokenAmount): boolean {
+  public equals(other: TokenAmount<T>): boolean {
     return this.token.equals(other.token) && this.amount.eq(other.amount);
   }
 
-  public toBN(): BN {
+  public toU64(): u64 {
     return this.amount;
   }
 
@@ -64,20 +64,20 @@ export class TokenAmount {
    * @param other Other token amount
    * @return TokenAmount of `this` token per unit of `other` token
    */
-  public div(other: TokenAmount): TokenAmount {
+  public div<U extends Token>(other: TokenAmount<U>): TokenAmount<T> {
     const thisAmount = this.amount;
     const otherAmount = other.amount;
-    const otherShift = TEN_BN.pow(new u64(other.token.decimals));
+    const otherShift = TEN_U64.pow(new u64(other.token.decimals));
 
     return TokenAmount.from(this.token, thisAmount.mul(otherShift).div(otherAmount));
   }
 
-  private static fromBN(token: Token, amount: BN): TokenAmount {
+  private static fromU64<T extends Token>(token: T, amount: u64): TokenAmount<T> {
     return new TokenAmount(token, amount);
   }
 
-  private static fromDecimal(token: Token, amount: Decimal): TokenAmount {
-    const amountBN = new u64(amount.mul(TEN_DECIMAL.pow(token.decimals)).toString());
-    return TokenAmount.fromBN(token, amountBN);
+  private static fromDecimal<T extends Token>(token: T, amount: Decimal): TokenAmount<T> {
+    const amountU64 = new u64(amount.mul(TEN_DECIMAL.pow(token.decimals)).toString());
+    return TokenAmount.fromU64(token, amountU64);
   }
 }

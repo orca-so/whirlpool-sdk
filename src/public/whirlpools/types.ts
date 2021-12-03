@@ -1,6 +1,6 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { OrcaToken, OrcaU64 } from "..";
+import { Token } from "../../model/token";
 import { Percentage } from "../utils/models/percentage";
 import { TickArray } from "./entities";
 
@@ -15,12 +15,12 @@ export enum FeeTier {
   HIGH = 3,
 }
 
-export type OrcaWhirlpoolArgs<A extends OrcaToken, B extends OrcaToken> = {
+export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenA: A;
   tokenB: B;
 };
 
-export interface OrcaWhirlpool<A extends OrcaToken, B extends OrcaToken> {
+export interface OrcaWhirlpool<A extends Token, B extends Token> {
   getOpenPositionQuote: (
     token: A | B,
     tokenAmount: u64,
