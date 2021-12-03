@@ -1,18 +1,20 @@
+import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
+import { q64 } from "../../utils/numbers/q64";
 import { NUM_TICKS_IN_ARRAY } from "../constants";
 
 export const TickMin = 0;
 export const TickMax = NUM_TICKS_IN_ARRAY - 1;
 
 export interface Tick {
-  readonly initialized: number; // u8
-  readonly liquidityNet: BN; // i64
-  readonly liquidity_gross: BN; // u64
+  readonly initialized: number;
+  readonly liquidityNet: BN; // i64 TODO
+  readonly liquidity_gross: u64;
 
-  readonly feeGrowthOutsideA: BN; // u256
-  readonly feeGrowthOutsideB: BN; // u256
+  readonly feeGrowthOutsideA: q64;
+  readonly feeGrowthOutsideB: q64;
 
-  readonly rewardGrowthOutside0: BN; // u256
-  readonly rewardGrowthOutside1: BN; // u256
-  readonly rewardGrowthOutside2: BN; // u256
+  readonly rewardGrowthOutside0: q64;
+  readonly rewardGrowthOutside1: q64;
+  readonly rewardGrowthOutside2: q64;
 }

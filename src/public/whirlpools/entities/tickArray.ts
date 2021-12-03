@@ -5,7 +5,7 @@ import { getWhirlpoolProgramId, NUM_TICKS_IN_ARRAY } from "../constants";
 
 export interface TickArrayAccount {
   readonly whirlpool: PublicKey;
-  readonly startTick: number; // i32
+  readonly startTick: number;
   readonly ticks: Tick[];
   readonly programId: PublicKey;
 }

@@ -1,52 +1,51 @@
-import BN from "bn.js";
-import { u64 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { u256 } from "../../utils/numbers/u256";
 import { TickArray } from ".";
+import { u64 } from "@solana/spl-token";
+import { q64 } from "../../utils/numbers/q64";
 
 export interface WhirlpoolAccount {
   readonly whirlpoolsConfig: PublicKey;
-  readonly whirlpoolBump: number; // u8
+  readonly whirlpoolBump: number;
 
-  readonly feeRate: number; // u16
-  readonly protocolFeeRate: number; // u16
+  readonly feeRate: number;
+  readonly protocolFeeRate: number;
 
-  readonly liquidity: BN; // u64
-  readonly sqrtPrice: BN; // q64.64
-  readonly tickArrayStart: number; // i32
-  readonly currentTick: number; // i32
+  readonly liquidity: u64;
+  readonly sqrtPrice: q64;
+  readonly tickArrayStart: number;
+  readonly currentTick: number;
 
-  readonly protocolFeeOwedA: BN; // u64
-  readonly protocolFeeOwedB: BN; // u64
+  readonly protocolFeeOwedA: u64;
+  readonly protocolFeeOwedB: u64;
 
   readonly tokenMintA: PublicKey;
   readonly tokenVaultA: PublicKey;
-  readonly feeGrowthGlobalA: BN; // q64.64
+  readonly feeGrowthGlobalA: q64;
 
   readonly tokenMintB: PublicKey;
   readonly tokenVaultB: PublicKey;
-  readonly feeGrowthGlobalB: BN; // q64.64
+  readonly feeGrowthGlobalB: q64;
 
-  readonly secondsSinceLastUpdate: BN; // u64
+  readonly secondsSinceLastUpdate: u64;
 
   readonly rewardMint0: PublicKey;
   readonly rewardVault0: PublicKey;
   readonly rewardEmissionsAuthority0: PublicKey;
-  readonly rewardEmissionsPerSecond0: BN; // u256
-  readonly rewardGrowthGlobal0: BN; // u256
+  readonly rewardEmissionsPerSecond0: q64;
+  readonly rewardGrowthGlobal0: q64;
 
   readonly rewardMint1: PublicKey;
   readonly rewardVault1: PublicKey;
   readonly rewardEmissionsAuthority1: PublicKey;
-  readonly rewardEmissionsPerSecond1: BN; // u256
-  readonly rewardGrowthGlobal1: BN; // u256
+  readonly rewardEmissionsPerSecond1: q64;
+  readonly rewardGrowthGlobal1: q64;
 
   readonly rewardMint2: PublicKey;
   readonly rewardVault2: PublicKey;
   readonly rewardEmissionsAuthority2: PublicKey;
-  readonly rewardEmissionsPerSecond2: BN; // u256
-  readonly rewardGrowthGlobal2: BN; // u256
+  readonly rewardEmissionsPerSecond2: q64;
+  readonly rewardGrowthGlobal2: q64;
 
   readonly programId: PublicKey;
 }

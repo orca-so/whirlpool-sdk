@@ -1,7 +1,7 @@
+import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { OrcaU64 } from "..";
+import { OrcaToken, OrcaU64 } from "..";
 import { Percentage } from "../utils/models/percentage";
-import { OrcaU256 } from "../utils/numbers/orca-u256";
 import { TickArray } from "./entities";
 
 export enum Network {
@@ -15,19 +15,19 @@ export enum FeeTier {
   HIGH = 3,
 }
 
-export type OrcaWhirlpoolArgs = {
-  tokenMintA: PublicKey;
-  tokenMintB: PublicKey;
+export type OrcaWhirlpoolArgs<A extends OrcaToken, B extends OrcaToken> = {
+  tokenA: A;
+  tokenB: B;
 };
 
-export interface OrcaWhirlpool {
+export interface OrcaWhirlpool<A extends OrcaToken, B extends OrcaToken> {
   getOpenPositionQuote: (
-    tokenMint: PublicKey,
-    tokenAmount: any,
+    token: A | B,
+    tokenAmount: u64,
     tickLowerIndex: number,
     tickUpperIndex: number,
     slippageTolerence?: Percentage
-  ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
+  ) => Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }>;
 
   // getOpenPositionQuoteByPrice: (
   //   tokenMint: PublicKey,
