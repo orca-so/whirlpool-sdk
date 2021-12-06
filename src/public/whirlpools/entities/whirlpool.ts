@@ -2,7 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { TickArray } from ".";
 import { u64 } from "@solana/spl-token";
-import { q64 } from "../../utils/numbers/q64";
+import { q64 } from "../..";
 
 export interface WhirlpoolAccount {
   readonly whirlpoolsConfig: PublicKey;
