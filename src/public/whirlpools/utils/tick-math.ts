@@ -1,8 +1,7 @@
-import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { q64 } from "../../utils/numbers/q64";
-import { u256 } from "../../utils/numbers/u256";
+import { q64, u256 } from "../..";
 
+// TODO update comments
 export abstract class TickMath {
   private constructor() {}
 
@@ -16,7 +15,7 @@ export abstract class TickMath {
   public static MIN_TICK: number = -443_636;
 
   /**
-   * Returns the sqrt ratio as a Q64.96 for the given tick. The sqrt ratio is computed as sqrt(1.0001)^tick
+   * Returns the sqrt ratio as a Q64.64 for the given tick. The sqrt ratio is computed as sqrt(1.0001)^tick
    * @param tick the tick for which to compute the sqrt ratio
    */
   public static sqrtPriceAtTick(tick: number): q64 {
@@ -72,7 +71,6 @@ export abstract class TickMath {
 
     // Cast back to Q64.64. Any value within tick range will fit in a u128.
     ratio.ishrn(64);
-
     invariant(ratio.bitLength() <= 128, "ratio exceeds 128 bits");
 
     return ratio;
@@ -83,7 +81,7 @@ export abstract class TickMath {
    * and #getSqrtRatioAtTick(tick + 1) > sqrtRatioX96
    * @param sqrtRatio the sqrt ratio as a Q64.96 for which to compute the tick
    */
-  public static getTickAtSqrtRatio(sqrtRatio: BN): number {
+  public static tickAtSqrtPrice(sqrtRatio: q64): number {
     throw new Error("TODO - implement");
   }
 }
