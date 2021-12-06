@@ -1,5 +1,5 @@
 import { Account, PublicKey } from "@solana/web3.js";
-import { OrcaU64, Percentage } from "../../../public";
+import { OrcaU64, Percentage, q64 } from "../../../public";
 import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
 import {
   getWhirlpoolProgramId,
@@ -85,20 +85,18 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     );
 
     const sqrtPrice = this.whirlpool.account.sqrtPrice;
-    const sqrtPriceLower = TickMath.getSqrtPriceAtTick(tickLowerIndex);
-    const sqrtPriceUpper = TickMath.getSqrtPriceAtTick(tickUpperIndex);
+    const sqrtPriceLower = TickMath.sqrtPriceAtTick(tickLowerIndex);
+    const sqrtPriceUpper = TickMath.sqrtPriceAtTick(tickUpperIndex);
 
-    // const qTokenAmount = Q.fromU64(tokenAmount);
-    // const qSqrtPrice = new Q(sqrtPrice, 64);
-    // const qSqrtPriceLower = new Q(sqrtPriceLower, 64);
-    // const qSqrtPriceUpper = new Q(sqrtPriceUpper, 64);
+    const qTokenAmount = q64.fromU64(tokenAmount);
 
     // 3.2.1 Example 1: Amount of assets from a range
-    // const Lx = qTokenAmount
-    //   .mul(qSqrtPrice)
-    //   .mul(qSqrtPriceUpper)
-    //   .div(qSqrtPriceUpper.sub(qSqrtPrice));
-    // const y = Lx.mul(qSqrtPrice.sub(qSqrtPriceLower));
+    const Lx: q64 = qTokenAmount
+      .mul(sqrtPrice)
+      .mul(sqrtPriceUpper)
+      .div(sqrtPriceUpper.sub(sqrtPrice));
+    const y: q64 = Lx.mul(sqrtPrice.sub(sqrtPriceLower));
+    const u64Y = q64.toU64(y);
 
     throw new Error("TODO - implement");
   }

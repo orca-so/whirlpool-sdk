@@ -1,6 +1,6 @@
 import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
-import { q64 } from "../../utils/numbers/q64";
+import { q64 } from "../..";
 import { NUM_TICKS_IN_ARRAY } from "../constants";
 
 export const TickMin = 0;

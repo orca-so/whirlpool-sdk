@@ -19,7 +19,7 @@ export class u128 extends BN {
   }
 
   /**
-   * Construct a u256 from Buffer representation
+   * Construct a u128 from Buffer representation
    */
   public static fromBuffer(buffer: Buffer): u128 {
     invariant(buffer.length === 16, `Invalid buffer length: ${buffer.length}`);
