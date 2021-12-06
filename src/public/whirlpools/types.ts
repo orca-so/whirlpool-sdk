@@ -1,6 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Token } from "../../model/token";
+import { TokenAmount } from "../../model/token/amount";
 import { Percentage } from "../utils/models/percentage";
 import { TickArray } from "./entities";
 
@@ -72,4 +73,11 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
 
   // fetch whitelist from zp
   // getWhitelist: () => Promise<any | null>;
+}
+
+export interface OrcaWhirlpoolPosition<A extends Token, B extends Token> {
+  getAddLiquidityQuote(
+    tokenAmount: TokenAmount<A> | TokenAmount<B>,
+    slippageTolerence?: Percentage
+  ): Promise<any>;
 }
