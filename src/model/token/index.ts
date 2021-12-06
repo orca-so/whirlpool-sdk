@@ -3,6 +3,10 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { TokenAmount } from "./amount";
 
+// TODO - we might want to rename this one because it conflicts with Token from solana's library
+//        not sure what a good name is because OrcaToken is already used.
+// TODO - we might need to move this to public folder since this class needs to be exposed to clients
+//        we can do that later tho, as we clean up. just adding a note here so we don't forget.
 export class Token {
   public readonly mint: PublicKey;
   public readonly decimals: number;
