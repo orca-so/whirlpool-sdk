@@ -71,7 +71,7 @@ export abstract class TickMath {
     if (tick > 0) ratio = u256.MAX.div(ratio);
 
     // Cast back to Q64.64. Any value within tick range will fit in a u128.
-    ratio.ishrn(128); // TODO sync with meeep on 128 vs 64
+    ratio.ishrn(64);
 
     invariant(ratio.bitLength() <= 128, "ratio exceeds 128 bits");
 
