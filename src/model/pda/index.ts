@@ -16,6 +16,10 @@ export class PDA {
     return new PDA(publicKey, bump);
   }
 
+  public static isPDA(maybePDA: any): maybePDA is PDA {
+    return PDA.isPubkey((maybePDA as PDA).publicKey) && typeof (maybePDA as PDA).bump === "number";
+  }
+
   private static toBuffer(stringOrPubkey: string | PublicKey): Buffer {
     if (PDA.isPubkey(stringOrPubkey)) {
       return stringOrPubkey.toBuffer();

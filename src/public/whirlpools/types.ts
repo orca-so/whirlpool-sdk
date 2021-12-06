@@ -21,6 +21,18 @@ export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenB: B;
 };
 
+export type AddLiquidityQuote<A extends Token, B extends Token> = {
+  maxTokenA: TokenAmount<A>;
+  maxTokenB: TokenAmount<B>;
+  liquidity: u64;
+};
+
+export enum PositionStatus {
+  BelowRange,
+  InRange,
+  AboveRange,
+}
+
 export interface OrcaWhirlpool<A extends Token, B extends Token> {
   getOpenPositionQuote: (
     token: A | B,
@@ -79,5 +91,5 @@ export interface OrcaWhirlpoolPosition<A extends Token, B extends Token> {
   getAddLiquidityQuote(
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
-  ): Promise<any>;
+  ): Promise<AddLiquidityQuote<A, B>>;
 }
