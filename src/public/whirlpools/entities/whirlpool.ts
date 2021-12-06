@@ -1,8 +1,10 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { TickArray } from ".";
+import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
+import { Token } from "../../../model/token";
+import { PositionStatus } from "..";
 
 export interface WhirlpoolAccount {
   readonly whirlpoolsConfig: PublicKey;
@@ -110,5 +112,17 @@ export class Whirlpool {
   ): Promise<PublicKey> {
     const buffers = [whirlpoolsConfig.toBuffer(), tokenMintA.toBuffer(), tokenMintB.toBuffer()];
     return (await PublicKey.findProgramAddress(buffers, programId))[0];
+  }
+
+  public async getPositionStatus<A extends Token, B extends Token>(
+    position: Position<A, B>
+  ): Promise<PositionStatus> {
+    if (this.account.currentTick < position.account.tickLower) {
+      return PositionStatus.BelowRange;
+    } else if (this.account.currentTick <= position.account.tickUpper) {
+      return PositionStatus.InRange;
+    } else {
+      return PositionStatus.AboveRange;
+    }
   }
 }
