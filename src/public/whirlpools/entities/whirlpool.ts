@@ -119,7 +119,7 @@ export class Whirlpool {
   ): Promise<PositionStatus> {
     if (this.account.currentTick < position.account.tickLower) {
       return PositionStatus.BelowRange;
-    } else if (this.account.currentTick < position.account.tickUpper) {
+    } else if (this.account.currentTick <= position.account.tickUpper) {
       return PositionStatus.InRange;
     } else {
       return PositionStatus.AboveRange;
