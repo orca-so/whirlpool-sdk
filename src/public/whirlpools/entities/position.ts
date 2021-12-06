@@ -2,11 +2,12 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
+import { PDA } from "../../../model/pda";
 
 export interface PositionAccount {
   whirlpool: PublicKey;
 
-  mint: PublicKey;
+  positionMint: PublicKey;
   liquidity: u64;
   tickLower: number;
   tickUpper: number;
@@ -32,33 +33,38 @@ export interface PositionAccount {
 export class Position {
   public readonly account: PositionAccount;
 
-  private _address: PublicKey | null = null;
+  private static SEED_HEADER = "position";
+  private pda?: PDA;
 
   constructor(account: PositionAccount) {
     invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
     this.account = account;
   }
 
-  public async getAddress(): Promise<PublicKey> {
-    if (!this._address) {
-      const { mint, programId } = this.account;
-      this._address = await Position.getAddress(mint, programId);
+  public getAddress(): PublicKey {
+    if (!this.pda) {
+      const { whirlpool, positionMint, programId } = this.account;
+      this.pda = Position.getPDA(whirlpool, positionMint, programId);
     }
-    return this._address;
+
+    return this.pda.publicKey;
   }
 
   public async equals(position: Position): Promise<boolean> {
-    const { mint, programId } = this.account;
-    const { mint: otherMint, programId: otherProgramId } = position.account;
-    return mint.equals(otherMint) && programId.equals(otherProgramId);
+    const { positionMint, programId } = this.account;
+    const { positionMint: otherMint, programId: otherProgramId } = position.account;
+    return positionMint.equals(otherMint) && programId.equals(otherProgramId);
   }
 
   public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
     throw new Error("TODO - fetch, then deserialize the account data into Position object");
   }
 
-  public static async getAddress(mint: PublicKey, programId: PublicKey): Promise<PublicKey> {
-    const buffers = [mint.toBuffer()];
-    return (await PublicKey.findProgramAddress(buffers, programId))[0];
+  public static getPDA(
+    whirlpool: PublicKey,
+    positioMint: PublicKey,
+    whirlpoolProgram: PublicKey
+  ): PDA {
+    return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positioMint]);
   }
 }
