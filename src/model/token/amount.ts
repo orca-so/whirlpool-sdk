@@ -33,13 +33,26 @@ export class TokenAmount<T extends Token> {
   }
 
   /**
+   * Returns a TokenAmount that represents `units` units of `token`
+   *
+   * @param token The Token instance
+   * @return The TokenAmount instance that represents `units` units of the Token
+   */
+  public static units<T extends Token>(token: T, units: number | u64): TokenAmount<T> {
+    return TokenAmount.fromU64(
+      token,
+      TEN_U64.pow(new u64(token.decimals)).mul(new u64(units.toString()))
+    );
+  }
+
+  /**
    * Returns a TokenAmount that represents one unit of the underlying token
    *
    * @param token The Token instance
    * @return The TokenAmount instance that represents a single unit of the Token
    */
   public static one<T extends Token>(token: T): TokenAmount<T> {
-    return TokenAmount.fromU64(token, TEN_U64.pow(new u64(token.decimals)));
+    return TokenAmount.units(token, 1);
   }
 
   /**
@@ -49,7 +62,7 @@ export class TokenAmount<T extends Token> {
    * @return The TokenAmount instance that represents 0 units of the Token
    */
   public static zero<T extends Token>(token: T): TokenAmount<T> {
-    return TokenAmount.fromU64(token, new u64(0));
+    return TokenAmount.units(token, 0);
   }
 
   public equals(other: TokenAmount<T>): boolean {
