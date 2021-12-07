@@ -36,6 +36,14 @@ export interface PositionAccount {
   programId: PublicKey;
 }
 
+/**
+ * SCUBA-ATAMARI
+ *
+ * Position shouldn't implement any api facing methods because it's an entity.
+ * Entity is a thin wrapper around accounts.
+ * I think getAddLiquidityQuote should live in either OrcaWhirlpoolImpl, or have a new api class
+ *   called OrcaPositionImpl
+ */
 export class Position<A extends Token, B extends Token> implements OrcaWhirlpoolPosition<A, B> {
   public readonly account: PositionAccount;
 
@@ -75,6 +83,14 @@ export class Position<A extends Token, B extends Token> implements OrcaWhirlpool
     throw new Error("TODO - fetch, then deserialize the account data into Position object");
   }
 
+  /**
+   * SCUBA-ATAMARI
+   *
+   * Hmm, not sure if PDA class is useful. I think we should rely on address being a PublicKey and
+   * standarize it that way.
+   *
+   * Thanks for fixing the derive logic to include the seed header
+   */
   public static getPDA(
     whirlpool: PublicKey,
     positionMint: PublicKey,
@@ -83,6 +99,24 @@ export class Position<A extends Token, B extends Token> implements OrcaWhirlpool
     return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positionMint]);
   }
 
+  /**
+   * SCUBA-ATAMARI
+   *
+   * Replied on discord but adding it here as well so we don't forget. We need to handle
+   * cases where we are adding liquidity to a position that is out of bounds.
+   */
+
+  /**
+   * SCUBA-ATAMARI
+   *
+   * One reason for not including this method in entities is because these public api's need to
+   * make fetch calls. Here we are making a Whirlpool.fetch() call. But we need to wrap that with
+   * a cache. We can't pass cache to entities because entities are part of the cache. That would create
+   * a circular dependency.
+   *
+   * Another reason is separation of concern like mentioned above. Entities are thin wrappers around
+   * an account.
+   */
   public async getAddLiquidityQuote(
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
