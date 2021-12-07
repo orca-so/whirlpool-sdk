@@ -21,6 +21,12 @@ export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenB: B;
 };
 
+export type OrcaPositionArgs<A extends Token, B extends Token> = {
+  tokenA: A;
+  tokenB: B;
+  positionMint: PublicKey;
+};
+
 export type AddLiquidityQuote<A extends Token, B extends Token> = {
   maxTokenA: TokenAmount<A>;
   maxTokenB: TokenAmount<B>;
@@ -87,9 +93,9 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   // getWhitelist: () => Promise<any | null>;
 }
 
-export interface OrcaWhirlpoolPosition<A extends Token, B extends Token> {
-  getAddLiquidityQuote(
+export interface OrcaPosition<A extends Token, B extends Token> {
+  getAddLiquidityQuote: (
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
-  ): Promise<AddLiquidityQuote<A, B>>;
+  ) => Promise<AddLiquidityQuote<A, B>>;
 }
