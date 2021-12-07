@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaCache, OrcaCacheManager } from "../..";
+import { OrcaCacheInternal, OrcaCache } from "../..";
 import {
   getWhirlpoolProgramId,
   getWhirlpoolsConfig,
@@ -12,12 +12,12 @@ import {
   OrcaCacheContentValue,
 } from "../../public";
 
-export class OrcaCacheManagerImpl implements OrcaCacheManager {
+export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 
   private _connection: Connection;
-  private _cache: OrcaCache = {};
+  private _cache: OrcaCacheInternal = {};
 
   constructor(network: Network, connection: Connection) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
@@ -50,7 +50,7 @@ export class OrcaCacheManagerImpl implements OrcaCacheManager {
   }
 
   public getCached(address: PublicKey | string): OrcaCacheContentValue | null {
-    const key = OrcaCacheManagerImpl.toAddressString(address);
+    const key = OrcaCacheImpl.toAddressString(address);
     return this._cache[key]?.value || null;
   }
 
@@ -62,7 +62,7 @@ export class OrcaCacheManagerImpl implements OrcaCacheManager {
     address: PublicKey | string,
     type: OrcaCacheContentType
   ): Promise<OrcaCacheContentValue> {
-    const pk = OrcaCacheManagerImpl.toPublicKey(address);
+    const pk = OrcaCacheImpl.toPublicKey(address);
 
     let fetch: (() => Promise<OrcaCacheContentValue>) | null = null;
 
@@ -76,7 +76,7 @@ export class OrcaCacheManagerImpl implements OrcaCacheManager {
       throw new Error(`${type} is not a known OrcaAccountType`);
     }
 
-    const key = OrcaCacheManagerImpl.toAddressString(address);
+    const key = OrcaCacheImpl.toAddressString(address);
 
     const value = await fetch();
     this._cache[key] = { type, value, fetch };
@@ -84,7 +84,7 @@ export class OrcaCacheManagerImpl implements OrcaCacheManager {
   }
 
   public async refresh(address: PublicKey | string): Promise<void> {
-    const key = OrcaCacheManagerImpl.toAddressString(address);
+    const key = OrcaCacheImpl.toAddressString(address);
 
     const cachedContent = this._cache[key];
     if (!cachedContent) {
@@ -95,6 +95,7 @@ export class OrcaCacheManagerImpl implements OrcaCacheManager {
     this._cache[key] = { ...cachedContent, value };
   }
 
+  // TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
   public async refreshAll(): Promise<void> {
     for (const [address, cachedContent] of Object.entries(this._cache)) {
       const value = await cachedContent.fetch();

@@ -17,9 +17,9 @@ interface OrcaCacheContent {
 
 export type OrcaCacheKey = string;
 
-export type OrcaCache = Record<OrcaCacheKey, OrcaCacheContent>;
+export type OrcaCacheInternal = Record<OrcaCacheKey, OrcaCacheContent>;
 
-export interface OrcaCacheManager {
+export interface OrcaCache {
   /**
    * Get a Whirlpool entity from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
