@@ -1,10 +1,11 @@
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
 import { Token } from "../../../model/token";
 import { PositionStatus } from "..";
+import { PDA } from "../../../model/pda";
 
 export interface WhirlpoolAccount {
   readonly whirlpoolsConfig: PublicKey;
@@ -53,34 +54,29 @@ export interface WhirlpoolAccount {
 }
 
 export class Whirlpool {
+  private static SEED_HEADER = "whirlpool";
+
   public readonly account: WhirlpoolAccount;
 
-  private _address: PublicKey | null = null;
+  private readonly pda: PDA;
 
   constructor(account: WhirlpoolAccount) {
     invariant(account.tokenMintA !== account.tokenMintB, "TOKEN_MINT");
     this.account = account;
+    this.pda = Whirlpool.getPDA(
+      account.whirlpoolsConfig,
+      account.tokenMintA,
+      account.tokenMintB,
+      account.programId
+    );
   }
 
-  public async getAddress(): Promise<PublicKey> {
-    if (!this._address) {
-      const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
-      this._address = await Whirlpool.getAddress(
-        whirlpoolsConfig,
-        tokenMintA,
-        tokenMintB,
-        programId
-      );
-    }
-    return this._address;
+  public get address(): PublicKey {
+    return this.pda.publicKey;
   }
 
   public async getCurrentTickArrayAddress(): Promise<PublicKey> {
-    return TickArray.getAddress(
-      await this.getAddress(),
-      this.account.tickArrayStart,
-      this.account.programId
-    );
+    return TickArray.getAddress(this.address, this.account.tickArrayStart, this.account.programId);
   }
 
   public async equals(whirlpool: Whirlpool): Promise<boolean> {
@@ -100,23 +96,20 @@ export class Whirlpool {
   }
 
   // TODO - connection: Connection
-  public static async fetch(address: PublicKey): Promise<Whirlpool> {
+  public static async fetch(connection: Connection, address: PublicKey): Promise<Whirlpool> {
     throw new Error("TODO - fetch, then deserialize the account data into Whirlpool object");
   }
 
-  public static async getAddress(
+  public static getPDA(
     whirlpoolsConfig: PublicKey,
     tokenMintA: PublicKey,
     tokenMintB: PublicKey,
     programId: PublicKey
-  ): Promise<PublicKey> {
-    const buffers = [whirlpoolsConfig.toBuffer(), tokenMintA.toBuffer(), tokenMintB.toBuffer()];
-    return (await PublicKey.findProgramAddress(buffers, programId))[0];
+  ): PDA {
+    return PDA.derive(programId, [Whirlpool.SEED_HEADER, whirlpoolsConfig, tokenMintA, tokenMintB]);
   }
 
-  public async getPositionStatus<A extends Token, B extends Token>(
-    position: Position<A, B>
-  ): Promise<PositionStatus> {
+  public async getPositionStatus(position: Position): Promise<PositionStatus> {
     if (this.account.currentTick < position.account.tickLower) {
       return PositionStatus.BelowRange;
     } else if (this.account.currentTick <= position.account.tickUpper) {
