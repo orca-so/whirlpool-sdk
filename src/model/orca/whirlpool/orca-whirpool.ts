@@ -8,6 +8,8 @@ import { TickMath } from "../../../public/whirlpools/utils/tick-math";
 import { u64 } from "@solana/spl-token";
 import { Token } from "../../token";
 import { TokenPrice } from "../../token/price";
+import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
+import { PDA } from "../../pda";
 
 interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
@@ -22,13 +24,11 @@ interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
  * Random notes: nft represents the authority to a specific position
  */
 export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaWhirlpool<A, B> {
-  private readonly whirlpoolsConfig: PublicKey;
-  private readonly programId: PublicKey;
-  private readonly tokenA: A | B;
-  private readonly tokenB: A | B;
   private readonly connection: Connection;
+  private readonly tokenA: A;
+  private readonly tokenB: B;
   private readonly cache: OrcaCache;
-  private whirlpool?: Whirlpool;
+  private readonly whirlpoolPDA: PDA;
 
   constructor({
     connection,
@@ -40,24 +40,19 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
     this.cache = cache || new OrcaCache(network, connection, OrcaCacheStrategy.AlwaysFetch);
     this.connection = connection;
-    this.whirlpoolsConfig = getWhirlpoolsConfig(network);
-    this.programId = getWhirlpoolProgramId(network);
+    const whirlpoolsConfig = getWhirlpoolsConfig(network);
+    const programId = getWhirlpoolProgramId(network);
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
-  }
-
-  async init(): Promise<void> {
-    const pda = Whirlpool.getPDA(
-      this.whirlpoolsConfig,
+    this.whirlpoolPDA = Whirlpool.getPDA(
+      whirlpoolsConfig,
       this.tokenA.mint,
       this.tokenB.mint,
-      this.programId
+      programId
     );
-    this.whirlpool = await Whirlpool.fetch(this.connection, pda.publicKey);
   }
 
   // create whirlpool and tickarray accounts
   async getInitPoolTransaction(initialPrice: TokenPrice<A, B> | TokenPrice<B, A>): Promise<any> {
-    invariant(!!this.whirlpool, "whirlpool has not been initialized");
     // TODO(atamari): Confirm that token A is base and token B is quote always
     const normalizedInitialPrice = initialPrice.matchBaseAndQuote(this.tokenA, this.tokenB);
 
@@ -81,13 +76,13 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     tickUpperIndex: number,
     slippageTolerence?: Percentage
   ): Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }> {
-    invariant(!!this.whirlpool, "whirlpool has not been initialized");
     invariant(
       token.mint.equals(this.tokenA.mint) || token.mint.equals(this.tokenB.mint),
       "invalid mint"
     );
 
-    const sqrtPrice = this.whirlpool.account.sqrtPrice;
+    const whirlpool = await this.cache.getWhirlpool(this.whirlpoolPDA.publicKey);
+    const sqrtPrice = whirlpool.account.sqrtPrice;
     const sqrtPriceLower = TickMath.sqrtPriceAtTick(tickLowerIndex);
     const sqrtPriceUpper = TickMath.sqrtPriceAtTick(tickUpperIndex);
 
@@ -111,7 +106,6 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     // priceUpper: OrcaU256,
     slippageTolerence?: Percentage
   ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
-    invariant(!!this.whirlpool, "whirlpool has not been initialized");
     invariant(
       token.mint.equals(this.tokenA.mint) || token.mint.equals(this.tokenB.mint),
       "invalid mint"
@@ -129,19 +123,37 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     // );
   }
 
-  async getSwapQuote(
-    tokenMint: PublicKey,
-    amount: OrcaU64,
-    slippageTolerence?: Percentage
-  ): Promise<any> {}
+  public async getSwapQuote(
+    swapAmount: SwapAmount<A, B>,
+    slippageTolerance?: Percentage
+  ): Promise<SwapQuote<A, B>> {
+    const whirlpool = await this.cache.getWhirlpool(this.whirlpoolPDA.publicKey);
+    const { publicKey: tickArrayAddress } = TickArray.getPDA(
+      this.whirlpoolPDA.publicKey,
+      whirlpool.account.tickArrayStart,
+      whirlpool.account.programId
+    );
+    const currentTickArray = await this.cache.getTickArray(tickArrayAddress);
+
+    return getSwapQuote({
+      whirlpool,
+      currentTickArray,
+      tokenA: this.tokenA,
+      tokenB: this.tokenB,
+      amount: swapAmount,
+      slippageTolerance,
+    });
+  }
 
   async loadTickArray(tickIndex: number): Promise<TickArray> {
-    invariant(!!this.whirlpool, "whirlpool has not been initialized");
+    const whirlpool = await this.cache.getWhirlpool(this.whirlpoolPDA.publicKey);
+    const startTick = TickArray.findStartTick(tickIndex, whirlpool.account.tickArrayStart);
+    const { publicKey: tickArrayAddress } = TickArray.getPDA(
+      this.whirlpoolPDA.publicKey,
+      startTick,
+      whirlpool.account.programId
+    );
 
-    const whirlpoolAddress = this.whirlpool.address;
-    const startTick = TickArray.findStartTick(tickIndex, this.whirlpool.account.tickArrayStart);
-    const address = await TickArray.getAddress(whirlpoolAddress, startTick, this.programId);
-
-    return this.cache.getTickArray(address);
+    return this.cache.getTickArray(tickArrayAddress);
   }
 }

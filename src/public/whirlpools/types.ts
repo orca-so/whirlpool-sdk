@@ -1,5 +1,6 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import { SwapAmount, SwapQuote } from "../../model/orca/whirlpool/swap-quoter";
 import { Token } from "../../model/token";
 import { TokenAmount } from "../../model/token/amount";
 import { Percentage } from "../utils/models/percentage";
@@ -68,7 +69,10 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   //   slippageTolerence?: Percentage
   // ) => Promise<any>;
 
-  getSwapQuote: (tokenMint: PublicKey, amount: any, slippageTolerence?: Percentage) => Promise<any>;
+  getSwapQuote: (
+    swapAmount: SwapAmount<A, B>,
+    slippageTolerence?: Percentage
+  ) => Promise<SwapQuote<A, B>>;
 
   // getSwapTransaction: (
   //   owner: Owner,
