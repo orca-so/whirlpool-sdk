@@ -62,8 +62,7 @@ export class TickArray {
   }
 
   // need to think about how to do batch fetch across different types of accounts
-  // connection: Connection
-  public static async fetch(address: PublicKey): Promise<TickArray> {
+  public static async fetch(connection: Connection, address: PublicKey): Promise<TickArray> {
     throw new Error("TODO - fetch, then deserialize the account data into TickArray object");
   }
 

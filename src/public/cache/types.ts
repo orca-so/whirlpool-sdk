@@ -1,6 +1,11 @@
 import { PublicKey } from "@solana/web3.js";
 import { Position, TickArray, Whirlpool } from "..";
 
+export enum OrcaCacheStrategy {
+  AlwaysFetch = "ALWAYS_FETCH",
+  Manual = "MANUAL",
+}
+
 export enum OrcaCacheContentType {
   Whirlpool = "WHIRLPOOL",
   Position = "POSITION",
@@ -19,45 +24,39 @@ export type OrcaCacheKey = string;
 
 export type OrcaCacheInternal = Record<OrcaCacheKey, OrcaCacheContent>;
 
-export interface OrcaCache {
+export interface OrcaCacheInterface {
   /**
    * Get a Whirlpool entity from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
    */
-  getWhirlpool: (address: PublicKey | string) => Promise<Whirlpool>;
+  getWhirlpool: (address: PublicKey, refresh?: boolean) => Promise<Whirlpool>;
 
   /**
    * Get a Position entity from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
    */
-  getPosition: (address: PublicKey | string) => Promise<Position>;
+  getPosition: (address: PublicKey, refresh?: boolean) => Promise<Position>;
 
   /**
    * Get a TickArray entity from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
    */
-  getTickArray: (address: PublicKey | string) => Promise<TickArray>;
+  getTickArray: (address: PublicKey, refresh?: boolean) => Promise<TickArray>;
 
   /**
-   * Check if an entity with the given address exists.
-   * Return the entity if it exists, throw an error if it does not.
+   * Check if an account is in the cache
    */
-  getCached: (address: PublicKey | string) => OrcaCacheContentValue | null;
+  isCached: (address: PublicKey) => boolean;
 
   /**
-   * Return entries of all the key, value pairs in the cache
+   * Return entries of all the key-value pairs in the cache
    */
   getCachedAll: () => [OrcaCacheKey, OrcaCacheContentValue][];
 
   /**
-   * Manually add an entity with the given address and type to the cache.
+   * Fetch and add to cache the given list of accounts
    */
-  add: (address: PublicKey | string, type: OrcaCacheContentType) => Promise<OrcaCacheContentValue>;
-
-  /**
-   * Update the cache of the entity with the given address.
-   */
-  refresh: (address: PublicKey | string) => Promise<void>;
+  fetchAll: (infos: { address: PublicKey; type: OrcaCacheContentType }[]) => Promise<void>;
 
   /**
    * Update the cached value of all entities currently in the cache.

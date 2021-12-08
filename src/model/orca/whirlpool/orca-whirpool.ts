@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaU64, Percentage, q64 } from "../../../public";
+import { OrcaCache, OrcaCacheStrategy, OrcaU64, Percentage, q64 } from "../../../public";
 import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../../public/whirlpools/constants";
 import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
@@ -12,6 +12,7 @@ import { TokenPrice } from "../../token/price";
 interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
   network: Network;
+  cache?: OrcaCache;
   args: OrcaWhirlpoolArgs<A, B>;
 }
 
@@ -21,20 +22,23 @@ interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
  * Random notes: nft represents the authority to a specific position
  */
 export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaWhirlpool<A, B> {
-  private whirlpoolsConfig: PublicKey;
-  private programId: PublicKey;
-  private tokenA: A | B;
-  private tokenB: A | B;
-  private connection: Connection;
+  private readonly whirlpoolsConfig: PublicKey;
+  private readonly programId: PublicKey;
+  private readonly tokenA: A | B;
+  private readonly tokenB: A | B;
+  private readonly connection: Connection;
+  private readonly cache: OrcaCache;
   private whirlpool?: Whirlpool;
 
   constructor({
     connection,
+    cache,
     network,
     args: { tokenA, tokenB },
   }: OrcaWhirpoolImplConstructorArgs<A, B>) {
     invariant(!tokenA.equals(tokenB), "tokens must be different");
 
+    this.cache = cache || new OrcaCache(network, connection, OrcaCacheStrategy.AlwaysFetch);
     this.connection = connection;
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
@@ -138,6 +142,6 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     const startTick = TickArray.findStartTick(tickIndex, this.whirlpool.account.tickArrayStart);
     const address = await TickArray.getAddress(whirlpoolAddress, startTick, this.programId);
 
-    return TickArray.fetch(address);
+    return this.cache.getTickArray(address);
   }
 }
