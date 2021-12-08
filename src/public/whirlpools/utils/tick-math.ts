@@ -137,6 +137,10 @@ export abstract class TickMath {
     // TODO saturating sub
     // https://github.com/orca-so/whirlpool/pull/30/files
     // https://docs.rs/primitive-types/0.6.1/primitive_types/struct.U256.html#method.saturating_sub
+
+    // Derive tick_low & high estimate. Adjust with the possibility of under-estimating by 2^precision_bits/log_2(b) + 0.01 error margin.
+    // TODO: Error state if input for sqrt_price is between -1 & 1. Such a value would yield a tick estimation that would flip signs
+    // and we need additional logic to handle the difference between round up / round down.
     const tickLow: number = logbpX128
       .sub(new u256("3402823669209384634633746074317682114"))
       .toNumber();
