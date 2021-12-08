@@ -41,6 +41,18 @@ export class TickArray {
     );
   }
 
+  // TODO: Account for when tick goes out of bounds of this tick array (i.e. moves to another tick array account)
+  // TODO: Account for min tick
+  public async getPrevInitializedTick(currentTick: number): Promise<number> {
+    throw new Error("TODO");
+  }
+
+  // Account for when tick goes out of bounds of this tick array (i.e. moves to another tick array account)
+  // TODO: Account for max tick
+  public async getNextInitializedTick(currentTick: number): Promise<number> {
+    throw new Error("TODO");
+  }
+
   public getTick(tickIndex: number): Tick {
     invariant(tickIndex >= this.account.startTick, "tickIndex is too small");
     invariant(tickIndex < this.account.startTick + NUM_TICKS_IN_ARRAY, "tickIndex is too large");

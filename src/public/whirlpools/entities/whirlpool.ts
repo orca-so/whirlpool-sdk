@@ -17,7 +17,7 @@ export interface WhirlpoolAccount {
   readonly liquidity: u64;
   readonly sqrtPrice: q64;
   readonly tickArrayStart: number;
-  readonly currentTick: number;
+  readonly tickCurrentIndex: number;
 
   readonly protocolFeeOwedA: u64;
   readonly protocolFeeOwedB: u64;
@@ -115,9 +115,9 @@ export class Whirlpool {
   }
 
   public async getPositionStatus(position: Position): Promise<PositionStatus> {
-    if (this.account.currentTick < position.account.tickLower) {
+    if (this.account.tickCurrentIndex < position.account.tickLower) {
       return PositionStatus.BelowRange;
-    } else if (this.account.currentTick <= position.account.tickUpper) {
+    } else if (this.account.tickCurrentIndex <= position.account.tickUpper) {
       return PositionStatus.InRange;
     } else {
       return PositionStatus.AboveRange;

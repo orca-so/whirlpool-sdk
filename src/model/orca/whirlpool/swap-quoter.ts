@@ -1,3 +1,4 @@
+import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
 import { Percentage, q64, TickArray, Whirlpool } from "../../..";
 import { Token } from "../../token";
@@ -98,7 +99,38 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputAToB()"
   );
 
-  throw new Error("TODO - implement");
+  const feeRate = input.whirlpool.account.feeRate; // u16 repr as number
+  const protocolFeeRate = input.whirlpool.account.protocolFeeRate; // u16 repr as number
+
+  const state = {
+    amountRemaining: input.amount.input.toU64(), // u64
+    amountCalculated: new u64(0), // u64
+    currSqrtPriceX64: input.whirlpool.account.sqrtPrice, // q64x64 repr as u128
+    currTickArray: input.currentTickArray,
+    currTickIndex: input.whirlpool.account.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.account.liquidity, // u64
+    protocolFee: new u64(0), // u64
+    feeGrowthGlobalAX64: input.whirlpool.account.feeGrowthGlobalA, // q64x64 repr as u128
+  };
+
+  const slippageToleranceNumeratorX64 = q64.fromU64(
+    input.slippageTolerance?.numerator || new u64(0)
+  );
+  const slippageToleranceDenominatorX64 = q64.fromU64(
+    input.slippageTolerance?.denominator || new u64(1)
+  );
+  const deltaSqrtPriceX64 = state.currSqrtPriceX64
+    .mul(slippageToleranceNumeratorX64)
+    .div(slippageToleranceDenominatorX64);
+  // Since A is deposited and B is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) decreases
+  const sqrtPriceLimitX64 = state.currSqrtPriceX64.sub(deltaSqrtPriceX64);
+
+  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.gt(sqrtPriceLimitX64)) {
+    const prevTick = state.currTickArray.getPrevInitializedTick(state.currTickIndex);
+    // TODO
+  }
+
+  throw new Error("TODO - complete");
 }
 
 async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
@@ -164,11 +196,15 @@ export async function getSwapQuote<A extends Token, B extends Token>(
 ): Promise<SwapQuote<A, B>> {
   invariant(
     input.tokenA.mint.equals(input.whirlpool.account.tokenMintA),
-    "Token A passed in does not match whirlpool's token A"
+    "Token A provided does not match whirlpool's token A"
   );
   invariant(
     input.tokenB.mint.equals(input.whirlpool.account.tokenMintB),
-    "Token B passed in does not match whirlpool's token B"
+    "Token B provided does not match whirlpool's token B"
+  );
+  invariant(
+    input.whirlpool.account.tickArrayStart === input.currentTickArray.account.startTick,
+    "Tick array passed in does not match whirlpool's current tick array"
   );
 
   const swapType = resolveSwapType(input.amount, input.tokenA, input.tokenB);
