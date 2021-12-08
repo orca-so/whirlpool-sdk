@@ -14,7 +14,7 @@ import {
 } from "../../public";
 
 /**
- * Data Access Object with cache management logic exposed to client.
+ * Data Access Layer with basic cache management logic exposed to client.
  */
 export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
