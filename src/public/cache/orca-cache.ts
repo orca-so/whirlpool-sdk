@@ -16,6 +16,7 @@ import invariant from "tiny-invariant";
 
 /**
  * Data Access Layer with basic cache management logic exposed to client.
+ * TODO maybe rename this to OrcaWhirlpoolDAL
  */
 export class OrcaCache implements OrcaCacheInterface {
   public readonly whirlpoolsConfig: PublicKey;
