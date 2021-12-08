@@ -12,6 +12,9 @@ import {
   OrcaCacheContentValue,
 } from "../../public";
 
+/**
+ * Data Access Object with cache invalidation logic exposed to client
+ */
 export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
@@ -25,16 +28,19 @@ export class OrcaCacheImpl implements OrcaCache {
     this._connection = connection;
   }
 
+  // TODO also need to add an easier way for the client to get and refresh
+  // TODO also a way to define a default cache that uses
+  // TODO improve type strucutre to not use `as`
   public async getWhirlpool(address: PublicKey | string): Promise<Whirlpool> {
-    return this.get(address, OrcaCacheContentType.Whirlpool);
+    return this.get(address, OrcaCacheContentType.Whirlpool) as Promise<Whirlpool>;
   }
 
   public async getPosition(address: PublicKey | string): Promise<Position> {
-    return this.get(address, OrcaCacheContentType.Position);
+    return this.get(address, OrcaCacheContentType.Position) as Promise<Position>;
   }
 
   public async getTickArray(address: PublicKey | string): Promise<TickArray> {
-    return this.get(address, OrcaCacheContentType.TickArray);
+    return this.get(address, OrcaCacheContentType.TickArray) as Promise<TickArray>;
   }
 
   private async get(
@@ -67,11 +73,11 @@ export class OrcaCacheImpl implements OrcaCache {
     let fetch: (() => Promise<OrcaCacheContentValue>) | null = null;
 
     if (type === OrcaCacheContentType.Whirlpool) {
-      fetch = () => Whirlpool.fetch(pk);
+      fetch = () => Whirlpool.fetch(this._connection, pk);
     } else if (type === OrcaCacheContentType.Position) {
-      fetch = () => Position.fetch(pk);
+      fetch = () => Position.fetch(this._connection, pk);
     } else if (type === OrcaCacheContentType.TickArray) {
-      fetch = () => TickArray.fetch(pk);
+      fetch = () => TickArray.fetch(this._connection, pk);
     } else {
       throw new Error(`${type} is not a known OrcaAccountType`);
     }
