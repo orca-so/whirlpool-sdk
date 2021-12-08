@@ -10,65 +10,68 @@ import {
   TickArray,
   Whirlpool,
   OrcaCacheContentValue,
+  OrcaCacheStrategy,
 } from "../../public";
 
 /**
- * Data Access Object with cache invalidation logic exposed to client
+ * Data Access Object with cache management logic exposed to client.
  */
 export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 
-  private _connection: Connection;
-  private _cache: OrcaCacheInternal = {};
+  private readonly _cache: OrcaCacheInternal = {};
+  private readonly _connection: Connection;
+  private readonly _strategy: OrcaCacheStrategy;
 
-  constructor(network: Network, connection: Connection) {
+  constructor(network: Network, connection: Connection, strategy = OrcaCacheStrategy.AlwaysFetch) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
     this._connection = connection;
+    this._strategy = strategy;
   }
 
-  // TODO also need to add an easier way for the client to get and refresh
-  // TODO also a way to define a default cache that uses
-  // TODO improve type strucutre to not use `as`
-  public async getWhirlpool(address: PublicKey | string): Promise<Whirlpool> {
-    return this.get(address, OrcaCacheContentType.Whirlpool) as Promise<Whirlpool>;
+  public async getWhirlpool(address: PublicKey | string, forceRefresh = false): Promise<Whirlpool> {
+    return this.getGeneric(
+      address,
+      OrcaCacheContentType.Whirlpool,
+      forceRefresh
+    ) as Promise<Whirlpool>;
   }
 
-  public async getPosition(address: PublicKey | string): Promise<Position> {
-    return this.get(address, OrcaCacheContentType.Position) as Promise<Position>;
+  public async getPosition(address: PublicKey | string, forceRefresh = false): Promise<Position> {
+    return this.getGeneric(
+      address,
+      OrcaCacheContentType.Position,
+      forceRefresh
+    ) as Promise<Position>;
   }
 
-  public async getTickArray(address: PublicKey | string): Promise<TickArray> {
-    return this.get(address, OrcaCacheContentType.TickArray) as Promise<TickArray>;
+  public async getTickArray(address: PublicKey | string, forceRefresh = false): Promise<TickArray> {
+    return this.getGeneric(
+      address,
+      OrcaCacheContentType.TickArray,
+      forceRefresh
+    ) as Promise<TickArray>;
   }
 
-  private async get(
+  private async getGeneric(
     address: PublicKey | string,
-    type: OrcaCacheContentType
+    type: OrcaCacheContentType,
+    forceRefresh: boolean
   ): Promise<OrcaCacheContentValue> {
-    const cachedValue = this.getCached(address);
-    if (cachedValue) {
+    const key = typeof address === "string" ? address : address.toBase58();
+    const cachedValue: OrcaCacheContentValue | undefined = this._cache[key]?.value;
+
+    /**
+     * If there is cached value, and the strategy is not always fetch, and we shouldn't force refresh,
+     * then return the cached value.
+     */
+    if (cachedValue && this._strategy !== OrcaCacheStrategy.AlwaysFetch && !forceRefresh) {
       return cachedValue;
     }
 
-    return this.add(address, type);
-  }
-
-  public getCached(address: PublicKey | string): OrcaCacheContentValue | null {
-    const key = OrcaCacheImpl.toAddressString(address);
-    return this._cache[key]?.value || null;
-  }
-
-  public getCachedAll(): [OrcaCacheKey, OrcaCacheContentValue][] {
-    return Object.entries(this._cache).map(([key, content]) => [key, content.value]);
-  }
-
-  public async add(
-    address: PublicKey | string,
-    type: OrcaCacheContentType
-  ): Promise<OrcaCacheContentValue> {
-    const pk = OrcaCacheImpl.toPublicKey(address);
+    const pk = typeof address === "string" ? new PublicKey(address) : address;
 
     let fetch: (() => Promise<OrcaCacheContentValue>) | null = null;
 
@@ -82,38 +85,22 @@ export class OrcaCacheImpl implements OrcaCache {
       throw new Error(`${type} is not a known OrcaAccountType`);
     }
 
-    const key = OrcaCacheImpl.toAddressString(address);
-
     const value = await fetch();
     this._cache[key] = { type, value, fetch };
     return value;
   }
 
-  public async refresh(address: PublicKey | string): Promise<void> {
-    const key = OrcaCacheImpl.toAddressString(address);
-
-    const cachedContent = this._cache[key];
-    if (!cachedContent) {
-      throw new Error("unable to refresh non-existing key");
-    }
-
-    const value = await cachedContent.fetch();
-    this._cache[key] = { ...cachedContent, value };
+  public getCachedAll(): [OrcaCacheKey, OrcaCacheContentValue][] {
+    return Object.entries(this._cache).map(([key, content]) => [key, content.value]);
   }
 
-  // TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
+  /**
+   * TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
+   */
   public async refreshAll(): Promise<void> {
     for (const [address, cachedContent] of Object.entries(this._cache)) {
       const value = await cachedContent.fetch();
       this._cache[address] = { ...cachedContent, value };
     }
-  }
-
-  private static toAddressString(address: PublicKey | string): string {
-    return typeof address === "string" ? address : address.toBase58();
-  }
-
-  private static toPublicKey(address: PublicKey | string): PublicKey {
-    return typeof address === "string" ? new PublicKey(address) : address;
   }
 }
