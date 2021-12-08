@@ -11,10 +11,9 @@ import {
   TickMath,
   Whirlpool,
 } from "../../../public/whirlpools";
-import { OrcaCache } from "../../../public/cache/types";
 import { Token } from "../../token";
 import { TokenAmount } from "../../token/amount";
-import { Percentage, q64 } from "../../../public";
+import { OrcaCache, OrcaCacheStrategy, Percentage, q64 } from "../../../public";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 
@@ -27,7 +26,7 @@ interface OrcaPositionImplConstructorArgs<A extends Token, B extends Token> {
 
 export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaPosition<A, B> {
   private readonly connection: Connection;
-  private readonly cache?: OrcaCache;
+  private readonly cache: OrcaCache;
   private readonly tokenA: A;
   private readonly tokenB: B;
   private readonly whirlpoolAddress: PublicKey;
@@ -45,7 +44,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const whirlpoolsConfig = getWhirlpoolsConfig(network);
 
     this.connection = connection;
-    this.cache = cache;
+    this.cache = cache || new OrcaCache(network, connection, OrcaCacheStrategy.AlwaysFetch);
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
 
     this.whirlpoolAddress = Whirlpool.getPDA(
@@ -90,26 +89,15 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     whirlpool: Whirlpool;
     position: Position;
   }> {
-    const [whirlpool, position] = await Promise.all([this.getWhirlpool(), this.getPosition()]);
+    const [whirlpool, position] = await Promise.all([
+      this.cache.getWhirlpool(this.whirlpoolAddress),
+      this.cache.getPosition(this.positionAddress),
+    ]);
 
     return {
       whirlpool,
       position,
     };
-  }
-
-  private async getWhirlpool(): Promise<Whirlpool> {
-    return (
-      this.cache?.getWhirlpool(this.whirlpoolAddress) ||
-      Whirlpool.fetch(this.connection, this.whirlpoolAddress)
-    );
-  }
-
-  private async getPosition(): Promise<Position> {
-    return (
-      this.cache?.getPosition(this.positionAddress) ||
-      Position.fetch(this.connection, this.positionAddress)
-    );
   }
 
   private getAddLiquidityQuoteWhenPositionIsBelowRange(

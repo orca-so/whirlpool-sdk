@@ -3,12 +3,6 @@ import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
 import { PDA } from "../../../model/pda";
-import { Token } from "../../../model/token";
-import { AddLiquidityQuote, OrcaPosition, PositionStatus, TickMath } from "..";
-import { TokenAmount } from "../../../model/token/amount";
-import { Percentage } from "../../utils";
-import { Whirlpool, WhirlpoolAccount } from ".";
-import { assert } from "console";
 
 export interface PositionAccount {
   whirlpool: PublicKey;
@@ -59,10 +53,7 @@ export class Position {
     return positionMint.equals(otherMint) && programId.equals(otherProgramId);
   }
 
-  public static async fetch<A extends Token, B extends Token>(
-    connection: Connection,
-    address: PublicKey
-  ): Promise<Position> {
+  public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
     // TODO: Also fetch whirlpool account here to get token A and B objects
     throw new Error("TODO - fetch, then deserialize the account data into Position object");
   }
