@@ -77,3 +77,6 @@ describe("TickMath.sqrtPriceAtTick", () => {
   //   });
   // });
 });
+
+// TODO add tests for tickFromSqrtPrice
+// reference https://github.com/orca-so/whirlpool/pull/30/files
