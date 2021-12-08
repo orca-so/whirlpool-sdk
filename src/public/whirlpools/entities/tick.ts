@@ -9,7 +9,7 @@ export const TickMax = NUM_TICKS_IN_ARRAY - 1;
 export interface Tick {
   readonly initialized: number;
   readonly liquidityNet: BN; // i64 TODO
-  readonly liquidity_gross: u64;
+  readonly liquidityGross: u64;
 
   readonly feeGrowthOutsideA: q64;
   readonly feeGrowthOutsideB: q64;

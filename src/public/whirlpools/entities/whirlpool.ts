@@ -17,7 +17,7 @@ export interface WhirlpoolAccount {
   readonly liquidity: u64;
   readonly sqrtPrice: q64;
   readonly tickArrayStart: number;
-  readonly currentTick: number;
+  readonly tickCurrentIndex: number;
 
   readonly protocolFeeOwedA: u64;
   readonly protocolFeeOwedB: u64;
@@ -76,7 +76,13 @@ export class Whirlpool {
   }
 
   public async getCurrentTickArrayAddress(): Promise<PublicKey> {
-    return TickArray.getAddress(this.address, this.account.tickArrayStart, this.account.programId);
+    const { publicKey } = TickArray.getPDA(
+      this.address,
+      this.account.tickArrayStart,
+      this.account.programId
+    );
+
+    return publicKey;
   }
 
   public async equals(whirlpool: Whirlpool): Promise<boolean> {
@@ -95,7 +101,6 @@ export class Whirlpool {
     );
   }
 
-  // TODO - connection: Connection
   public static async fetch(connection: Connection, address: PublicKey): Promise<Whirlpool> {
     throw new Error("TODO - fetch, then deserialize the account data into Whirlpool object");
   }
@@ -110,9 +115,9 @@ export class Whirlpool {
   }
 
   public async getPositionStatus(position: Position): Promise<PositionStatus> {
-    if (this.account.currentTick < position.account.tickLower) {
+    if (this.account.tickCurrentIndex < position.account.tickLower) {
       return PositionStatus.BelowRange;
-    } else if (this.account.currentTick <= position.account.tickUpper) {
+    } else if (this.account.tickCurrentIndex <= position.account.tickUpper) {
       return PositionStatus.InRange;
     } else {
       return PositionStatus.AboveRange;
