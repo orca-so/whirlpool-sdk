@@ -142,6 +142,6 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     const startTick = TickArray.findStartTick(tickIndex, this.whirlpool.account.tickArrayStart);
     const address = await TickArray.getAddress(whirlpoolAddress, startTick, this.programId);
 
-    return TickArray.fetch(address);
+    return this.cache.getTickArray(address);
   }
 }
