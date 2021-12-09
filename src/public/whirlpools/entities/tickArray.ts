@@ -41,13 +41,13 @@ export class TickArray {
     );
   }
 
-  // TODO: Account for when tick goes out of bounds of this tick array (i.e. moves to another tick array account)
+  // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
   // TODO: Account for min tick
   public async getPrevInitializedTick(currentTick: number): Promise<number> {
     throw new Error("TODO");
   }
 
-  // Account for when tick goes out of bounds of this tick array (i.e. moves to another tick array account)
+  // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
   // TODO: Account for max tick
   public async getNextInitializedTick(currentTick: number): Promise<number> {
     throw new Error("TODO");
