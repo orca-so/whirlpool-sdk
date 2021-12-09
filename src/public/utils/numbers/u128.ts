@@ -33,4 +33,16 @@ export class u128 extends BN {
       16
     );
   }
+
+  public mulDivRoundingUp(mulBy: u128, divProductBy: u128): u128 {
+    throw new Error("TODO");
+  }
+
+  public divRoundingUp(divBy: u128): u128 {
+    throw new Error("TODO");
+  }
+
+  public subU128(amount: u128): u128 {
+    return new u128(this.sub(amount));
+  }
 }
