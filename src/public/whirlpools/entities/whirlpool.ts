@@ -3,7 +3,6 @@ import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
-import { Token } from "../../../model/token";
 import { PositionStatus } from "..";
 import { PDA } from "../../../model/pda";
 
@@ -114,7 +113,7 @@ export class Whirlpool {
     return PDA.derive(programId, [Whirlpool.SEED_HEADER, whirlpoolsConfig, tokenMintA, tokenMintB]);
   }
 
-  public async getPositionStatus(position: Position): Promise<PositionStatus> {
+  public getPositionStatus(position: Position): PositionStatus {
     if (this.account.tickCurrentIndex < position.account.tickLower) {
       return PositionStatus.BelowRange;
     } else if (this.account.tickCurrentIndex <= position.account.tickUpper) {

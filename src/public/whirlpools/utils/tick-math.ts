@@ -80,9 +80,17 @@ export abstract class TickMath {
     return ratio as q64;
   }
 
-  public static readonly MAX_SQRT_PRICE_X64 = new q64("79226673515401279992447579061");
-  public static readonly MIN_SQRT_PRICE_X64 = new q64("4295048016");
-  public static readonly LOG_B_2_X64 = new q64("255738958999603826347141");
+  public static readonly MAX_SQRT_PRICE_X64: q64 = new q64("79226673515401279992447579061");
+  public static readonly MIN_SQRT_PRICE_X64: q64 = new q64("4295048016");
+
+  public static readonly LOG_B_2_X64: q64 = new q64("255738958999603826347141");
+  public static readonly BIT_PRECISION: number = 14;
+  public static readonly LOG_B_P_ERR_MARGIN_LOWER_X128: u256 = new u256(
+    "3402823669209384634633746074317682114"
+  ); // 0.01
+  public static readonly LOG_B_P_ERR_MARGIN_UPPER_X128: u256 = new u256(
+    "291339293782892971344202069882609108985"
+  ); // 2^-precision / log_2_b + 0.01
 
   /**
    * Returns the tick corresponding to a given sqrt ratio, s.t. #getSqrtRatioAtTick(tick) <= sqrtRatioX96
@@ -105,21 +113,20 @@ export abstract class TickMath {
     // msb always > 128. Any input with msb under 128 are inverted at the start
     const ratioX128: u256 = ratioX64.shln(64);
     const msb = ratioX128.bitLength() - 1;
-    const log2pIntegerX64: u256 = new u256(msb - 128).shln(64);
 
     // get fractional value (r/2^msb), msb always > 128
-    const requiredPrecision: number = 14;
     const log2pFractionX128: u256 = new u256(0);
     // We begin the iteration from bit 127 (0.5 in Q128.128)
     const bit: u128 = new u128("80000000000000000000000000000000", "hex");
     let precision: number = 0;
+    const log2pIntegerX64: u256 = new u256(msb - 128).shln(64);
 
     // Log2 iterative approximation for the fractional part
     // Go through each 2^(j) bit where j < 128 in a Q128.128 number
     // Append current bit value to fraction result if r^2 Q2.254 is more than 2
     const r = ratioX128.shrn(msb - 127);
     const zero = new BN(0);
-    while (bit.gt(zero) && precision < requiredPrecision) {
+    while (bit.gt(zero) && precision < TickMath.BIT_PRECISION) {
       r.imul(r);
       const isRMoreThanTwo = 0; // TODO
       r.ishrn(127 + isRMoreThanTwo);
@@ -142,10 +149,11 @@ export abstract class TickMath {
     // TODO: Error state if input for sqrt_price is between -1 & 1. Such a value would yield a tick estimation that would flip signs
     // and we need additional logic to handle the difference between round up / round down.
     const tickLow: number = logbpX128
-      .sub(new u256("3402823669209384634633746074317682114"))
+      .sub(TickMath.LOG_B_P_ERR_MARGIN_LOWER_X128)
+      .shrn(128)
       .toNumber();
     const tickHigh: number = logbpX128
-      .add(new u256("291339293782892971344202069882609108985u128"))
+      .add(TickMath.LOG_B_P_ERR_MARGIN_UPPER_X128)
       .shrn(128)
       .toNumber();
 

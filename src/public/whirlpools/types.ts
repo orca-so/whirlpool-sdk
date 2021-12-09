@@ -34,6 +34,12 @@ export type AddLiquidityQuote<A extends Token, B extends Token> = {
   liquidity: u64;
 };
 
+export type RemoveLiquidityQuote<A extends Token, B extends Token> = {
+  minTokenA: TokenAmount<A>;
+  minTokenB: TokenAmount<B>;
+  liquidity: u64;
+};
+
 export enum PositionStatus {
   BelowRange,
   InRange,
@@ -102,4 +108,9 @@ export interface OrcaPosition<A extends Token, B extends Token> {
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
   ) => Promise<AddLiquidityQuote<A, B>>;
+
+  getRemoveLiquidityQuote: (
+    liquidity: u64,
+    slippageTolerence?: Percentage
+  ) => Promise<RemoveLiquidityQuote<A, B>>;
 }
