@@ -1,8 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import {
   AddLiquidityQuote,
-  getWhirlpoolProgramId,
-  getWhirlpoolsConfig,
   Network,
   OrcaPosition,
   OrcaPositionArgs,
@@ -14,10 +12,15 @@ import {
 } from "../../../public/whirlpools";
 import { Token } from "../../token";
 import { TokenAmount } from "../../token/amount";
-import { OrcaCache, OrcaCacheStrategy, Percentage, q64 } from "../../../public";
+import { OrcaCache, OrcaCacheStrategy, Percentage, q64, TransactionPayload } from "../../../public";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
-import { defaultSlippagePercentage } from "../../../constants";
+import {
+  defaultSlippagePercentage,
+  getWhirlpoolProgramId,
+  getWhirlpoolsConfig,
+} from "../../../constants";
+import { Owner } from "../../../public/utils/web3/key-utils";
 
 interface OrcaPositionImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
@@ -87,6 +90,13 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return _getAddLiqudityQuote(tokenAmount, slippageTolerence);
   }
 
+  public async getAddLiquidityTransaction(
+    owner: Owner,
+    quote: AddLiquidityQuote<A, B>
+  ): Promise<TransactionPayload> {
+    throw new Error("Method not implemented.");
+  }
+
   public async getRemoveLiquidityQuote(
     liquidity: u64,
     slippageTolerence = defaultSlippagePercentage
@@ -111,6 +121,29 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     }
 
     return _getRemoveLiqudityQuote(liquidity, slippageTolerence);
+  }
+
+  public async getRemoveLiquidityTransaction(
+    owner: Owner,
+    quote: RemoveLiquidityQuote<A, B>
+  ): Promise<TransactionPayload> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getCollectFeesQuote(owner: Owner): Promise<u64> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getCollectRewardsQuote(owner: Owner): Promise<u64> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getCollectFeesAndRewardsQuote(owner: Owner): Promise<u64> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getCollectFeesAndRewardsTransaction(owner: Owner): Promise<TransactionPayload> {
+    throw new Error("Method not implemented.");
   }
 
   private async getAddLiquidityQuoteWhenPositionIsBelowRange(

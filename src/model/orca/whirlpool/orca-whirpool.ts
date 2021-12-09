@@ -1,7 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { OrcaCache, OrcaCacheStrategy, OrcaU64, Percentage, q64 } from "../../../public";
 import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
-import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../../public/whirlpools/constants";
 import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
 import invariant from "tiny-invariant";
 import { TickMath } from "../../../public/whirlpools/utils/tick-math";
@@ -10,6 +9,7 @@ import { Token } from "../../token";
 import { TokenPrice } from "../../token/price";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
 import { PDA } from "../../pda";
+import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../../constants";
 
 interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
@@ -52,6 +52,12 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
   // create whirlpool and tickarray accounts
   async getInitPoolTransaction(initialPrice: TokenPrice<A, B> | TokenPrice<B, A>): Promise<any> {
     // TODO(atamari): Confirm that token A is base and token B is quote always
+
+    // from yutaro feedback:
+    // 1. Token A should always be the base and token B should always be the quote.
+    // 2. Token A should always be the base and token B should always be the quote.
+    // SCUBA-ATAMARI: we should add the token sort logic here as well
+
     const normalizedInitialPrice = initialPrice.matchBaseAndQuote(this.tokenA, this.tokenB);
 
     // TODO: compute the initial sqrt price from initial price

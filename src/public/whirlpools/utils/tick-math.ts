@@ -4,6 +4,7 @@ import invariant from "tiny-invariant";
 import { q64, u128, u256 } from "../..";
 
 const u64MAX: u64 = new u64("ffffffffffffffff", "hex");
+// TODO maybe just move max values of u128 and u256 here as well instead of readonly static variable
 
 // TODO update comments
 export abstract class TickMath {

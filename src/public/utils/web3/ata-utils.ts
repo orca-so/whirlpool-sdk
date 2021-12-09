@@ -3,7 +3,7 @@ import { Connection, Keypair, PublicKey } from "@solana/web3.js";
 import { solToken } from "../../../constants/tokens";
 import { SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID } from "../constants";
 import { emptyInstruction, Instruction } from "../models/instruction";
-import { deserializeAccount } from "./deserialize-account";
+import { deserializeTokenAccount } from "./deserialize-account";
 import {
   createAssociatedTokenAccountInstruction,
   createWSOLAccountInstructions,
@@ -29,13 +29,14 @@ export async function resolveOrCreateAssociatedTokenAddress(
   tokenMint: PublicKey,
   wrappedSolAmountIn = new u64(0)
 ): Promise<ResolvedTokenAddressInstruction> {
+  // TODO use .equals()
   if (tokenMint !== solToken.mint) {
     const derivedAddress = await deriveAssociatedTokenAddress(owner.publicKey, tokenMint);
 
     // Check if current wallet has an ATA for this spl-token mint. If not, create one.
     let resolveAtaInstruction = emptyInstruction;
     await connection.getAccountInfo(derivedAddress).then((info) => {
-      const tokenAccountInfo = deserializeAccount(info?.data);
+      const tokenAccountInfo = deserializeTokenAccount(info?.data);
 
       if (!tokenAccountInfo) {
         resolveAtaInstruction = createAssociatedTokenAccountInstruction(

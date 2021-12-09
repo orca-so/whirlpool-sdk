@@ -1,8 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import { OrcaCacheInternal, OrcaCacheInterface } from "../..";
 import {
-  getWhirlpoolProgramId,
-  getWhirlpoolsConfig,
   Network,
   OrcaCacheContentType,
   OrcaCacheKey,
@@ -13,6 +11,7 @@ import {
   OrcaCacheStrategy,
 } from "..";
 import invariant from "tiny-invariant";
+import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
 
 /**
  * Data Access Layer with basic cache management logic exposed to client.
@@ -89,6 +88,19 @@ export class OrcaCache implements OrcaCacheInterface {
   }
 
   /**
+   * rpc batch request
+   * https://docs.solana.com/developing/clients/jsonrpc-api#getaccountinfo
+   * https://docs.solana.com/developing/clients/jsonrpc-api#gettokenaccountbalance
+   *
+   * const requests = addresses.map((address: string) => ({
+   *   methodName: "getTokenAccountBalance",
+   *   args: connection._buildArgs([address], "singleGossip"),
+   * }));
+   * const results = await connection._rpcBatchRequest(requests);
+   * Object.fromEntries(addresses.map((address, idx) => [address, new u64(results[idx].result.value.amount)]));
+   */
+
+  /**
    * TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
    */
   public async fetchAll(
@@ -110,4 +122,8 @@ export class OrcaCache implements OrcaCacheInterface {
       this._cache[key] = { ...cachedContent, value };
     }
   }
+
+  /**
+   * Make request to get whitelist
+   */
 }
