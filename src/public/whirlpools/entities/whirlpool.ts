@@ -6,6 +6,14 @@ import { q64 } from "../..";
 import { PositionStatus } from "..";
 import { PDA } from "../../../model/pda";
 
+export interface WhirlpoolRewardInfo {
+  readonly mint: PublicKey;
+  readonly vault: PublicKey;
+  readonly authority: PublicKey;
+  readonly emissionsPerSecondX64: q64;
+  readonly growthGlobalX64: q64;
+}
+
 export interface WhirlpoolAccount {
   readonly whirlpoolsConfig: PublicKey;
   readonly whirlpoolBump: number;
@@ -29,36 +37,22 @@ export interface WhirlpoolAccount {
   readonly tokenVaultB: PublicKey;
   readonly feeGrowthGlobalB: q64;
 
-  readonly secondsSinceLastUpdate: u64;
+  readonly rewardLastUpdatedTimestamp: u64;
 
-  readonly rewardMint0: PublicKey;
-  readonly rewardVault0: PublicKey;
-  readonly rewardEmissionsAuthority0: PublicKey;
-  readonly rewardEmissionsPerSecond0: q64;
-  readonly rewardGrowthGlobal0: q64;
+  readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
 
-  readonly rewardMint1: PublicKey;
-  readonly rewardVault1: PublicKey;
-  readonly rewardEmissionsAuthority1: PublicKey;
-  readonly rewardEmissionsPerSecond1: q64;
-  readonly rewardGrowthGlobal1: q64;
-
-  readonly rewardMint2: PublicKey;
-  readonly rewardVault2: PublicKey;
-  readonly rewardEmissionsAuthority2: PublicKey;
-  readonly rewardEmissionsPerSecond2: q64;
-  readonly rewardGrowthGlobal2: q64;
-
-  readonly programId: PublicKey;
+  readonly programId: PublicKey; // TODO most likely remove
 }
 
 export class Whirlpool {
+  // TODO move these to constant?
   private static SEED_HEADER = "whirlpool";
 
   public readonly account: WhirlpoolAccount;
 
   private readonly pda: PDA;
 
+  // TODO most likely not needed, make private empty constructure
   constructor(account: WhirlpoolAccount) {
     invariant(account.tokenMintA !== account.tokenMintB, "TOKEN_MINT");
     this.account = account;

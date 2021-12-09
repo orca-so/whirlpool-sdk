@@ -1,4 +1,3 @@
 export * from "./whirlpool";
 export * from "./position";
-export * from "./tick";
-export * from "./tickArray";
+export * from "./tick-array";

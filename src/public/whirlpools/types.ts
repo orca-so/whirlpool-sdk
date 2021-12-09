@@ -1,9 +1,11 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import { TransactionPayload } from "..";
 import { SwapAmount, SwapQuote } from "../../model/orca/whirlpool/swap-quoter";
 import { Token } from "../../model/token";
 import { TokenAmount } from "../../model/token/amount";
 import { Percentage } from "../utils/models/percentage";
+import { Owner } from "../utils/web3/key-utils";
 import { TickArray } from "./entities";
 
 export enum Network {
@@ -98,9 +100,6 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
 
   getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
-
-  // fetch whitelist from zp
-  // getWhitelist: () => Promise<any | null>;
 }
 
 export interface OrcaPosition<A extends Token, B extends Token> {
@@ -109,8 +108,27 @@ export interface OrcaPosition<A extends Token, B extends Token> {
     slippageTolerence?: Percentage
   ) => Promise<AddLiquidityQuote<A, B>>;
 
+  getAddLiquidityTransaction(
+    owner: Owner,
+    quote: AddLiquidityQuote<A, B>
+  ): Promise<TransactionPayload>;
+
   getRemoveLiquidityQuote: (
     liquidity: u64,
     slippageTolerence?: Percentage
   ) => Promise<RemoveLiquidityQuote<A, B>>;
+
+  getRemoveLiquidityTransaction(
+    owner: Owner,
+    quote: RemoveLiquidityQuote<A, B>
+  ): Promise<TransactionPayload>;
+
+  getCollectFeesQuote: (owner: Owner) => Promise<u64>;
+
+  getCollectRewardsQuote: (owner: Owner) => Promise<u64>;
+
+  // TODO theoretically this could be u65
+  getCollectFeesAndRewardsQuote: (owner: Owner) => Promise<u64>;
+
+  getCollectFeesAndRewardsTransaction: (owner: Owner) => Promise<TransactionPayload>;
 }

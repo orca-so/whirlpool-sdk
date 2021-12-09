@@ -1,4 +1,4 @@
-# Orca Typescript SDK
+# Orca Whirlpool SDK
 
 The Orca SDK contains a set of simple to use APIs to allow developers to integrate with the Orca exchange platform.
 

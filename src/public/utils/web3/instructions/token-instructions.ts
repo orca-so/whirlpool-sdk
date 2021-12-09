@@ -10,6 +10,18 @@ import { Instruction, SPL_ASSOCIATED_TOKEN_ACCOUNT_PROGRAM_ID } from "../..";
 import { ResolvedTokenAddressInstruction } from "../ata-utils";
 import { Owner } from "../key-utils";
 
+/**
+ * TODO, feedback from yutaro:
+ * Note that we should change the behavior of WSOL to support syncNative.
+ * https://github.com/solana-labs/solana-program-library/blob/0b8961597b3adf7355e48506d7e81b3925bbacd0/token/js/client/token.js#L1405
+ *
+ * Essentially, we always use the user's WSOL ATA.
+ * If the WSOL ATA doesn't exist, create it.
+ * If the WSOL ATA exists and the balance is insufficient but the user has lamports,
+ * transfer lamports to the WSOL ATA, call syncNative, and use the WSOL ATA.
+ *
+ * This also means that we never close the WSOL account.
+ */
 export const createWSOLAccountInstructions = (
   owner: PublicKey,
   solMint: PublicKey,

@@ -4,39 +4,39 @@ import { u64 } from "@solana/spl-token";
 import { q64 } from "../..";
 import { PDA } from "../../../model/pda";
 
+export interface PositionRewardInfo {
+  readonly growthInsideCheckpoint: q64;
+  readonly amountOwed: u64;
+}
+
 export interface PositionAccount {
-  whirlpool: PublicKey;
+  readonly whirlpool: PublicKey;
 
-  positionMint: PublicKey;
-  liquidity: u64;
-  tickLower: number;
-  tickUpper: number;
+  readonly positionMint: PublicKey;
+  readonly liquidity: u64;
+  readonly tickLower: number;
+  readonly tickUpper: number;
 
-  feeGrowthCheckpointA: q64;
-  feeOwedA: u64;
+  readonly feeGrowthCheckpointA: q64;
+  readonly feeOwedA: u64;
 
-  feeGrowthCheckpointB: q64;
-  feeOwedB: u64;
+  readonly feeGrowthCheckpointB: q64;
+  readonly feeOwedB: u64;
 
-  rewardGrowthCheckpoint0: q64;
-  rewardOwed0: u64;
+  readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
 
-  rewardGrowthCheckpoint1: q64;
-  rewardOwed1: u64;
-
-  rewardGrowthCheckpoint2: q64;
-  rewardOwed2: u64;
-
-  programId: PublicKey;
+  readonly programId: PublicKey; // TODO most likely remove
 }
 
 export class Position {
   public readonly account: PositionAccount;
 
+  // TODO move these to constant?
   private static SEED_HEADER = "position";
   private readonly pda: PDA;
 
   // This entity can only be created by calling Position.fetch(...)
+  // TODO most likely not needed, make private empty constructure
   private constructor(account: PositionAccount) {
     invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
     this.account = account;
