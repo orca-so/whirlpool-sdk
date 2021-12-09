@@ -24,7 +24,6 @@ interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
  * Random notes: nft represents the authority to a specific position
  */
 export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaWhirlpool<A, B> {
-  private readonly connection: Connection;
   private readonly tokenA: A;
   private readonly tokenB: B;
   private readonly cache: OrcaCache;
@@ -39,7 +38,6 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     invariant(!tokenA.equals(tokenB), "tokens must be different");
 
     this.cache = cache || new OrcaCache(network, connection, OrcaCacheStrategy.AlwaysFetch);
-    this.connection = connection;
     const whirlpoolsConfig = getWhirlpoolsConfig(network);
     const programId = getWhirlpoolProgramId(network);
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
