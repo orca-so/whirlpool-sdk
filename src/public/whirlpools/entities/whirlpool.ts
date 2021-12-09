@@ -2,7 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
-import { q64 } from "../..";
+import { Percentage, q64 } from "../..";
 import { PositionStatus } from "..";
 import { PDA } from "../../../model/pda";
 
@@ -121,5 +121,17 @@ export class Whirlpool {
     } else {
       return PositionStatus.AboveRange;
     }
+  }
+
+  // Should ideally return a fraction (but our percentage class is a fraction, so using that for now)
+  public getFeeRate(): Percentage {
+    // TODO: This method should parse this.account.feeRate which is a number (u16) and generate a Fraction that can be easily used by the caller for math
+    throw new Error("TODO - Implement");
+  }
+
+  // Should ideally return a fraction (but our percentage class is a fraction, so using that for now)
+  public getProtocolFeeRate(): Percentage {
+    // TODO: This method should parse this.account.protocolFeeRate which is a number (u16) and generate a Fraction that can be easily used by the caller for math
+    throw new Error("TODO - Implement");
   }
 }
