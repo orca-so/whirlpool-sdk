@@ -1,8 +1,9 @@
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { Percentage, q64, TickArray, TickMath, u128, Whirlpool } from "../../..";
-import { Token } from "../../token";
-import { TokenAmount } from "../../token/amount";
+import { Percentage, q64 } from "../..";
+import { TickMath } from "../math";
+import { Token } from "../utils/token";
+import { TokenAmount } from "../utils/token/amount";
 
 // TODO(atamari): This file isn't the cleanest right now.
 // I want to work on everything to do with swap quote within this file and then clean it after I get it to work.

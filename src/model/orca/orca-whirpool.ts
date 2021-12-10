@@ -1,15 +1,15 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaCache, OrcaCacheStrategy, OrcaU64, Percentage, q64 } from "../../../public";
-import { Network, OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../../public/whirlpools";
-import { TickArray, Whirlpool } from "../../../public/whirlpools/entities";
+import { Connection } from "@solana/web3.js";
+import { Network, OrcaU64, Percentage, q64 } from "../../public";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../public/whirlpool";
+import { TickArray, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
-import { TickMath } from "../../../public/whirlpools/utils/tick-math";
 import { u64 } from "@solana/spl-token";
-import { Token } from "../../token";
-import { TokenPrice } from "../../token/price";
+import { Token } from "../utils/token";
+import { TokenPrice } from "../utils/token/price";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
-import { PDA } from "../../pda";
-import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../../constants";
+import { PDA } from "../utils/pda";
+import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
+import { TickMath } from "../math";
 
 interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;

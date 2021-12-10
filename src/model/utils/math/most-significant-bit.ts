@@ -1,7 +1,4 @@
-import JSBI from "jsbi";
 import invariant from "tiny-invariant";
-import { ZERO } from "../../../internal/constants";
-import { MaxUint256 } from "../constants";
 
 const TWO = JSBI.BigInt(2);
 const POWERS_OF_2 = [128, 64, 32, 16, 8, 4, 2, 1].map((pow: number): [number, JSBI] => [

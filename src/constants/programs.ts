@@ -1,4 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
+import { Network } from "../public";
 
 // TODO - update once we have actual contract addresses
 export function getWhirlpoolsConfig(network: Network): PublicKey {
