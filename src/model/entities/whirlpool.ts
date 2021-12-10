@@ -2,9 +2,9 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
-import { Percentage, q64 } from "../..";
-import { PositionStatus } from "..";
-import { PDA } from "../../../model/pda";
+import { Percentage, q64 } from "../../public";
+import { PositionStatus } from "../../public/whirlpool";
+import { PDA } from "../utils/pda";
 
 export interface WhirlpoolRewardInfo {
   readonly mint: PublicKey;

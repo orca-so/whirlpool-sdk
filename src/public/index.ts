@@ -1,3 +1,3 @@
+export * from "./main";
 export * from "./utils";
-export * from "./whirlpools";
-export * from "./cache";
+export * from "./whirlpool";

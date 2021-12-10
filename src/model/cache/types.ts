@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { Position, TickArray, Whirlpool } from "..";
+import { Position, TickArray, Whirlpool } from "../entities";
 
 export enum OrcaCacheStrategy {
   AlwaysFetch = "ALWAYS_FETCH",

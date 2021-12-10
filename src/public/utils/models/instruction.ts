@@ -1,11 +1,4 @@
-import {
-  Keypair,
-  PublicKey,
-  Signer,
-  Transaction,
-  TransactionInstruction,
-  TransactionSignature,
-} from "@solana/web3.js";
+import { Signer, Transaction, TransactionInstruction, TransactionSignature } from "@solana/web3.js";
 
 export const emptyInstruction: Instruction = {
   instructions: [],

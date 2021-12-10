@@ -1,23 +1,12 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { TransactionPayload } from "..";
-import { SwapAmount, SwapQuote } from "../../model/orca/whirlpool/swap-quoter";
-import { Token } from "../../model/token";
-import { TokenAmount } from "../../model/token/amount";
+import { Token } from "../../model/utils/token";
+import { TokenAmount } from "../../model/utils/token/amount";
 import { Percentage } from "../utils/models/percentage";
 import { Owner } from "../utils/web3/key-utils";
-import { TickArray } from "./entities";
-
-export enum Network {
-  MAINNET = "mainnet",
-  DEVNET = "devnet",
-}
-
-export enum FeeTier {
-  LOW = 1,
-  STANDARD = 2,
-  HIGH = 3,
-}
+import { TickArray } from "../../model/entities";
+import { SwapAmount, SwapQuote } from "../../model/orca";
 
 export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenA: A;

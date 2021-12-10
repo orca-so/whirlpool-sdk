@@ -1,17 +1,16 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaCacheInternal, OrcaCacheInterface } from "../..";
 import {
-  Network,
   OrcaCacheContentType,
   OrcaCacheKey,
-  Position,
-  TickArray,
-  Whirlpool,
   OrcaCacheContentValue,
   OrcaCacheStrategy,
-} from "..";
+  OrcaCacheInterface,
+  OrcaCacheInternal,
+} from ".";
 import invariant from "tiny-invariant";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
+import { Position, TickArray, Whirlpool } from "../entities";
+import { Network } from "../..";
 
 /**
  * Data Access Layer with basic cache management logic exposed to client.
@@ -32,6 +31,7 @@ export class OrcaCache implements OrcaCacheInterface {
     this._strategy = strategy;
   }
 
+  // TODO handle error cases where the address does not "exist"
   public async getWhirlpool(address: PublicKey, forceRefresh = false): Promise<Whirlpool> {
     return this.get(address, OrcaCacheContentType.Whirlpool, forceRefresh) as Promise<Whirlpool>;
   }

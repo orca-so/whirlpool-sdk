@@ -2,9 +2,9 @@ import { u64 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { q64 } from "../..";
-import { TICK_ARRAY_SIZE } from "../../../constants";
-import { PDA } from "../../../model/pda";
+import { q64 } from "../../public";
+import { TICK_ARRAY_SIZE } from "../../constants";
+import { PDA } from "../utils/pda";
 
 export const TickMin = 0;
 export const TickMax = TICK_ARRAY_SIZE - 1;

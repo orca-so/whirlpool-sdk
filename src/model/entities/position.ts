@@ -1,8 +1,8 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
-import { q64 } from "../..";
-import { PDA } from "../../../model/pda";
+import { q64 } from "../../public";
+import { PDA } from "../utils/pda";
 
 export interface PositionRewardInfo {
   readonly growthInsideCheckpoint: q64;

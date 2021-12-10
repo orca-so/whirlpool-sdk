@@ -1,26 +1,24 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import {
   AddLiquidityQuote,
-  Network,
   OrcaPosition,
   OrcaPositionArgs,
-  Position,
   PositionStatus,
   RemoveLiquidityQuote,
-  TickMath,
-  Whirlpool,
-} from "../../../public/whirlpools";
-import { Token } from "../../token";
-import { TokenAmount } from "../../token/amount";
-import { OrcaCache, OrcaCacheStrategy, Percentage, q64, TransactionPayload } from "../../../public";
+} from "../../public/whirlpool";
+import { Token } from "../utils/token";
+import { TokenAmount } from "../utils/token/amount";
+import { Network, Percentage, q64, TransactionPayload } from "../../public";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 import {
   defaultSlippagePercentage,
   getWhirlpoolProgramId,
   getWhirlpoolsConfig,
-} from "../../../constants";
-import { Owner } from "../../../public/utils/web3/key-utils";
+} from "../../constants";
+import { Owner } from "../../public/utils/web3/key-utils";
+import { TickMath } from "../math";
+import { Position, Whirlpool } from "../entities";
 
 interface OrcaPositionImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
