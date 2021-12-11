@@ -2,8 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
-import { Percentage, q64 } from "../../public";
-import { PositionStatus } from "../../public/orca";
+import { PositionStatus, Percentage, q64 } from "../../public";
 import { PDA } from "../utils/pda";
 import { Account } from "./account";
 
@@ -112,6 +111,10 @@ export class Whirlpool extends Account {
     } else {
       return PositionStatus.AboveRange;
     }
+  }
+
+  public static isRewardInitialized(rewardInfo: WhirlpoolRewardInfo): boolean {
+    return !PublicKey.default.equals(rewardInfo.mint);
   }
 
   // Should ideally return a fraction (but our percentage class is a fraction, so using that for now)

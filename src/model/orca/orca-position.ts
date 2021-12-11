@@ -7,19 +7,22 @@ import {
   OrcaPositionArgs,
   PositionStatus,
   RemoveLiquidityQuote,
-} from "../../public/orca";
-import { Token } from "../utils/token";
-import { TokenAmount } from "../utils/token/amount";
-import { Network, Percentage, q64, TransactionPayload } from "../../public";
+  Network,
+  Percentage,
+  q64,
+  TransactionPayload,
+} from "../../public";
+import { Token, TokenAmount } from "../utils";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 import {
   defaultSlippagePercentage,
   getWhirlpoolProgramId,
   getWhirlpoolsConfig,
+  NUM_REWARDS,
 } from "../../constants";
 import { Owner } from "../../public/utils/web3/key-utils";
-import { Position, TickArray, Whirlpool } from "../entities";
+import { Position, Tick, TickArray, Whirlpool } from "../entities";
 import { TickMath } from "../utils";
 import { OrcaCache } from "../cache";
 
@@ -69,26 +72,19 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getAccounts();
+    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
     const positionStatus = whirlpool.getPositionStatus(position);
-
-    let _getAddLiqudityQuote;
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
-        _getAddLiqudityQuote = this.getAddLiquidityQuoteWhenPositionIsBelowRange;
-        break;
+        return this.getAddLiquidityQuoteWhenPositionIsBelowRange(tokenAmount, slippageTolerence);
       case PositionStatus.InRange:
-        _getAddLiqudityQuote = this.getAddLiquidityQuoteWhenPositionIsInRange;
-        break;
+        return this.getAddLiquidityQuoteWhenPositionIsInRange(tokenAmount, slippageTolerence);
       case PositionStatus.AboveRange:
-        _getAddLiqudityQuote = this.getAddLiquidityQuoteWhenPositionIsAboveRange;
-        break;
+        return this.getAddLiquidityQuoteWhenPositionIsAboveRange(tokenAmount, slippageTolerence);
       default:
         throw new Error(`type ${positionStatus} is an unknown PositionStatus`);
     }
-
-    return _getAddLiqudityQuote(tokenAmount, slippageTolerence);
   }
 
   public async getAddLiquidityTransaction(
@@ -102,26 +98,19 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     liquidity: u64,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<RemoveLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getAccounts();
+    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
     const positionStatus = whirlpool.getPositionStatus(position);
-
-    let _getRemoveLiqudityQuote;
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
-        _getRemoveLiqudityQuote = this.getRemoveLiquidityQuoteWhenPositionIsBelowRange;
-        break;
+        return this.getRemoveLiquidityQuoteWhenPositionIsBelowRange(liquidity, slippageTolerence);
       case PositionStatus.InRange:
-        _getRemoveLiqudityQuote = this.getRemoveLiquidityQuoteWhenPositionIsInRange;
-        break;
+        return this.getRemoveLiquidityQuoteWhenPositionIsInRange(liquidity, slippageTolerence);
       case PositionStatus.AboveRange:
-        _getRemoveLiqudityQuote = this.getRemoveLiquidityQuoteWhenPositionIsAboveRange;
-        break;
+        return this.getRemoveLiquidityQuoteWhenPositionIsAboveRange(liquidity, slippageTolerence);
       default:
         throw new Error(`type ${positionStatus} is an unknown PositionStatus`);
     }
-
-    return _getRemoveLiqudityQuote(liquidity, slippageTolerence);
   }
 
   public async getRemoveLiquidityTransaction(
@@ -132,7 +121,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   }
 
   public async getCollectFeesQuote(): Promise<CollectFeesQuote<A, B>> {
-    const { position, whirlpool } = await this.getAccounts();
+    const { position, whirlpool } = await this.getWhirlpoolAndPosition();
+
     const { tickCurrentIndex, feeGrowthGlobalA, feeGrowthGlobalB } = whirlpool.account;
     const {
       tickLower: tickLowerIndex,
@@ -144,19 +134,16 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       feeGrowthCheckpointB,
     } = position.account;
 
-    const tickLowerAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
-    const tickUpperAddress = TickArray.getAddressContainingTickIndex(tickUpperIndex);
+    const { tickLower, tickUpper } = await this.getTicksLowerAndUpper(
+      tickLowerIndex,
+      tickUpperIndex
+    );
 
-    const tickArrayLower = await this.cache.getTickArray(tickLowerAddress);
-    const tickArrayUpper = await this.cache.getTickArray(tickUpperAddress);
-
-    const tickLower = tickArrayLower.getTick(tickLowerIndex);
-    const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
-
-    // Calculate updated fee growth inside
+    // Calculate the fee growths inside the position
 
     let feeGrowthBelowA: q64 | null = null;
     let feeGrowthBelowB: q64 | null = null;
+
     if (tickCurrentIndex < tickLowerIndex) {
       feeGrowthBelowA = feeGrowthGlobalA.sub(tickLower.feeGrowthOutsideA);
       feeGrowthBelowB = feeGrowthGlobalB.sub(tickLower.feeGrowthOutsideB);
@@ -167,6 +154,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     let feeGrowthAboveA: q64 | null = null;
     let feeGrowthAboveB: q64 | null = null;
+
     if (tickCurrentIndex < tickUpperIndex) {
       feeGrowthAboveA = tickUpper.feeGrowthOutsideA;
       feeGrowthAboveB = tickUpper.feeGrowthOutsideB;
@@ -178,7 +166,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const feeGrowthInsideA: q64 = feeGrowthGlobalA.sub(feeGrowthBelowA).sub(feeGrowthAboveA);
     const feeGrowthInsideB: q64 = feeGrowthGlobalB.sub(feeGrowthBelowB).sub(feeGrowthAboveB);
 
-    // Calculate updated fee owed
+    // Calculate the updated fees owed
+
     const liquidityX64: q64 = new q64(liquidity);
     const feeOwedADeltaX64: q64 = liquidityX64.mul(feeGrowthInsideA.sub(feeGrowthCheckpointA));
     const feeOwedBDeltaX64: q64 = liquidityX64.mul(feeGrowthInsideB.sub(feeGrowthCheckpointB));
@@ -193,6 +182,59 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   }
 
   public async getCollectRewardsQuote(): Promise<CollectRewardsQuote<A, B>> {
+    const { position, whirlpool } = await this.getWhirlpoolAndPosition();
+
+    const { tickCurrentIndex, rewardInfos: whirlpoolRewardsInfos } = whirlpool.account;
+    const {
+      tickLower: tickLowerIndex,
+      tickUpper: tickUpperIndex,
+      liquidity,
+      rewardInfos,
+    } = position.account;
+
+    const { tickLower, tickUpper } = await this.getTicksLowerAndUpper(
+      tickLowerIndex,
+      tickUpperIndex
+    );
+
+    // Calculate the reward growths inside the position
+
+    const range = [...Array(NUM_REWARDS).keys()];
+    const rewardGrowthsBelow: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+    const rewardGrowthsAbove: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+
+    for (const i of range) {
+      if (tickCurrentIndex < tickLowerIndex) {
+        rewardGrowthsBelow[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
+          tickLower.rewardGrowthsOutside[i]
+        );
+      } else {
+        rewardGrowthsBelow[i] = tickLower.rewardGrowthsOutside[i];
+      }
+
+      if (tickCurrentIndex < tickUpperIndex) {
+        rewardGrowthsAbove[i] = tickUpper.rewardGrowthsOutside[i];
+      } else {
+        rewardGrowthsAbove[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
+          tickUpper.rewardGrowthsOutside[i]
+        );
+      }
+    }
+
+    const rewardGrowthsInside: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+    for (const i of range) {
+      if (Whirlpool.isRewardInitialized(whirlpoolRewardsInfos[i])) {
+        rewardGrowthsInside[i] = whirlpoolRewardsInfos[i].growthGlobalX64
+          .sub(rewardGrowthsBelow[i])
+          .sub(rewardGrowthsAbove[i]);
+      }
+    }
+
+    // Calculate the updated rewards owed
+
+    for (const i of range) {
+    }
+
     throw new Error("Method not implemented.");
   }
 
@@ -204,7 +246,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { position } = await this.getAccounts();
+    const { position } = await this.getWhirlpoolAndPosition();
 
     if (!this.isTokenAAmount(tokenAmount)) {
       // Cannot deposit Token B into position when price is below position's range
@@ -233,10 +275,10 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   }
 
   private async getAddLiquidityQuoteWhenPositionIsInRange(
-    tokenAmount: TokenAmount<A> | TokenAmount<B>,
+    tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getAccounts();
+    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
 
     // TODO: Use slippage tolerance here
 
@@ -282,10 +324,10 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   }
 
   private async getAddLiquidityQuoteWhenPositionIsAboveRange(
-    tokenAmount: TokenAmount<A> | TokenAmount<B>,
+    tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { position } = await this.getAccounts();
+    const { position } = await this.getWhirlpoolAndPosition();
 
     if (!this.isTokenBAmount(tokenAmount)) {
       // Cannot deposit Token A into position when price is above position's range
@@ -317,7 +359,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { position } = await this.getAccounts();
+    const { position } = await this.getWhirlpoolAndPosition();
     const liquidityX64 = q64.fromU64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.account.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.account.tickUpper);
@@ -339,7 +381,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { whirlpool, position } = await this.getAccounts();
+    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
     const liquidityX64 = q64.fromU64(liquidity);
     const sqrtPriceX64 = whirlpool.account.sqrtPrice;
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.account.tickLower);
@@ -363,7 +405,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { position } = await this.getAccounts();
+    const { position } = await this.getWhirlpoolAndPosition();
     const liquidityX64 = q64.fromU64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.account.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.account.tickUpper);
@@ -377,7 +419,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     };
   }
 
-  private async getAccounts(): Promise<{
+  private async getWhirlpoolAndPosition(): Promise<{
     whirlpool: Whirlpool;
     position: Position;
   }> {
@@ -389,6 +431,27 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return {
       whirlpool,
       position,
+    };
+  }
+
+  private async getTicksLowerAndUpper(
+    tickLowerIndex: number,
+    tickUpperIndex: number
+  ): Promise<{
+    tickLower: Tick;
+    tickUpper: Tick;
+  }> {
+    const tickLowerAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
+    const tickUpperAddress = TickArray.getAddressContainingTickIndex(tickUpperIndex);
+
+    const [tickArrayLower, tickArrayUpper] = await Promise.all([
+      await this.cache.getTickArray(tickLowerAddress),
+      await this.cache.getTickArray(tickUpperAddress),
+    ]);
+
+    return {
+      tickLower: tickArrayLower.getTick(tickLowerIndex),
+      tickUpper: tickArrayUpper.getTick(tickUpperIndex),
     };
   }
 

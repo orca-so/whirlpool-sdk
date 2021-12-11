@@ -17,9 +17,7 @@ export interface Tick {
   readonly feeGrowthOutsideA: q64;
   readonly feeGrowthOutsideB: q64;
 
-  readonly rewardGrowthOutside0: q64;
-  readonly rewardGrowthOutside1: q64;
-  readonly rewardGrowthOutside2: q64;
+  readonly rewardGrowthsOutside: [q64, q64, q64];
 }
 
 export interface TickArrayAccount {

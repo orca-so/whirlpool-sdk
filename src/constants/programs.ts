@@ -25,12 +25,7 @@ export function getWhirlpoolProgramId(network: Network): PublicKey {
   }
 }
 
-/**
- * Number of ticks contained in a single tick array
- */
 export const TICK_ARRAY_SIZE: number = 1000;
-
-/**
- * Tick spacing
- */
 export const TICK_SPACING: number = 5;
+
+export const NUM_REWARDS: number = 3;

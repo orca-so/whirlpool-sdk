@@ -1,15 +1,13 @@
 import { Connection } from "@solana/web3.js";
-import { Network, OrcaU64, Percentage, q64 } from "../../public";
-import { OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../public/orca";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs, Network, OrcaU64, Percentage, q64 } from "../../public";
 import { TickArray, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
-import { Token } from "../utils/token";
-import { TokenPrice } from "../utils/token/price";
+import { Token, TokenPrice } from "../utils";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
 import { PDA } from "../utils/pda";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
-import { TickMath } from "../math";
+import { TickMath } from "../utils";
 
 interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
@@ -17,8 +15,6 @@ interface OrcaWhirpoolImplConstructorArgs<A extends Token, B extends Token> {
   cache?: OrcaCache;
   args: OrcaWhirlpoolArgs<A, B>;
 }
-
-// TODO: Integrate OrcaCache into OrcaWhirlpoolImpl
 
 /**
  * Random notes: nft represents the authority to a specific position
