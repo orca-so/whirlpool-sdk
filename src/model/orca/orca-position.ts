@@ -1,11 +1,13 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import {
   AddLiquidityQuote,
+  CollectFeesQuote,
+  CollectRewardsQuote,
   OrcaPosition,
   OrcaPositionArgs,
   PositionStatus,
   RemoveLiquidityQuote,
-} from "../../public/whirlpool";
+} from "../../public/orca";
 import { Token } from "../utils/token";
 import { TokenAmount } from "../utils/token/amount";
 import { Network, Percentage, q64, TransactionPayload } from "../../public";
@@ -17,8 +19,9 @@ import {
   getWhirlpoolsConfig,
 } from "../../constants";
 import { Owner } from "../../public/utils/web3/key-utils";
-import { TickMath } from "../math";
-import { Position, Whirlpool } from "../entities";
+import { Position, TickArray, Whirlpool } from "../entities";
+import { TickMath } from "../utils";
+import { OrcaCache } from "../cache";
 
 interface OrcaPositionImplConstructorArgs<A extends Token, B extends Token> {
   connection: Connection;
@@ -128,15 +131,68 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     throw new Error("Method not implemented.");
   }
 
-  public async getCollectFeesQuote(owner: Owner): Promise<u64> {
-    throw new Error("Method not implemented.");
+  public async getCollectFeesQuote(): Promise<CollectFeesQuote<A, B>> {
+    const { position, whirlpool } = await this.getAccounts();
+    const { tickCurrentIndex, feeGrowthGlobalA, feeGrowthGlobalB } = whirlpool.account;
+    const {
+      tickLower: tickLowerIndex,
+      tickUpper: tickUpperIndex,
+      liquidity,
+      feeOwedA,
+      feeOwedB,
+      feeGrowthCheckpointA,
+      feeGrowthCheckpointB,
+    } = position.account;
+
+    const tickLowerAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
+    const tickUpperAddress = TickArray.getAddressContainingTickIndex(tickUpperIndex);
+
+    const tickArrayLower = await this.cache.getTickArray(tickLowerAddress);
+    const tickArrayUpper = await this.cache.getTickArray(tickUpperAddress);
+
+    const tickLower = tickArrayLower.getTick(tickLowerIndex);
+    const tickUpper = tickArrayUpper.getTick(tickUpperIndex);
+
+    // Calculate updated fee growth inside
+
+    let feeGrowthBelowA: q64 | null = null;
+    let feeGrowthBelowB: q64 | null = null;
+    if (tickCurrentIndex < tickLowerIndex) {
+      feeGrowthBelowA = feeGrowthGlobalA.sub(tickLower.feeGrowthOutsideA);
+      feeGrowthBelowB = feeGrowthGlobalB.sub(tickLower.feeGrowthOutsideB);
+    } else {
+      feeGrowthBelowA = tickLower.feeGrowthOutsideA;
+      feeGrowthBelowB = tickLower.feeGrowthOutsideB;
+    }
+
+    let feeGrowthAboveA: q64 | null = null;
+    let feeGrowthAboveB: q64 | null = null;
+    if (tickCurrentIndex < tickUpperIndex) {
+      feeGrowthAboveA = tickUpper.feeGrowthOutsideA;
+      feeGrowthAboveB = tickUpper.feeGrowthOutsideB;
+    } else {
+      feeGrowthAboveA = feeGrowthGlobalA.sub(tickUpper.feeGrowthOutsideA);
+      feeGrowthAboveB = feeGrowthGlobalB.sub(tickUpper.feeGrowthOutsideB);
+    }
+
+    const feeGrowthInsideA: q64 = feeGrowthGlobalA.sub(feeGrowthBelowA).sub(feeGrowthAboveA);
+    const feeGrowthInsideB: q64 = feeGrowthGlobalB.sub(feeGrowthBelowB).sub(feeGrowthAboveB);
+
+    // Calculate updated fee owed
+    const liquidityX64: q64 = new q64(liquidity);
+    const feeOwedADeltaX64: q64 = liquidityX64.mul(feeGrowthInsideA.sub(feeGrowthCheckpointA));
+    const feeOwedBDeltaX64: q64 = liquidityX64.mul(feeGrowthInsideB.sub(feeGrowthCheckpointB));
+
+    const updatedFeeOwedA: u64 = feeOwedA.add(q64.toU64(feeOwedADeltaX64));
+    const updatedFeeOwedB: u64 = feeOwedB.add(q64.toU64(feeOwedBDeltaX64));
+
+    return {
+      feeOwedA: TokenAmount.from(this.tokenA, updatedFeeOwedA),
+      feeOwedB: TokenAmount.from(this.tokenB, updatedFeeOwedB),
+    };
   }
 
-  public async getCollectRewardsQuote(owner: Owner): Promise<u64> {
-    throw new Error("Method not implemented.");
-  }
-
-  public async getCollectFeesAndRewardsQuote(owner: Owner): Promise<u64> {
+  public async getCollectRewardsQuote(): Promise<CollectRewardsQuote<A, B>> {
     throw new Error("Method not implemented.");
   }
 

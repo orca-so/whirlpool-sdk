@@ -47,20 +47,6 @@ export class TickArray {
     return this.pda.publicKey;
   }
 
-  public async equals(tickArray: TickArray): Promise<boolean> {
-    const { whirlpool, startTick, programId } = this.account;
-    const {
-      whirlpool: otherWhirlpool,
-      startTick: otherStartTick,
-      programId: otherProgramId,
-    } = tickArray.account;
-    return (
-      whirlpool.equals(otherWhirlpool) &&
-      startTick === otherStartTick &&
-      programId.equals(otherProgramId)
-    );
-  }
-
   // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
   // TODO: Account for min tick
   public async getPrevInitializedTick(currentTick: number): Promise<number> {
@@ -84,6 +70,10 @@ export class TickArray {
     return this.account.ticks[localIndex];
   }
 
+  public static getAddressContainingTickIndex(tickIndex: number): PublicKey {
+    throw new Error("TODO - implmenet");
+  }
+
   public static findStartTick(tickIndex: number, baseTickStart: number): number {
     const delta = Math.floor(Math.abs(tickIndex - baseTickStart) / TICK_ARRAY_SIZE);
     const direction = tickIndex - baseTickStart > 0 ? 1 : -1;
@@ -97,5 +87,14 @@ export class TickArray {
 
   public static getPDA(whirlpool: PublicKey, startTick: number, whirlpoolProgram: PublicKey): PDA {
     return PDA.derive(whirlpoolProgram, [TickArray.SEED_HEADER, whirlpool, startTick.toString()]);
+  }
+
+  public static getAddress(
+    whirlpool: PublicKey,
+    startTick: number,
+    whirlpoolProgram: PublicKey
+  ): PublicKey {
+    return PDA.derive(whirlpoolProgram, [TickArray.SEED_HEADER, whirlpool, startTick.toString()])
+      .publicKey;
   }
 }

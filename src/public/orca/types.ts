@@ -31,6 +31,16 @@ export type RemoveLiquidityQuote<A extends Token, B extends Token> = {
   liquidity: u64;
 };
 
+export type CollectFeesQuote<A extends Token, B extends Token> = {
+  feeOwedA: TokenAmount<A>;
+  feeOwedB: TokenAmount<B>;
+};
+
+export type CollectRewardsQuote<A extends Token, B extends Token> = {
+  rewardsOwedA: TokenAmount<A>;
+  rewardsOwedB: TokenAmount<B>;
+};
+
 export enum PositionStatus {
   BelowRange,
   InRange,
@@ -112,12 +122,9 @@ export interface OrcaPosition<A extends Token, B extends Token> {
     quote: RemoveLiquidityQuote<A, B>
   ): Promise<TransactionPayload>;
 
-  getCollectFeesQuote: (owner: Owner) => Promise<u64>;
+  getCollectFeesQuote: () => Promise<CollectFeesQuote<A, B>>;
 
-  getCollectRewardsQuote: (owner: Owner) => Promise<u64>;
-
-  // TODO theoretically this could be u65
-  getCollectFeesAndRewardsQuote: (owner: Owner) => Promise<u64>;
+  getCollectRewardsQuote: () => Promise<CollectRewardsQuote<A, B>>;
 
   getCollectFeesAndRewardsTransaction: (owner: Owner) => Promise<TransactionPayload>;
 }

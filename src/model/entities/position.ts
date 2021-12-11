@@ -47,15 +47,17 @@ export class Position {
     return this.pda.publicKey;
   }
 
-  public equals(position: Position): boolean {
-    const { positionMint, programId } = this.account;
-    const { positionMint: otherMint, programId: otherProgramId } = position.account;
-    return positionMint.equals(otherMint) && programId.equals(otherProgramId);
-  }
-
   public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
     // TODO: Also fetch whirlpool account here to get token A and B objects
     throw new Error("TODO - fetch, then deserialize the account data into Position object");
+  }
+
+  public static getAddress(
+    whirlpool: PublicKey,
+    positionMint: PublicKey,
+    whirlpoolProgram: PublicKey
+  ): PublicKey {
+    return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positionMint]).publicKey;
   }
 
   public static getPDA(

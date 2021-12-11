@@ -1,6 +1,6 @@
 import { Connection } from "@solana/web3.js";
 import { Network, OrcaU64, Percentage, q64 } from "../../public";
-import { OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../public/whirlpool";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs } from "../../public/orca";
 import { TickArray, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";

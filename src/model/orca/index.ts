@@ -1,7 +1,10 @@
+import { Connection } from "@solana/web3.js";
+import { Network } from "../../public";
+
 export class OrcaFactory {
-  getDAL() {}
+  getDAL(connection: Connection, network: Network) {}
 
-  getWhirlpool() {}
+  getWhirlpool(connection: Connection, network: Network) {}
 
-  getPosition() {}
+  getPosition(connection: Connection, network: Network) {}
 }

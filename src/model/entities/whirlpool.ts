@@ -3,8 +3,9 @@ import invariant from "tiny-invariant";
 import { Position, TickArray } from ".";
 import { u64 } from "@solana/spl-token";
 import { Percentage, q64 } from "../../public";
-import { PositionStatus } from "../../public/whirlpool";
+import { PositionStatus } from "../../public/orca";
 import { PDA } from "../utils/pda";
+import { Account } from "./account";
 
 export interface WhirlpoolRewardInfo {
   readonly mint: PublicKey;
@@ -40,11 +41,9 @@ export interface WhirlpoolAccount {
   readonly rewardLastUpdatedTimestamp: u64;
 
   readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
-
-  readonly programId: PublicKey; // TODO most likely remove
 }
 
-export class Whirlpool {
+export class Whirlpool extends Account {
   // TODO move these to constant?
   private static SEED_HEADER = "whirlpool";
 
@@ -52,15 +51,15 @@ export class Whirlpool {
 
   private readonly pda: PDA;
 
-  // TODO most likely not needed, make private empty constructure
-  constructor(account: WhirlpoolAccount) {
-    invariant(account.tokenMintA !== account.tokenMintB, "TOKEN_MINT");
+  constructor(account: WhirlpoolAccount, programId: PublicKey) {
+    invariant(!account.tokenMintA.equals(account.tokenMintB), "tokens cannot be the same");
+    super();
     this.account = account;
     this.pda = Whirlpool.getPDA(
       account.whirlpoolsConfig,
       account.tokenMintA,
       account.tokenMintB,
-      account.programId
+      programId
     );
   }
 
@@ -78,24 +77,22 @@ export class Whirlpool {
     return publicKey;
   }
 
-  public async equals(whirlpool: Whirlpool): Promise<boolean> {
-    const { whirlpoolsConfig, tokenMintA, tokenMintB, programId } = this.account;
-    const {
-      whirlpoolsConfig: otherWhirlpoolsConfig,
-      tokenMintA: otherTokenMintA,
-      tokenMintB: otherTokenMintB,
-      programId: otherProgramId,
-    } = whirlpool.account;
-    return (
-      whirlpoolsConfig.equals(otherWhirlpoolsConfig) &&
-      tokenMintA.equals(otherTokenMintA) &&
-      tokenMintB.equals(otherTokenMintB) &&
-      programId.equals(otherProgramId)
-    );
-  }
-
   public static async fetch(connection: Connection, address: PublicKey): Promise<Whirlpool> {
     throw new Error("TODO - fetch, then deserialize the account data into Whirlpool object");
+  }
+
+  public parse(): Whirlpool {
+    throw new Error("TODO - implement");
+  }
+
+  public static getAddress(
+    whirlpoolsConfig: PublicKey,
+    tokenMintA: PublicKey,
+    tokenMintB: PublicKey,
+    programId: PublicKey
+  ): PublicKey {
+    return PDA.derive(programId, [Whirlpool.SEED_HEADER, whirlpoolsConfig, tokenMintA, tokenMintB])
+      .publicKey;
   }
 
   public static getPDA(
