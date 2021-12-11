@@ -221,7 +221,11 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       }
     }
 
-    const rewardGrowthsInside: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+    const rewardGrowthsInside: [[q64, boolean], [q64, boolean], [q64, boolean]] = [
+      [new q64(0), false],
+      [new q64(0), false],
+      [new q64(0), false],
+    ];
     for (const i of range) {
       if (Whirlpool.isRewardInitialized(whirlpoolRewardsInfos[i])) {
         rewardGrowthsInside[i] = whirlpoolRewardsInfos[i].growthGlobalX64
@@ -232,7 +236,15 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // Calculate the updated rewards owed
 
+    const liquidityX64: q64 = new q64(liquidity);
+    const updatedRewardInfos: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+
     for (const i of range) {
+      if (rewardGrowthsInside[i][1]) {
+        updatedRewardInfos[i] = rewardInfos[i].amountOwed.add(
+          liquidityX64.mul(rewardGrowthsInside[i][0].sub(rewardInfos[i].growthInsideCheckpoint))
+        );
+      }
     }
 
     throw new Error("Method not implemented.");
