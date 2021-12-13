@@ -1,10 +1,11 @@
-export interface EntityStatic<EntityAccount> {
+export interface ParsableEntity<T> {
   /**
+   * Parse account data
    *
    * @param accountData
    * @returns
    */
-  parse: (accountData: Buffer | undefined | null) => EntityAccount | null;
+  parse: (accountData: Buffer | undefined | null) => T | null;
 }
 
 /**

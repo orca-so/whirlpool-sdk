@@ -3,7 +3,7 @@ import { CachedAccount, OrcaCacheStrategy, OrcaCache, OrcaCacheInternal } from "
 import invariant from "tiny-invariant";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
 import {
-  EntityStatic,
+  ParsableEntity,
   PositionAccount,
   PositionEntity,
   TickArrayAccount,
@@ -60,7 +60,7 @@ export class OrcaCacheImpl implements OrcaCache {
 
   private async get<T extends CachedAccount>(
     address: PublicKey,
-    entity: EntityStatic<T>,
+    entity: ParsableEntity<T>,
     forceRefresh: boolean
   ): Promise<T | null> {
     const key = address.toBase58();
@@ -88,7 +88,7 @@ export class OrcaCacheImpl implements OrcaCache {
   }
 
   public async fetchAll(
-    infos: { address: PublicKey; entity: EntityStatic<CachedAccount> }[]
+    infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
   ): Promise<void> {
     invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
 

@@ -3,7 +3,7 @@ import { PositionAccount } from ".";
 import { u64 } from "@solana/spl-token";
 import { PositionStatus, Percentage, q64 } from "../../public";
 import { PDA } from "../utils/pda";
-import { EntityStatic, staticImplements } from "./types";
+import { ParsableEntity, staticImplements } from "./types";
 
 export interface WhirlpoolRewardInfo {
   readonly mint: PublicKey;
@@ -41,7 +41,7 @@ export interface WhirlpoolAccount {
   readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
 }
 
-@staticImplements<EntityStatic<WhirlpoolAccount>>()
+@staticImplements<ParsableEntity<WhirlpoolAccount>>()
 export class WhirlpoolEntity {
   private constructor() {}
 

@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import {
-  EntityStatic,
+  ParsableEntity,
   PositionAccount,
   TickArrayAccount,
   TokenAccount,
@@ -15,7 +15,7 @@ export enum OrcaCacheStrategy {
 export type CachedAccount = WhirlpoolAccount | PositionAccount | TickArrayAccount | TokenAccount;
 
 interface CachedContent<T extends CachedAccount> {
-  entity: EntityStatic<T>;
+  entity: ParsableEntity<T>;
   value: CachedAccount | null;
 }
 
@@ -56,7 +56,9 @@ export interface OrcaCache {
   /**
    * Fetch and add to cache the given list of accounts
    */
-  fetchAll: (infos: { address: PublicKey; entity: EntityStatic<CachedAccount> }[]) => Promise<void>;
+  fetchAll: (
+    infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
+  ) => Promise<void>;
 
   /**
    * Update the cached value of all entities currently in the cache.

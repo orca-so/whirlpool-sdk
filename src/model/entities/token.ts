@@ -5,7 +5,7 @@ import {
   u64,
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { EntityStatic, staticImplements } from ".";
+import { ParsableEntity, staticImplements } from ".";
 import { PDA } from "../utils";
 
 export interface TokenAccount {
@@ -14,7 +14,7 @@ export interface TokenAccount {
   readonly amount: u64;
 }
 
-@staticImplements<EntityStatic<TokenAccount>>()
+@staticImplements<ParsableEntity<TokenAccount>>()
 export class TokenEntity {
   private constructor() {}
 

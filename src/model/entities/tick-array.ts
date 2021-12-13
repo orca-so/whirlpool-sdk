@@ -4,7 +4,7 @@ import BN from "bn.js";
 import { q64 } from "../../public";
 import { TICK_ARRAY_SIZE } from "../../constants";
 import { PDA } from "../utils/pda";
-import { EntityStatic, PositionAccount, staticImplements } from ".";
+import { ParsableEntity, PositionAccount, staticImplements } from ".";
 
 export const TickMin = 0;
 export const TickMax = TICK_ARRAY_SIZE - 1;
@@ -27,7 +27,7 @@ export interface TickArrayAccount {
   readonly programId: PublicKey; // TODO most likely delete
 }
 
-@staticImplements<EntityStatic<TickArrayAccount>>()
+@staticImplements<ParsableEntity<TickArrayAccount>>()
 export class TickArrayEntity {
   private constructor() {}
 

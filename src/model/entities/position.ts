@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../../public";
 import { PDA } from "../utils/pda";
-import { EntityStatic, staticImplements } from ".";
+import { ParsableEntity, staticImplements } from ".";
 
 export interface PositionRewardInfo {
   readonly growthInsideCheckpoint: q64;
@@ -26,7 +26,7 @@ export interface PositionAccount {
   readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
 }
 
-@staticImplements<EntityStatic<PositionAccount>>()
+@staticImplements<ParsableEntity<PositionAccount>>()
 export class PositionEntity {
   private constructor() {}
 
