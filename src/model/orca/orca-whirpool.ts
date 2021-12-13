@@ -1,5 +1,5 @@
-import { OrcaWhirlpool, OrcaWhirlpoolArgs, OrcaU64, Percentage, q64 } from "../../public";
-import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } from "../entities";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs, Percentage, q64 } from "../../public";
+import { TickArrayAccount, TickArray, WhirlpoolAccount, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
 import { u64 } from "@solana/spl-token";
 import { Token, TokenPrice } from "../utils";
@@ -23,7 +23,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
     this.cache = cache;
 
-    this.address = WhirlpoolEntity.deriveAddress(
+    this.address = Whirlpool.deriveAddress(
       this.cache.whirlpoolsConfig,
       this.tokenA.mint,
       this.tokenB.mint,
@@ -70,11 +70,8 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     const qTokenAmount = q64.fromU64(tokenAmount);
 
     // 3.2.1 Example 1: Amount of assets from a range
-    const Lx: q64 = qTokenAmount
-      .mul(sqrtPrice)
-      .mul(sqrtPriceUpper)
-      .div(sqrtPriceUpper.sub(sqrtPrice));
-    const y: q64 = Lx.mul(sqrtPrice.sub(sqrtPriceLower));
+    const Lx = qTokenAmount.mul(sqrtPrice).mul(sqrtPriceUpper).div(sqrtPriceUpper.sub(sqrtPrice));
+    const y = Lx.mul(sqrtPrice.sub(sqrtPriceLower));
     const u64Y = q64.toU64(y);
 
     throw new Error("TODO - implement");
@@ -82,7 +79,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   async getOpenPositionQuoteByPrice(
     token: A | B,
-    tokenAmount: OrcaU64,
+    tokenAmount: any,
     // priceLower: OrcaU256,
     // priceUpper: OrcaU256,
     slippageTolerence?: Percentage
@@ -123,16 +120,12 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
     const whirlpool = await this.getWhirlpool();
-    const startTick = TickArrayEntity.findStartTick(tickIndex, whirlpool.tickArrayStart);
+    const startTick = TickArray.findStartTick(tickIndex, whirlpool.tickArrayStart);
     // invariant(!!startTick, "loadTickArray - tick_array does not exist");
 
-    const tickArrayAddress = TickArrayEntity.deriveAddress(
-      this.address,
-      startTick,
-      this.cache.programId
-    );
+    const tickArrayAddress = TickArray.deriveAddress(this.address, startTick, this.cache.programId);
 
-    const tickArray = this.cache.getTickArray(tickArrayAddress);
+    const tickArray = await this.cache.getTickArray(tickArrayAddress);
     invariant(!!tickArray, "loadTickArray - tick_array does not exist");
 
     return tickArray;
@@ -146,7 +139,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   private async getCurrentTickArray(): Promise<TickArrayAccount> {
     const { tickArrayStart } = await this.getWhirlpool();
-    const tickArrayAddress = TickArrayEntity.deriveAddress(
+    const tickArrayAddress = TickArray.deriveAddress(
       this.address,
       tickArrayStart,
       this.cache.programId

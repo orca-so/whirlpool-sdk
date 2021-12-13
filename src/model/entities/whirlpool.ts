@@ -1,7 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
-import { PositionAccount } from ".";
 import { u64 } from "@solana/spl-token";
-import { PositionStatus, Percentage, q64 } from "../../public";
+import { Percentage, q64 } from "../../public";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements } from "./types";
 
@@ -42,24 +41,8 @@ export interface WhirlpoolAccount {
 }
 
 @staticImplements<ParsableEntity<WhirlpoolAccount>>()
-export class WhirlpoolEntity {
+export class Whirlpool {
   private constructor() {}
-
-  public static getPositionStatus(
-    whirlpool: WhirlpoolAccount,
-    position: PositionAccount
-  ): PositionStatus {
-    const { tickCurrentIndex } = whirlpool;
-    const { tickLower, tickUpper } = position;
-
-    if (tickCurrentIndex < tickLower) {
-      return PositionStatus.BelowRange;
-    } else if (tickCurrentIndex <= tickUpper) {
-      return PositionStatus.InRange;
-    } else {
-      return PositionStatus.AboveRange;
-    }
-  }
 
   public static isRewardInitialized(rewardInfo: WhirlpoolRewardInfo): boolean {
     return !PublicKey.default.equals(rewardInfo.mint);

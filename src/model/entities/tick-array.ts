@@ -28,7 +28,7 @@ export interface TickArrayAccount {
 }
 
 @staticImplements<ParsableEntity<TickArrayAccount>>()
-export class TickArrayEntity {
+export class TickArray {
   private constructor() {}
 
   // TODO: Account for when tick goes out of bounds of this tick array (throw error?)

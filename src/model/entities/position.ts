@@ -1,8 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 import { u64 } from "@solana/spl-token";
-import { q64 } from "../../public";
+import { PositionStatus, q64 } from "../../public";
 import { PDA } from "../utils/pda";
-import { ParsableEntity, staticImplements } from ".";
+import { ParsableEntity, staticImplements, WhirlpoolAccount } from ".";
 
 export interface PositionRewardInfo {
   readonly growthInsideCheckpoint: q64;
@@ -27,7 +27,7 @@ export interface PositionAccount {
 }
 
 @staticImplements<ParsableEntity<PositionAccount>>()
-export class PositionEntity {
+export class Position {
   private constructor() {}
 
   public static deriveAddress(
@@ -36,6 +36,22 @@ export class PositionEntity {
     whirlpoolProgram: PublicKey
   ): PublicKey {
     return PDA.derive(whirlpoolProgram, ["position", whirlpool, positionMint]).publicKey;
+  }
+
+  public static getPositionStatus(
+    whirlpool: WhirlpoolAccount,
+    position: PositionAccount
+  ): PositionStatus {
+    const { tickCurrentIndex } = whirlpool;
+    const { tickLower, tickUpper } = position;
+
+    if (tickCurrentIndex < tickLower) {
+      return PositionStatus.BelowRange;
+    } else if (tickCurrentIndex <= tickUpper) {
+      return PositionStatus.InRange;
+    } else {
+      return PositionStatus.AboveRange;
+    }
   }
 
   public static parse(accountData: Buffer | undefined | null): PositionAccount | null {

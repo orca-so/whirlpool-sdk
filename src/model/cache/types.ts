@@ -64,9 +64,4 @@ export interface OrcaCache {
    * Update the cached value of all entities currently in the cache.
    */
   refreshAll: () => Promise<void>;
-
-  /**
-   * Get whitelisted whirlpools
-   */
-  getWhitelist: () => Promise<PublicKey>;
 }

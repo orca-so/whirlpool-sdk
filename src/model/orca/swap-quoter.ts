@@ -1,7 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
 import { Percentage, q64, u128 } from "../..";
-import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } from "../entities";
+import { TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
 import { TickMath } from "../utils/math";
 import { Token } from "../utils/token";
 import { TokenAmount } from "../utils/token/amount";
@@ -111,16 +111,16 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputAToB()"
   );
 
-  const feeRate = input.whirlpool.getFeeRate();
-  const protocolFeeRate = input.whirlpool.getProtocolFeeRate();
+  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
+  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.account.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
-    currTickIndex: input.whirlpool.account.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.account.liquidity, // u64
+    currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.liquidity, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);

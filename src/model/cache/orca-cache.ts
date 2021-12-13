@@ -5,13 +5,13 @@ import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
 import {
   ParsableEntity,
   PositionAccount,
-  PositionEntity,
+  Position,
   TickArrayAccount,
-  TickArrayEntity,
+  TickArray,
   TokenAccount,
   TokenEntity,
   WhirlpoolAccount,
-  WhirlpoolEntity,
+  Whirlpool,
 } from "../entities";
 import { Network } from "../..";
 
@@ -37,21 +37,21 @@ export class OrcaCacheImpl implements OrcaCache {
     address: PublicKey,
     forceRefresh = false
   ): Promise<WhirlpoolAccount | null> {
-    return this.get(address, WhirlpoolEntity, forceRefresh);
+    return this.get(address, Whirlpool, forceRefresh);
   }
 
   public async getPosition(
     address: PublicKey,
     forceRefresh = false
   ): Promise<PositionAccount | null> {
-    return this.get(address, PositionEntity, forceRefresh);
+    return this.get(address, Position, forceRefresh);
   }
 
   public async getTickArray(
     address: PublicKey,
     forceRefresh = false
   ): Promise<TickArrayAccount | null> {
-    return this.get(address, TickArrayEntity, forceRefresh);
+    return this.get(address, TickArray, forceRefresh);
   }
 
   public async getToken(address: PublicKey, forceRefresh = false): Promise<TokenAccount | null> {
@@ -131,9 +131,5 @@ export class OrcaCacheImpl implements OrcaCache {
 
       this._cache[key] = { entity, value };
     }
-  }
-
-  public async getWhitelist(): Promise<PublicKey> {
-    throw new Error("TODO");
   }
 }
