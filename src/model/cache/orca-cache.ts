@@ -1,22 +1,24 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import {
-  OrcaCacheContentType,
-  OrcaCacheKey,
-  OrcaCacheContentValue,
-  OrcaCacheStrategy,
-  OrcaCacheInterface,
-  OrcaCacheInternal,
-} from ".";
+import { CachedAccount, OrcaCacheStrategy, OrcaCache, OrcaCacheInternal } from ".";
 import invariant from "tiny-invariant";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
-import { Position, TickArray, Whirlpool } from "../entities";
+import {
+  EntityStatic,
+  PositionAccount,
+  PositionEntity,
+  TickArrayAccount,
+  TickArrayEntity,
+  TokenAccount,
+  TokenEntity,
+  WhirlpoolAccount,
+  WhirlpoolEntity,
+} from "../entities";
 import { Network } from "../..";
 
 /**
  * Data Access Layer with basic cache management logic exposed to client.
- * TODO maybe rename this to OrcaWhirlpoolDAL
  */
-export class OrcaCache implements OrcaCacheInterface {
+export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 
@@ -24,54 +26,57 @@ export class OrcaCache implements OrcaCacheInterface {
   private readonly _connection: Connection;
   private readonly _strategy: OrcaCacheStrategy;
 
-  constructor(network: Network, connection: Connection, strategy = OrcaCacheStrategy.Manual) {
+  constructor(connection: Connection, network: Network, strategy = OrcaCacheStrategy.Manual) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
     this._connection = connection;
     this._strategy = strategy;
   }
 
-  // TODO handle error cases where the address does not "exist"
-  public async getWhirlpool(address: PublicKey, forceRefresh = false): Promise<Whirlpool> {
-    return this.get(address, OrcaCacheContentType.Whirlpool, forceRefresh) as Promise<Whirlpool>;
-  }
-
-  public async getPosition(address: PublicKey, forceRefresh = false): Promise<Position> {
-    return this.get(address, OrcaCacheContentType.Position, forceRefresh) as Promise<Position>;
-  }
-
-  public async getTickArray(address: PublicKey, forceRefresh = false): Promise<TickArray> {
-    return this.get(address, OrcaCacheContentType.TickArray, forceRefresh) as Promise<TickArray>;
-  }
-
-  private async get(
+  public async getWhirlpool(
     address: PublicKey,
-    type: OrcaCacheContentType,
+    forceRefresh = false
+  ): Promise<WhirlpoolAccount | null> {
+    return this.get(address, WhirlpoolEntity, forceRefresh);
+  }
+
+  public async getPosition(
+    address: PublicKey,
+    forceRefresh = false
+  ): Promise<PositionAccount | null> {
+    return this.get(address, PositionEntity, forceRefresh);
+  }
+
+  public async getTickArray(
+    address: PublicKey,
+    forceRefresh = false
+  ): Promise<TickArrayAccount | null> {
+    return this.get(address, TickArrayEntity, forceRefresh);
+  }
+
+  public async getToken(address: PublicKey, forceRefresh = false): Promise<TokenAccount | null> {
+    return this.get(address, TokenEntity, forceRefresh);
+  }
+
+  private async get<T extends CachedAccount>(
+    address: PublicKey,
+    entity: EntityStatic<T>,
     forceRefresh: boolean
-  ): Promise<OrcaCacheContentValue> {
+  ): Promise<T | null> {
     const key = address.toBase58();
-    const cachedValue: OrcaCacheContentValue | undefined = this._cache[key]?.value;
+    const cachedValue: CachedAccount | null | undefined = this._cache[key]?.value;
 
-    if (cachedValue && !forceRefresh) {
-      return cachedValue;
+    // TODO - currently we store null in cache. is this the correct behavior?
+    if (cachedValue !== undefined && !forceRefresh) {
+      return cachedValue as T;
     }
 
-    let fetch: (() => Promise<OrcaCacheContentValue>) | null = null;
-
-    if (type === OrcaCacheContentType.Whirlpool) {
-      fetch = () => Whirlpool.fetch(this._connection, address);
-    } else if (type === OrcaCacheContentType.Position) {
-      fetch = () => Position.fetch(this._connection, address);
-    } else if (type === OrcaCacheContentType.TickArray) {
-      fetch = () => TickArray.fetch(this._connection, address);
-    } else {
-      throw new Error(`${type} is not a known OrcaAccountType`);
-    }
-
-    const value = await fetch();
+    const accountInfo = await this._connection.getAccountInfo(address, "singleGossip");
+    const accountData = accountInfo?.data;
+    const value = entity.parse(accountData);
 
     if (this._strategy !== OrcaCacheStrategy.AlwaysFetch) {
-      this._cache[key] = { type, value, fetch };
+      this._cache[key] = { value, entity };
     }
 
     return value;
@@ -82,48 +87,53 @@ export class OrcaCache implements OrcaCacheInterface {
     return address.toBase58() in this._cache;
   }
 
-  public getCachedAll(): [OrcaCacheKey, OrcaCacheContentValue][] {
-    invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
-    return Object.entries(this._cache).map(([key, content]) => [key, content.value]);
-  }
-
-  /**
-   * rpc batch request
-   * https://docs.solana.com/developing/clients/jsonrpc-api#getaccountinfo
-   * https://docs.solana.com/developing/clients/jsonrpc-api#gettokenaccountbalance
-   *
-   * const requests = addresses.map((address: string) => ({
-   *   methodName: "getTokenAccountBalance",
-   *   args: connection._buildArgs([address], "singleGossip"),
-   * }));
-   * const results = await connection._rpcBatchRequest(requests);
-   * Object.fromEntries(addresses.map((address, idx) => [address, new u64(results[idx].result.value.amount)]));
-   */
-
-  /**
-   * TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
-   */
   public async fetchAll(
-    infos: { address: PublicKey; type: OrcaCacheContentType }[]
+    infos: { address: PublicKey; entity: EntityStatic<CachedAccount> }[]
   ): Promise<void> {
     invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
-    throw new Error("TODO - implement");
-    for (const { address, type } of infos) {
+
+    const addresses: string[] = infos.map((info) => info.address.toBase58());
+    const requests = addresses.map((address: string) => ({
+      methodName: "getAccountInfo",
+      args: this._connection._buildArgs([address], "singleGossip"),
+    }));
+
+    const results: any[] | null = await (this._connection as any)._rpcBatchRequest(requests);
+    invariant(results !== null, "fetchAll no results");
+    invariant(addresses.length === results.length, "fetchAll not enough results");
+
+    for (const [idx, { address, entity }] of infos.entries()) {
+      const data: Buffer | null = results[idx].result.value.data;
+      const value = entity.parse(data);
+
+      const key = address.toBase58();
+      this._cache[key] = { entity, value };
     }
   }
 
-  /**
-   * TODO - use batch account fetch, then parse individually, instead of individual fetch and parse
-   */
   public async refreshAll(): Promise<void> {
     invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
-    for (const [key, cachedContent] of Object.entries(this._cache)) {
-      const value = await cachedContent.fetch();
-      this._cache[key] = { ...cachedContent, value };
+
+    const addresses: string[] = Object.keys(this._cache);
+    const requests = addresses.map((address: string) => ({
+      methodName: "getAccountInfo",
+      args: this._connection._buildArgs([address], "singleGossip"),
+    }));
+
+    const results: any[] | null = await (this._connection as any)._rpcBatchRequest(requests);
+    invariant(results !== null, "refreshAll no results");
+    invariant(addresses.length === results.length, "refreshAll not enough results");
+
+    for (const [idx, [key, cachedContent]] of Object.entries(this._cache).entries()) {
+      const entity = cachedContent.entity;
+      const data: Buffer | null = results[idx].result.value.data;
+      const value = entity.parse(data);
+
+      this._cache[key] = { entity, value };
     }
   }
 
-  /**
-   * Make request to get whitelist
-   */
+  public async getWhitelist(): Promise<PublicKey> {
+    throw new Error("TODO");
+  }
 }

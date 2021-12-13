@@ -1,26 +1,21 @@
 import { Connection } from "@solana/web3.js";
 import { Network, Orca } from "../public";
+import { OrcaCacheImpl, OrcaCache } from "./cache";
 import { OrcaFactory } from "./orca";
 
 export class OrcaImpl implements Orca {
-  private readonly connection: Connection;
-  private readonly network: Network;
+  public readonly cache: OrcaCache;
   private readonly factory: OrcaFactory;
 
   constructor(connection: Connection, network: Network) {
-    this.connection = connection;
-    this.network = network;
+    this.cache = new OrcaCacheImpl(connection, network);
     this.factory = new OrcaFactory();
   }
 
-  public getDAL() {
-    return this.factory.getDAL(this.connection, this.network);
+  public getWhirlpool(args: any) {
+    return this.factory.getWhirlpool(this.cache, args);
   }
-
-  public getWhirlpool() {
-    return this.factory.getWhirlpool(this.connection, this.network);
-  }
-  public getPosition() {
-    return this.factory.getPosition(this.connection, this.network);
+  public getPosition(args: any) {
+    return this.factory.getPosition(this.cache, args);
   }
 }

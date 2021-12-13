@@ -1,8 +1,8 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import invariant from "tiny-invariant";
+import { PublicKey } from "@solana/web3.js";
 import { u64 } from "@solana/spl-token";
 import { q64 } from "../../public";
 import { PDA } from "../utils/pda";
+import { EntityStatic, staticImplements } from ".";
 
 export interface PositionRewardInfo {
   readonly growthInsideCheckpoint: q64;
@@ -24,47 +24,25 @@ export interface PositionAccount {
   readonly feeOwedB: u64;
 
   readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
-
-  readonly programId: PublicKey; // TODO most likely remove
 }
 
-export class Position {
-  public readonly account: PositionAccount;
+@staticImplements<EntityStatic<PositionAccount>>()
+export class PositionEntity {
+  private constructor() {}
 
-  // TODO move these to constant?
-  private static SEED_HEADER = "position";
-  private readonly pda: PDA;
-
-  // This entity can only be created by calling Position.fetch(...)
-  // TODO most likely not needed, make private empty constructure
-  private constructor(account: PositionAccount) {
-    invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
-    this.account = account;
-    this.pda = Position.getPDA(account.whirlpool, account.positionMint, account.programId);
-  }
-
-  public get address(): PublicKey {
-    return this.pda.publicKey;
-  }
-
-  public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
-    // TODO: Also fetch whirlpool account here to get token A and B objects
-    throw new Error("TODO - fetch, then deserialize the account data into Position object");
-  }
-
-  public static getAddress(
+  public static deriveAddress(
     whirlpool: PublicKey,
     positionMint: PublicKey,
     whirlpoolProgram: PublicKey
   ): PublicKey {
-    return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positionMint]).publicKey;
+    return PDA.derive(whirlpoolProgram, ["position", whirlpool, positionMint]).publicKey;
   }
 
-  public static getPDA(
-    whirlpool: PublicKey,
-    positionMint: PublicKey,
-    whirlpoolProgram: PublicKey
-  ): PDA {
-    return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positionMint]);
+  public static parse(accountData: Buffer | undefined | null): PositionAccount | null {
+    if (accountData === undefined || accountData === null || accountData.length === 0) {
+      return null;
+    }
+
+    throw new Error("TODO - implement");
   }
 }

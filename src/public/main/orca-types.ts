@@ -2,11 +2,9 @@ import { Connection } from "@solana/web3.js";
 import { Network } from "..";
 
 export type Orca = {
-  getDAL: () => any;
+  getWhirlpool: (args: any) => any;
 
-  getWhirlpool: () => any;
-
-  getPosition: () => any;
+  getPosition: (args: any) => any;
 };
 
 export function getOrca(connection: Connection, network = Network.MAINNET): Orca {

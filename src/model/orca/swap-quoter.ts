@@ -1,7 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
 import { Percentage, q64, u128 } from "../..";
-import { TickArray, Whirlpool } from "../entities";
+import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } from "../entities";
 import { TickMath } from "../utils/math";
 import { Token } from "../utils/token";
 import { TokenAmount } from "../utils/token/amount";
@@ -91,12 +91,12 @@ function resolveSwapType<A extends Token, B extends Token>(
 }
 
 type SwapQuoteInput<A extends Token, B extends Token> = {
-  whirlpool: Whirlpool;
-  currentTickArray: TickArray;
+  whirlpool: WhirlpoolAccount;
+  currentTickArray: TickArrayAccount;
   tokenA: A;
   tokenB: B;
   amount: SwapAmount<A, B>;
-  slippageTolerance: Percentage;
+  slippageTolerance?: Percentage;
 };
 
 async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
@@ -521,15 +521,15 @@ export async function getSwapQuote<A extends Token, B extends Token>(
   input: SwapQuoteInput<A, B>
 ): Promise<SwapQuote<A, B>> {
   invariant(
-    input.tokenA.mint.equals(input.whirlpool.account.tokenMintA),
+    input.tokenA.mint.equals(input.whirlpool.tokenMintA),
     "Token A provided does not match whirlpool's token A"
   );
   invariant(
-    input.tokenB.mint.equals(input.whirlpool.account.tokenMintB),
+    input.tokenB.mint.equals(input.whirlpool.tokenMintB),
     "Token B provided does not match whirlpool's token B"
   );
   invariant(
-    input.whirlpool.account.tickArrayStart === input.currentTickArray.account.startTick,
+    input.whirlpool.tickArrayStart === input.currentTickArray.startTick,
     "Tick array passed in does not match whirlpool's current tick array"
   );
 

@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 import { TransactionPayload } from "..";
 import { Token } from "../../model/utils/token";
 import { Percentage } from "../utils/models/percentage";
-import { TickArray } from "../../model/entities";
+import { TickArrayAccount } from "../../model/entities";
 import { SwapAmount, SwapQuote } from "../../model/orca/swap-quoter";
 
 export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
@@ -53,7 +53,7 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   //   slippageTolerence?: Percentage
   // ) => Promise<any>;
 
-  loadTickArray: (tickIndex: number) => Promise<TickArray>;
+  loadTickArray: (tickIndex: number) => Promise<TickArrayAccount>;
 
   // // return distribution of liquidity
   // // required to visualize liquidity in UI

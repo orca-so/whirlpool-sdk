@@ -1,10 +1,13 @@
-import { Connection } from "@solana/web3.js";
-import { Network } from "../../public";
+import { OrcaCache } from "../cache";
+import { OrcaPositionImpl } from "./orca-position";
+import { OrcaWhirpoolImpl } from "./orca-whirpool";
 
 export class OrcaFactory {
-  getDAL(connection: Connection, network: Network) {}
+  getWhirlpool(cache: OrcaCache, args: any) {
+    return new OrcaWhirpoolImpl(cache, args);
+  }
 
-  getWhirlpool(connection: Connection, network: Network) {}
-
-  getPosition(connection: Connection, network: Network) {}
+  getPosition(cache: OrcaCache, args: any) {
+    return new OrcaPositionImpl(cache, args);
+  }
 }
