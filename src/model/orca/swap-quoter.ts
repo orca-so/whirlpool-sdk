@@ -523,18 +523,102 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
   const sqrtPriceLimitX64 = state.currSqrtPriceX64.add(deltaSqrtPriceX64);
 
   while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.lt(sqrtPriceLimitX64)) {
-    const nextTickIndex = TickArray.getPrev; // await state.currTickArray.getNe();
+    // Find the next initialized tick since we're gonna be moving the price up when swapping B to A due to price being sqrt(B/A)
+    const nextTickIndex = await TickArray.getNextInitializedTick(
+      state.currTickArray,
+      state.currTickIndex
+    );
     const nextTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
-    const nextTick = state.currTickArray.getTick(nextTickIndex);
+    const nextTick = TickArray.getTick(state.currTickArray, nextTickIndex);
 
     // Clamp the target price to min(price limit, next tick's price)
     const targetSqrtPriceX64 = new q64(q64.min(nextTickSqrtPriceX64, sqrtPriceLimitX64));
-  }
-  // fix_input = false: amount specifies the amount of output token
-  //   swap across initialized ticks until amount_remaining reaches 0
-  //   or curr_sqrt_price reaches sqrt_price_target_limit
 
-  throw new Error("TODO - implement");
+    // Find how much of token A we can withdraw such that the sqrtPrice of the whirlpool moves up to targetSqrtPrice
+    // Use eq 6.16 from univ3 whitepaper to find deltaA
+    // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
+    // => deltaA = ((sqrt(upper) - sqrt(lower)) / (sqrt(lower) * sqrt(upper))) * state.currLiquidity
+    // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / sqrt(upper) / sqrt(lower)
+    // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
+    // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
+    const tokenARoomAvailable = state.currLiquidity
+      .mul(targetSqrtPriceX64.sub(state.currSqrtPriceX64))
+      .div(targetSqrtPriceX64)
+      .div(state.currSqrtPriceX64);
+
+    // Since we're swapping B to A and the user specified output (i.e. A), we DON'T subtract the base fees from the remaining amount
+    const remainingAToWithdraw = state.amountRemaining;
+
+    // Now we calculate the next sqrt price after fully or partially swapping B to A within the tick we're in rn
+    let nextSqrtPriceX64: q64;
+    if (remainingAToWithdraw.gte(tokenARoomAvailable)) {
+      // We're gonna need to use all the room available here, so next sqrt price is the target we used to compute the room in the first place
+      nextSqrtPriceX64 = targetSqrtPriceX64;
+    } else {
+      // We can get the entire remaining A we need from B by swapping just within this tick
+      // To compute this, we use eq 6.15 from univ3 whitepaper:
+      // Δ(1/√P) = ΔX/L => 1/sqrt(lower) - 1/sqrt(upper) = remainingAToWithdraw/state.currLiquidity
+      // What we're trying to find here is actually sqrt(upper) , so let's solve for that:
+      //  => 1/sqrt(upper) =  1/sqrt(lower) - remainingAToWithdraw/state.currLiquidity
+      //  => sqrt(upper) =  (state.currLiquidity * sqrt(lower)) / (state.currLiquidity - sqrt(lower)*remainingAToWithdraw)
+      // Precision analysis raw: (u64 * q64.64) / (u64 - q64.64 * u64)
+      // Precision analysis modified: (q64.64 * q64.64) / (q64.64 - q64.64 * u64)
+      const currLiquidityX64 = state.currLiquidity.shln(64);
+      nextSqrtPriceX64 = currLiquidityX64
+        .mul(state.currSqrtPriceX64)
+        .div(currLiquidityX64.sub(sqrtPriceLimitX64.mul(remainingAToWithdraw)));
+    }
+
+    const currentTickFullyUsed = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+
+    // Use eq 6.14 from univ3 whitepaper to find deltaB for transition from sqrt(lower) to sqrt(upper)
+    // ΔY = Δ√P·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
+    // Analyzing the precisions here: (q64.64 - q64.64) * q64.0 => q128.64
+    // We need to shave off decimal part, hence q128.64 >> 64 => q128.0
+    const deltaB = nextSqrtPriceX64.sub(state.currSqrtPriceX64).mul(state.currLiquidity).shrn(64);
+
+    // Use eq 6.16 from univ3 whitepaper to find deltaA for given remainingBToWithdraw
+    // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
+    // => deltaA = ((sqrt(upper) - sqrt(lower)) / (sqrt(lower) * sqrt(upper))) * state.currLiquidity
+    // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / sqrt(upper) / sqrt(lower)
+    // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
+    // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
+    const currLiquidityX64 = state.currLiquidity.shln(64);
+    const deltaA = currentTickFullyUsed
+      ? tokenARoomAvailable
+      : currLiquidityX64
+          .mul(nextSqrtPriceX64.sub(state.currSqrtPriceX64))
+          .div(nextSqrtPriceX64)
+          .div(state.currSqrtPriceX64);
+
+    const amountIn = deltaB;
+    const amountOut = u64.min(deltaA, state.amountRemaining);
+
+    const feeAmount = amountIn.mul(feeRate.numerator).div(feeRate.denominator);
+
+    // State updates
+
+    state.currSqrtPriceX64 = nextSqrtPriceX64;
+    state.amountRemaining = state.amountRemaining.sub(amountOut);
+    state.amountCalculated = state.amountCalculated.add(amountIn.add(feeAmount));
+
+    // Cross ticks to the next (i.e. to the right) initialized one
+    if (nextSqrtPriceX64.eq(nextTickSqrtPriceX64)) {
+      // When moving to the right tick, we increase liquidity by nextTick.liquidityNet
+      // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
+      state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNet); // Sample impl for now
+      state.currTickIndex = nextTickIndex;
+    }
+  }
+
+  const inputAmount = state.amountCalculated;
+  const outputAmount = input.amount.output.toU64().sub(state.amountRemaining);
+
+  return {
+    sqrtPriceLimitX64: new q64(sqrtPriceLimitX64),
+    minAmountOut: TokenAmount.from(input.tokenA, outputAmount),
+    amountIn: TokenAmount.from(input.tokenB, inputAmount),
+  };
 }
 
 /*******************************************************************
