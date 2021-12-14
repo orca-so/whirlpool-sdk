@@ -1,8 +1,8 @@
-import { Connection, PublicKey } from "@solana/web3.js";
-import invariant from "tiny-invariant";
+import { PublicKey } from "@solana/web3.js";
 import { u64 } from "@solana/spl-token";
-import { q64 } from "../../public";
+import { PositionStatus, q64 } from "../../public";
 import { PDA } from "../utils/pda";
+import { ParsableEntity, staticImplements, WhirlpoolAccount } from ".";
 
 export interface PositionRewardInfo {
   readonly growthInsideCheckpoint: q64;
@@ -24,45 +24,42 @@ export interface PositionAccount {
   readonly feeOwedB: u64;
 
   readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
-
-  readonly programId: PublicKey; // TODO most likely remove
 }
 
+@staticImplements<ParsableEntity<PositionAccount>>()
 export class Position {
-  public readonly account: PositionAccount;
+  private constructor() {}
 
-  // TODO move these to constant?
-  private static SEED_HEADER = "position";
-  private readonly pda: PDA;
-
-  // This entity can only be created by calling Position.fetch(...)
-  // TODO most likely not needed, make private empty constructure
-  private constructor(account: PositionAccount) {
-    invariant(account.tickLower < account.tickUpper, "tick boundaries are not in order");
-    this.account = account;
-    this.pda = Position.getPDA(account.whirlpool, account.positionMint, account.programId);
-  }
-
-  public get address(): PublicKey {
-    return this.pda.publicKey;
-  }
-
-  public equals(position: Position): boolean {
-    const { positionMint, programId } = this.account;
-    const { positionMint: otherMint, programId: otherProgramId } = position.account;
-    return positionMint.equals(otherMint) && programId.equals(otherProgramId);
-  }
-
-  public static async fetch(connection: Connection, address: PublicKey): Promise<Position> {
-    // TODO: Also fetch whirlpool account here to get token A and B objects
-    throw new Error("TODO - fetch, then deserialize the account data into Position object");
-  }
-
-  public static getPDA(
+  // TODO maybe add typing to the return so only getPosition() can receive
+  public static deriveAddress(
     whirlpool: PublicKey,
     positionMint: PublicKey,
     whirlpoolProgram: PublicKey
-  ): PDA {
-    return PDA.derive(whirlpoolProgram, [Position.SEED_HEADER, whirlpool, positionMint]);
+  ): PublicKey {
+    return PDA.derive(whirlpoolProgram, ["position", whirlpool, positionMint]).publicKey;
+  }
+
+  public static getPositionStatus(
+    whirlpool: WhirlpoolAccount,
+    position: PositionAccount
+  ): PositionStatus {
+    const { tickCurrentIndex } = whirlpool;
+    const { tickLower, tickUpper } = position;
+
+    if (tickCurrentIndex < tickLower) {
+      return PositionStatus.BelowRange;
+    } else if (tickCurrentIndex <= tickUpper) {
+      return PositionStatus.InRange;
+    } else {
+      return PositionStatus.AboveRange;
+    }
+  }
+
+  public static parse(accountData: Buffer | undefined | null): PositionAccount | null {
+    if (accountData === undefined || accountData === null || accountData.length === 0) {
+      return null;
+    }
+
+    throw new Error("TODO - implement");
   }
 }

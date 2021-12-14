@@ -1,7 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
 import { Percentage, q64, u128 } from "../..";
-import { TickArray, Whirlpool } from "../entities";
+import { TickArray, TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
 import { TickMath } from "../utils/math";
 import { Token } from "../utils/token";
 import { TokenAmount } from "../utils/token/amount";
@@ -91,8 +91,8 @@ function resolveSwapType<A extends Token, B extends Token>(
 }
 
 type SwapQuoteInput<A extends Token, B extends Token> = {
-  whirlpool: Whirlpool;
-  currentTickArray: TickArray;
+  whirlpool: WhirlpoolAccount;
+  currentTickArray: TickArrayAccount;
   tokenA: A;
   tokenB: B;
   amount: SwapAmount<A, B>;
@@ -111,16 +111,16 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputAToB()"
   );
 
-  const feeRate = input.whirlpool.getFeeRate();
-  const protocolFeeRate = input.whirlpool.getProtocolFeeRate();
+  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
+  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.account.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
-    currTickIndex: input.whirlpool.account.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.account.liquidity, // u64
+    currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.liquidity, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -249,16 +249,16 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputBToA()"
   );
 
-  const feeRate = input.whirlpool.getFeeRate();
-  const protocolFeeRate = input.whirlpool.getProtocolFeeRate();
+  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
+  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.account.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
-    currTickIndex: input.whirlpool.account.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.account.liquidity, // u64
+    currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.liquidity, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -378,16 +378,16 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForAToExactOutputB()"
   );
 
-  const feeRate = input.whirlpool.getFeeRate();
-  const protocolFeeRate = input.whirlpool.getProtocolFeeRate();
+  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
+  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.output.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.account.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
-    currTickIndex: input.whirlpool.account.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.account.liquidity, // u64
+    currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.liquidity, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -502,6 +502,38 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForBToExactOutputA()"
   );
 
+  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
+  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
+
+  const state = {
+    amountRemaining: input.amount.output.toU64(), // u64
+    amountCalculated: new u64(0), // u64
+    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
+    currTickArray: input.currentTickArray,
+    currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
+    currLiquidity: input.whirlpool.liquidity, // u64
+  };
+
+  const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
+  const slippageToleranceDenominatorX64 = q64.fromU64(input.slippageTolerance.denominator);
+  const deltaSqrtPriceX64 = state.currSqrtPriceX64
+    .mul(slippageToleranceNumeratorX64)
+    .div(slippageToleranceDenominatorX64);
+  // Since B is deposited and A is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) increases
+  const sqrtPriceLimitX64 = state.currSqrtPriceX64.add(deltaSqrtPriceX64);
+
+  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.lt(sqrtPriceLimitX64)) {
+    const nextTickIndex = TickArray.getPrev; // await state.currTickArray.getNe();
+    const nextTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
+    const nextTick = state.currTickArray.getTick(nextTickIndex);
+
+    // Clamp the target price to min(price limit, next tick's price)
+    const targetSqrtPriceX64 = new q64(q64.min(nextTickSqrtPriceX64, sqrtPriceLimitX64));
+  }
+  // fix_input = false: amount specifies the amount of output token
+  //   swap across initialized ticks until amount_remaining reaches 0
+  //   or curr_sqrt_price reaches sqrt_price_target_limit
+
   throw new Error("TODO - implement");
 }
 
@@ -521,15 +553,15 @@ export async function getSwapQuote<A extends Token, B extends Token>(
   input: SwapQuoteInput<A, B>
 ): Promise<SwapQuote<A, B>> {
   invariant(
-    input.tokenA.mint.equals(input.whirlpool.account.tokenMintA),
+    input.tokenA.mint.equals(input.whirlpool.tokenMintA),
     "Token A provided does not match whirlpool's token A"
   );
   invariant(
-    input.tokenB.mint.equals(input.whirlpool.account.tokenMintB),
+    input.tokenB.mint.equals(input.whirlpool.tokenMintB),
     "Token B provided does not match whirlpool's token B"
   );
   invariant(
-    input.whirlpool.account.tickArrayStart === input.currentTickArray.account.startTick,
+    input.whirlpool.tickArrayStart === input.currentTickArray.startTick,
     "Tick array passed in does not match whirlpool's current tick array"
   );
 

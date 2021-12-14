@@ -1,6 +1,5 @@
 import { u64 } from "@solana/spl-token";
 import Decimal from "decimal.js";
-import { ZERO } from "..";
 
 export class Percentage {
   readonly numerator: u64;
@@ -26,7 +25,7 @@ export class Percentage {
   };
 
   public toDecimal() {
-    if (this.denominator.eq(ZERO)) {
+    if (this.denominator.eq(new u64(0))) {
       return new Decimal(0);
     }
     return new Decimal(this.numerator.toString()).div(new Decimal(this.denominator.toString()));

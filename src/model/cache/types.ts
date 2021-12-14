@@ -1,65 +1,97 @@
 import { PublicKey } from "@solana/web3.js";
-import { Position, TickArray, Whirlpool } from "../entities";
+import {
+  ParsableEntity,
+  PositionAccount,
+  TickArrayAccount,
+  TokenAccount,
+  WhirlpoolAccount,
+} from "../entities";
 
-export enum OrcaCacheStrategy {
+/**
+ * Determines if OrcaCache should utilize the internal cache or not.
+ */
+export enum CacheStrategy {
+  /**
+   * Do not use cache. Always fetch the latest account info from rpc.
+   */
   AlwaysFetch = "ALWAYS_FETCH",
+
+  /**
+   * Use cache. The client is responsible for cache refresh.
+   */
   Manual = "MANUAL",
 }
 
-export enum OrcaCacheContentType {
-  Whirlpool = "WHIRLPOOL",
-  Position = "POSITION",
-  TickArray = "TICK_ARRAY",
+export type CachedAccount = WhirlpoolAccount | PositionAccount | TickArrayAccount | TokenAccount;
+
+/**
+ * Include both the entity (i.e. type) of the stored value, and the value itself
+ */
+interface CachedContent<T extends CachedAccount> {
+  entity: ParsableEntity<T>;
+  value: CachedAccount | null;
 }
 
-export type OrcaCacheContentValue = Whirlpool | Position | TickArray;
+/**
+ * Map PublicKey.toBase58() to CachedContent
+ */
+export type CacheStore = Record<string, CachedContent<CachedAccount>>;
 
-interface OrcaCacheContent {
-  type: OrcaCacheContentType;
-  value: OrcaCacheContentValue;
-  fetch: () => Promise<OrcaCacheContentValue>;
-}
-
-export type OrcaCacheKey = string;
-
-export type OrcaCacheInternal = Record<OrcaCacheKey, OrcaCacheContent>;
-
-export interface OrcaCacheInterface {
-  /**
-   * Get a Whirlpool entity from the cache.
-   * If it doesn't exist in the cache, then fetch, save to cache, then return.
-   */
-  getWhirlpool: (address: PublicKey, refresh?: boolean) => Promise<Whirlpool>;
+/**
+ * Data access layer for accounts used by OrcaWhirlpool and OrcaPosition.
+ * The types of accounts that are being used are defined by CachedAccount.
+ * Includes internal cache that can be refreshed by the client.
+ */
+export interface OrcaCache {
+  readonly whirlpoolsConfig: PublicKey;
+  readonly programId: PublicKey;
 
   /**
-   * Get a Position entity from the cache.
+   * Get a Whirlpool account from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
+   * If _refresh_ is true, then ignore the cached value, then fetch, save to cache, and return.
    */
-  getPosition: (address: PublicKey, refresh?: boolean) => Promise<Position>;
+  getWhirlpool: (address: PublicKey, refresh?: boolean) => Promise<WhirlpoolAccount | null>;
 
   /**
-   * Get a TickArray entity from the cache.
+   * Get a Position account from the cache.
    * If it doesn't exist in the cache, then fetch, save to cache, then return.
+   * If _refresh_ is true, then ignore the cached value, then fetch, save to cache, and return.
    */
-  getTickArray: (address: PublicKey, refresh?: boolean) => Promise<TickArray>;
+  getPosition: (address: PublicKey, refresh?: boolean) => Promise<PositionAccount | null>;
+
+  /**
+   * Get a TickArray account from the cache.
+   * If it doesn't exist in the cache, then fetch, save to cache, then return.
+   * If _refresh_ is true, then ignore the cached value, then fetch, save to cache, and return.
+   */
+  getTickArray: (address: PublicKey, refresh?: boolean) => Promise<TickArrayAccount | null>;
+
+  /**
+   * Get a Token account from the cache.
+   * If it doesn't exist in the cache, then fetch, save to cache, then return.
+   * If _refresh_ is true, then ignore the cached value, then fetch, save to cache, and return.
+   */
+  getToken: (address: PublicKey, refresh?: boolean) => Promise<TokenAccount | null>;
 
   /**
    * Check if an account is in the cache
+   * TODO: not sure if we need this. delete?
    */
   isCached: (address: PublicKey) => boolean;
 
   /**
-   * Return entries of all the key-value pairs in the cache
+   * Fetch and add to cache the list of accounts.
+   * Uses batched rpc request for network efficient fetch.
+   * Use case: initializing the cache with a list of whitelisted accounts
    */
-  getCachedAll: () => [OrcaCacheKey, OrcaCacheContentValue][];
-
-  /**
-   * Fetch and add to cache the given list of accounts
-   */
-  fetchAll: (infos: { address: PublicKey; type: OrcaCacheContentType }[]) => Promise<void>;
+  fetchAll: (
+    infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
+  ) => Promise<void>;
 
   /**
    * Update the cached value of all entities currently in the cache.
+   * Uses batched rpc request for network efficient fetch.
    */
   refreshAll: () => Promise<void>;
 }

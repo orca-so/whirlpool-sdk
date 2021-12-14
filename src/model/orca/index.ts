@@ -1,7 +1,13 @@
+import { OrcaCache } from "../cache";
+import { OrcaPositionImpl } from "./orca-position";
+import { OrcaWhirpoolImpl } from "./orca-whirpool";
+
 export class OrcaFactory {
-  getDAL() {}
+  getWhirlpool(cache: OrcaCache, args: any) {
+    return new OrcaWhirpoolImpl(cache, args);
+  }
 
-  getWhirlpool() {}
-
-  getPosition() {}
+  getPosition(cache: OrcaCache, args: any) {
+    return new OrcaPositionImpl(cache, args);
+  }
 }

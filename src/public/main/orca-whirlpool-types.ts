@@ -2,40 +2,14 @@ import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { TransactionPayload } from "..";
 import { Token } from "../../model/utils/token";
-import { TokenAmount } from "../../model/utils/token/amount";
 import { Percentage } from "../utils/models/percentage";
-import { Owner } from "../utils/web3/key-utils";
-import { TickArray } from "../../model/entities";
-import { SwapAmount, SwapQuote } from "../../model/orca";
+import { TickArrayAccount } from "../../model/entities";
+import { SwapAmount, SwapQuote } from "../../model/orca/swap-quoter";
 
 export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenA: A;
   tokenB: B;
 };
-
-export type OrcaPositionArgs<A extends Token, B extends Token> = {
-  tokenA: A;
-  tokenB: B;
-  positionMint: PublicKey;
-};
-
-export type AddLiquidityQuote<A extends Token, B extends Token> = {
-  maxTokenA: TokenAmount<A>;
-  maxTokenB: TokenAmount<B>;
-  liquidity: u64;
-};
-
-export type RemoveLiquidityQuote<A extends Token, B extends Token> = {
-  minTokenA: TokenAmount<A>;
-  minTokenB: TokenAmount<B>;
-  liquidity: u64;
-};
-
-export enum PositionStatus {
-  BelowRange,
-  InRange,
-  AboveRange,
-}
 
 export interface OrcaWhirlpool<A extends Token, B extends Token> {
   getOpenPositionQuote: (
@@ -79,7 +53,7 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   //   slippageTolerence?: Percentage
   // ) => Promise<any>;
 
-  loadTickArray: (tickIndex: number) => Promise<TickArray>;
+  loadTickArray: (tickIndex: number) => Promise<TickArrayAccount>;
 
   // // return distribution of liquidity
   // // required to visualize liquidity in UI
@@ -89,35 +63,4 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
 
   getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
-}
-
-export interface OrcaPosition<A extends Token, B extends Token> {
-  getAddLiquidityQuote: (
-    tokenAmount: TokenAmount<A> | TokenAmount<B>,
-    slippageTolerence?: Percentage
-  ) => Promise<AddLiquidityQuote<A, B>>;
-
-  getAddLiquidityTransaction(
-    owner: Owner,
-    quote: AddLiquidityQuote<A, B>
-  ): Promise<TransactionPayload>;
-
-  getRemoveLiquidityQuote: (
-    liquidity: u64,
-    slippageTolerence?: Percentage
-  ) => Promise<RemoveLiquidityQuote<A, B>>;
-
-  getRemoveLiquidityTransaction(
-    owner: Owner,
-    quote: RemoveLiquidityQuote<A, B>
-  ): Promise<TransactionPayload>;
-
-  getCollectFeesQuote: (owner: Owner) => Promise<u64>;
-
-  getCollectRewardsQuote: (owner: Owner) => Promise<u64>;
-
-  // TODO theoretically this could be u65
-  getCollectFeesAndRewardsQuote: (owner: Owner) => Promise<u64>;
-
-  getCollectFeesAndRewardsTransaction: (owner: Owner) => Promise<TransactionPayload>;
 }
