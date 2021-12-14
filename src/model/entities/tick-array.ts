@@ -34,7 +34,7 @@ export class TickArray {
   // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
   // TODO: Account for min tick
   public static async getPrevInitializedTick(
-    account: PositionAccount,
+    account: TickArrayAccount,
     currentTick: number
   ): Promise<number> {
     // TODO feedback from yutaro:
@@ -47,7 +47,7 @@ export class TickArray {
   // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
   // TODO: Account for max tick
   public static async getNextInitializedTick(
-    account: PositionAccount,
+    account: TickArrayAccount,
     currentTick: number
   ): Promise<number> {
     throw new Error("TODO");
