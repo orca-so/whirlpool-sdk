@@ -154,7 +154,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // Calculate the updated fees owed
 
-    const liquidityX64: q64 = new q64(liquidity);
+    const liquidityX64: q64 = q64.fromU64(liquidity);
     const feeOwedADeltaX64: q64 = liquidityX64.mul(feeGrowthInsideA.sub(feeGrowthCheckpointA));
     const feeOwedBDeltaX64: q64 = liquidityX64.mul(feeGrowthInsideB.sub(feeGrowthCheckpointB));
 

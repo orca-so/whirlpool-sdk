@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { Network, Orca } from "../public";
-import { OrcaCacheImpl, OrcaCache } from "./cache";
+import { OrcaNetwork, Orca } from "../public";
+import { OrcaCacheImpl, OrcaCache, CacheStrategy } from "./cache";
 import { Whirlpool } from "./entities";
 import { OrcaFactory } from "./orca";
 
@@ -8,8 +8,9 @@ export class OrcaImpl implements Orca {
   private readonly cache: OrcaCache;
   private readonly factory: OrcaFactory;
 
-  constructor(connection: Connection, network: Network) {
-    this.cache = new OrcaCacheImpl(connection, network);
+  constructor(connection: Connection, network: OrcaNetwork, cache: boolean) {
+    const cacheStrategy = cache ? CacheStrategy.Manual : CacheStrategy.AlwaysFetch;
+    this.cache = new OrcaCacheImpl(connection, network, cacheStrategy);
     this.factory = new OrcaFactory();
   }
 

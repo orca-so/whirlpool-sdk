@@ -1,5 +1,5 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { CachedAccount, OrcaCacheStrategy, OrcaCache, OrcaCacheInternal } from ".";
+import { CachedAccount, CacheStrategy, OrcaCache, CacheStore } from ".";
 import invariant from "tiny-invariant";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
 import {
@@ -13,85 +13,68 @@ import {
   WhirlpoolAccount,
   Whirlpool,
 } from "../entities";
-import { Network } from "../..";
+import { OrcaNetwork } from "../..";
 
-/**
- * Data Access Layer with basic cache management logic exposed to client.
- */
 export class OrcaCacheImpl implements OrcaCache {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 
-  private readonly _cache: OrcaCacheInternal = {};
+  private readonly _cache: CacheStore = {};
   private readonly _connection: Connection;
-  private readonly _strategy: OrcaCacheStrategy;
+  private readonly _strategy: CacheStrategy;
 
-  constructor(connection: Connection, network: Network, strategy = OrcaCacheStrategy.Manual) {
+  constructor(connection: Connection, network: OrcaNetwork, strategy = CacheStrategy.Manual) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
     this._connection = connection;
     this._strategy = strategy;
   }
 
-  public async getWhirlpool(
-    address: PublicKey,
-    forceRefresh = false
-  ): Promise<WhirlpoolAccount | null> {
-    return this.get(address, Whirlpool, forceRefresh);
+  public async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolAccount | null> {
+    return this.get(address, Whirlpool, refresh);
   }
 
-  public async getPosition(
-    address: PublicKey,
-    forceRefresh = false
-  ): Promise<PositionAccount | null> {
-    return this.get(address, Position, forceRefresh);
+  public async getPosition(address: PublicKey, refresh = false): Promise<PositionAccount | null> {
+    return this.get(address, Position, refresh);
   }
 
-  public async getTickArray(
-    address: PublicKey,
-    forceRefresh = false
-  ): Promise<TickArrayAccount | null> {
-    return this.get(address, TickArray, forceRefresh);
+  public async getTickArray(address: PublicKey, refresh = false): Promise<TickArrayAccount | null> {
+    return this.get(address, TickArray, refresh);
   }
 
-  public async getToken(address: PublicKey, forceRefresh = false): Promise<TokenAccount | null> {
-    return this.get(address, TokenEntity, forceRefresh);
+  public async getToken(address: PublicKey, refresh = false): Promise<TokenAccount | null> {
+    return this.get(address, TokenEntity, refresh);
   }
 
   private async get<T extends CachedAccount>(
     address: PublicKey,
     entity: ParsableEntity<T>,
-    forceRefresh: boolean
+    refresh: boolean
   ): Promise<T | null> {
     const key = address.toBase58();
     const cachedValue: CachedAccount | null | undefined = this._cache[key]?.value;
+    const alwaysFetch = this._strategy === CacheStrategy.AlwaysFetch;
 
     // TODO - currently we store null in cache. is this the correct behavior?
-    if (cachedValue !== undefined && !forceRefresh) {
-      return cachedValue as T;
+    if (cachedValue !== undefined && !refresh && !alwaysFetch) {
+      return cachedValue as T | null;
     }
 
     const accountInfo = await this._connection.getAccountInfo(address, "singleGossip");
     const accountData = accountInfo?.data;
     const value = entity.parse(accountData);
-
-    if (this._strategy !== OrcaCacheStrategy.AlwaysFetch) {
-      this._cache[key] = { value, entity };
-    }
+    this._cache[key] = { entity, value };
 
     return value;
   }
 
   public isCached(address: PublicKey): boolean {
-    invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
     return address.toBase58() in this._cache;
   }
 
   public async fetchAll(
     infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
   ): Promise<void> {
-    invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
-
     const addresses: string[] = infos.map((info) => info.address.toBase58());
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
@@ -112,8 +95,6 @@ export class OrcaCacheImpl implements OrcaCache {
   }
 
   public async refreshAll(): Promise<void> {
-    invariant(this._strategy !== OrcaCacheStrategy.AlwaysFetch, "not supported for AlwaysFetch");
-
     const addresses: string[] = Object.keys(this._cache);
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",

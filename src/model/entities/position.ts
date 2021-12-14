@@ -30,6 +30,7 @@ export interface PositionAccount {
 export class Position {
   private constructor() {}
 
+  // TODO maybe add typing to the return so only getPosition() can receive
   public static deriveAddress(
     whirlpool: PublicKey,
     positionMint: PublicKey,

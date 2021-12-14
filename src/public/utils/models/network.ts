@@ -1,4 +1,4 @@
-export enum Network {
+export enum OrcaNetwork {
   MAINNET = "mainnet",
   DEVNET = "devnet",
 }

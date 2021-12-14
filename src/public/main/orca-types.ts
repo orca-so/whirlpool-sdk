@@ -1,5 +1,5 @@
 import { Connection } from "@solana/web3.js";
-import { Network } from "..";
+import { OrcaNetwork } from "..";
 import { OrcaImpl } from "../../model";
 
 export type Orca = {
@@ -12,6 +12,18 @@ export type Orca = {
   getPosition: (args: any) => any;
 };
 
-export function getOrca(connection: Connection, network = Network.MAINNET): Orca {
-  return new OrcaImpl(connection, network);
+/**
+ * Note: cache is turned off by default.
+ *
+ * @param connection
+ * @param network
+ * @param cache
+ * @returns
+ */
+export function getOrca(
+  connection: Connection,
+  network = OrcaNetwork.MAINNET,
+  cache = false
+): Orca {
+  return new OrcaImpl(connection, network, cache);
 }

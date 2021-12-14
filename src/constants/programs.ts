@@ -1,12 +1,12 @@
 import { PublicKey } from "@solana/web3.js";
-import { Network } from "../public";
+import { OrcaNetwork } from "../public";
 
 // TODO - update once we have actual contract addresses
-export function getWhirlpoolsConfig(network: Network): PublicKey {
+export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
   switch (network) {
-    case Network.MAINNET:
+    case OrcaNetwork.MAINNET:
       return PublicKey.default;
-    case Network.DEVNET:
+    case OrcaNetwork.DEVNET:
       return PublicKey.default;
     default:
       throw new Error(`type ${network} is an Unknown network`);
@@ -14,11 +14,11 @@ export function getWhirlpoolsConfig(network: Network): PublicKey {
 }
 
 // TODO - update once we have actual contract addresses
-export function getWhirlpoolProgramId(network: Network): PublicKey {
+export function getWhirlpoolProgramId(network: OrcaNetwork): PublicKey {
   switch (network) {
-    case Network.MAINNET:
+    case OrcaNetwork.MAINNET:
       return PublicKey.default;
-    case Network.DEVNET:
+    case OrcaNetwork.DEVNET:
       return PublicKey.default;
     default:
       throw new Error(`type ${network} is an Unknown network`);

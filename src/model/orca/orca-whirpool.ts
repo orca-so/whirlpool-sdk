@@ -7,6 +7,7 @@ import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
 import { TickMath } from "../utils";
 import { OrcaCache } from "../cache";
 import { PublicKey } from "@solana/web3.js";
+import { defaultSlippagePercentage } from "../../constants";
 
 /**
  * Random notes: nft represents the authority to a specific position
@@ -60,7 +61,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     tokenAmount: u64,
     tickLowerIndex: number,
     tickUpperIndex: number,
-    slippageTolerence?: Percentage
+    slippageTolerence = defaultSlippagePercentage
   ): Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }> {
     const { sqrtPrice } = await this.getWhirlpool();
 
@@ -72,7 +73,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     // 3.2.1 Example 1: Amount of assets from a range
     const Lx = qTokenAmount.mul(sqrtPrice).mul(sqrtPriceUpper).div(sqrtPriceUpper.sub(sqrtPrice));
     const y = Lx.mul(sqrtPrice.sub(sqrtPriceLower));
-    const u64Y = q64.toU64(y);
+    const u64Y = q64.toU64(y as q64); // TODO fix forced type
 
     throw new Error("TODO - implement");
   }
@@ -103,7 +104,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   public async getSwapQuote(
     swapAmount: SwapAmount<A, B>,
-    slippageTolerance?: Percentage
+    slippageTolerance = defaultSlippagePercentage
   ): Promise<SwapQuote<A, B>> {
     const whirlpool = await this.getWhirlpool();
     const currentTickArray = await this.getCurrentTickArray();
