@@ -3,12 +3,20 @@ import BN from "bn.js";
 import { TICK_ARRAY_SIZE } from "../../constants";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements } from ".";
+import { TickMath } from "../utils";
+import invariant from "tiny-invariant";
+
+enum TickSearchDirection {
+  left,
+  right,
+}
 
 export const TickMin = 0;
 export const TickMax = TICK_ARRAY_SIZE - 1;
 
 export interface Tick {
-  readonly initialized: number;
+  readonly index: number;
+  readonly initialized: boolean;
   readonly liquidityNetI64: BN;
   readonly liquidityGrossU64: BN;
 
@@ -25,44 +33,71 @@ export interface TickArrayAccount {
   readonly programId: PublicKey; // TODO most likely delete
 }
 
+/**
+ * Tick is outside the given tick array's range (inclusive)
+ */
+export class TickArrayOutOfBoundsError extends Error {
+  public readonly lowerBound: number;
+  public readonly upperBound: number;
+
+  constructor(tickArray: Tick[]) {
+    super("Tick is outside the given tick array's range (inclusive)");
+    this.lowerBound = 0;
+    this.upperBound = tickArray.length - 1;
+  }
+}
+/**
+ * Outside of the [MIN_TICK, MAX_TICK] range
+ */
+export class TickOutOfRangeError extends Error {
+  constructor() {
+    super(`Outside of the [MIN_TICK, MAX_TICK] range`);
+  }
+}
+
+// SCUBA-ATAMARI: @scuba How do we account for tick spacing here?
+
 @staticImplements<ParsableEntity<TickArrayAccount>>()
 export class TickArray {
   private constructor() {}
 
-  // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
-  // TODO: Account for min tick
-  public static async getPrevInitializedTick(
+  public static getPrevInitializedTickIndex(
     account: TickArrayAccount,
-    currentTick: number
-  ): Promise<number> {
-    // TODO feedback from yutaro:
-    // 1. This should get the previous initialized tick within the tick array.
-    //    If it reaches the first tick and it's uninitialized, return the first tick.
-    // 2. The caller should be responsible for getting the previous tick array in the next iteration.
-    throw new Error("TODO");
+    currentTickIndex: number
+  ): number {
+    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.left);
   }
 
-  // TODO: Account for when tick goes out of bounds of this tick array (throw error?)
-  // TODO: Account for max tick
-  public static async getNextInitializedTick(
+  public static getNextInitializedTickIndex(
     account: TickArrayAccount,
-    currentTick: number
-  ): Promise<number> {
-    throw new Error("TODO");
+    currentTickIndex: number
+  ): number {
+    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.right);
   }
 
   public static getTick(account: TickArrayAccount, tickIndex: number): Tick {
-    // invariant(tickIndex >= this.account.startTick, "tickIndex is too small");
-    // invariant(tickIndex < this.account.startTick + TICK_ARRAY_SIZE, "tickIndex is too large");
-    // const localIndex = (tickIndex - this.account.startTick) % TICK_ARRAY_SIZE;
-    // return this.account.ticks[localIndex];
-    throw new Error("TODO - implmenet");
+    invariant(TickArray.isValidTickIndex(tickIndex), "Tick index out of range");
+
+    const tickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, tickIndex);
+    invariant(
+      tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length,
+      "Tick array index out of bounds"
+    );
+
+    return account.ticks[tickArrayIndex];
   }
 
-  public static getAddressContainingTickIndex(tickIndex: number): PublicKey {
-    throw new Error("TODO - implmenet");
+  public static getAddressContainingTickIndex(
+    tickIndex: number,
+    whirlpoolTickStart: number,
+    whilrpoolAccountAddress: PublicKey,
+    whirlpoolProgramAddress: PublicKey
+  ): PublicKey {
+    const startTick = TickArray.findStartTick(tickIndex, whirlpoolTickStart);
+    return TickArray.deriveAddress(whilrpoolAccountAddress, startTick, whirlpoolProgramAddress);
   }
 
+  // SCUBA-ATAMARI: @scuba can you add a comment here referring to where you derived this logic from in the whitepaper/smart contracts?
   public static findStartTick(tickIndex: number, baseTickStart: number): number {
     const delta = Math.floor(Math.abs(tickIndex - baseTickStart) / TICK_ARRAY_SIZE);
     const direction = tickIndex - baseTickStart > 0 ? 1 : -1;
@@ -77,11 +112,81 @@ export class TickArray {
     return PDA.derive(whirlpoolProgram, ["tick_array", whirlpool, startTick.toString()]).publicKey;
   }
 
+  // SCUBA-ATAMARI: @scuba we probably don't need this since deserialization is taken care of by the low level SDK (should sync on this)
   public static parse(accountData: Buffer | undefined | null): TickArrayAccount | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
     throw new Error("TODO - implement");
+  }
+
+  private static isValidTickIndex(tickIndex: number) {
+    return tickIndex >= TickMath.MIN_TICK && tickIndex <= TickMath.MAX_TICK;
+  }
+
+  private static isValidTickIndexWithinAccount(account: TickArrayAccount, tickIndex: number) {
+    invariant(
+      TickArray.isValidTickIndex(tickIndex),
+      `tickIndex out of range [${TickMath.MIN_TICK}, ${TickMath.MAX_TICK}]`
+    );
+    return tickIndex >= account.startTick && tickIndex < account.startTick + TICK_ARRAY_SIZE;
+  }
+
+  private static isValidTickArrayIndex(account: TickArrayAccount, tickArrayIndex: number) {
+    return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
+  }
+
+  // SCUBA-ATAMARI: @scuba Check this logic
+  private static tickIndexToTickArrayIndex(account: TickArrayAccount, tickIndex: number): number {
+    invariant(TickArray.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+    const tickArrayIndex = tickIndex - account.startTick;
+    invariant(TickArray.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+
+    return tickArrayIndex;
+  }
+
+  // SCUBA-ATAMARI: @scuba Check this logic
+  private static tickArrayIndexToTickIndex(
+    account: TickArrayAccount,
+    tickArrayIndex: number
+  ): number {
+    invariant(TickArray.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+    const tickIndex = account.startTick + tickArrayIndex;
+    invariant(TickArray.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+
+    return tickIndex;
+  }
+
+  private static findInitializedTick(
+    account: TickArrayAccount,
+    currentTickIndex: number,
+    searchDirection: TickSearchDirection
+  ): number {
+    const currentTickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, currentTickIndex);
+
+    const increment = searchDirection === TickSearchDirection.right ? 1 : -1;
+
+    let nextInitializedTickArrayIndex = currentTickArrayIndex + increment;
+    while (
+      nextInitializedTickArrayIndex >= 0 &&
+      nextInitializedTickArrayIndex < account.ticks.length
+    ) {
+      if (account.ticks[nextInitializedTickArrayIndex].initialized) {
+        return TickArray.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex);
+      }
+
+      nextInitializedTickArrayIndex += increment;
+    }
+
+    if (
+      TickArray.isValidTickIndex(
+        TickArray.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex)
+      )
+    ) {
+      throw new TickArrayOutOfBoundsError(account.ticks);
+    }
+
+    throw new TickOutOfRangeError();
   }
 }
