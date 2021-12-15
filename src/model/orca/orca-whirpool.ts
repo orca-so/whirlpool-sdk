@@ -75,7 +75,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
       .mul(sqrtPriceUpper)
       .div(sqrtPriceUpper.sub(sqrtPrice));
     const yX64 = LxX64.mul(sqrtPrice.sub(sqrtPriceLower));
-    const yU64 = BNUtils.ceilX64(yX64);
+    const yU64 = BNUtils.x64ToU64Floor(yX64);
 
     throw new Error("TODO - implement");
   }
@@ -123,9 +123,12 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
     const whirlpool = await this.getWhirlpool();
-    const startTick = TickArray.findStartTickWith(tickIndex, whirlpool.tickArrayStart);
 
-    const tickArrayAddress = TickArray.deriveAddress(this.address, startTick, this.cache.programId);
+    const tickArrayAddress = TickArray.getAddressContainingTickIndex(
+      tickIndex,
+      whirlpool,
+      this.cache.programId
+    );
     const tickArray = await this.cache.getTickArray(tickArrayAddress);
     invariant(!!tickArray, "loadTickArray - tick_array does not exist");
 

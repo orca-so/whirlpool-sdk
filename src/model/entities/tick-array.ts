@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { TICK_ARRAY_SIZE } from "../../constants";
 import { PDA } from "../utils/pda";
-import { ParsableEntity, staticImplements } from ".";
+import { ParsableEntity, staticImplements, Whirlpool, WhirlpoolAccount } from ".";
 import { TickMath } from "../utils";
 import invariant from "tiny-invariant";
 
@@ -86,12 +86,17 @@ export class TickArray {
 
   public static getAddressContainingTickIndex(
     tickIndex: number,
-    whirlpoolTickStart: number,
-    whilrpoolAccountAddress: PublicKey,
-    whirlpoolProgramAddress: PublicKey
+    whirlpool: WhirlpoolAccount,
+    programId: PublicKey
   ): PublicKey {
-    const startTick = TickArray.findStartTickWith(tickIndex, whirlpoolTickStart);
-    return TickArray.deriveAddress(whilrpoolAccountAddress, startTick, whirlpoolProgramAddress);
+    const startTick = TickArray.findStartTickWith(tickIndex, whirlpool.tickArrayStart);
+    const whirlpoolAddress = Whirlpool.deriveAddress(
+      whirlpool.whirlpoolsConfig,
+      programId,
+      whirlpool.tokenMintA,
+      whirlpool.tokenMintB
+    );
+    return TickArray.deriveAddress(whirlpoolAddress, startTick, programId);
   }
 
   /**
@@ -113,7 +118,7 @@ export class TickArray {
    * @param baseTickStart - a valid startTick
    * @returns startTick containing tickIndex
    */
-  public static findStartTickWith(tickIndex: number, baseTickStart: number): number {
+  private static findStartTickWith(tickIndex: number, baseTickStart: number): number {
     // delta tells us number of hops we need to make in terms of tick arrays
     const delta = Math.floor(Math.abs(tickIndex - baseTickStart) / TICK_ARRAY_SIZE);
     // direction tells us if we should move left or right
@@ -122,11 +127,11 @@ export class TickArray {
   }
 
   public static deriveAddress(
-    whirlpool: PublicKey,
+    whirlpoolAddress: PublicKey,
     startTick: number,
-    whirlpoolProgram: PublicKey
+    programId: PublicKey
   ): PublicKey {
-    return PDA.derive(whirlpoolProgram, ["tick_array", whirlpool, startTick.toString()]).publicKey;
+    return PDA.derive(programId, ["tick_array", whirlpoolAddress, startTick.toString()]).publicKey;
   }
 
   public static parse(accountData: Buffer | undefined | null): TickArrayAccount | null {

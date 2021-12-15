@@ -158,8 +158,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const feeOwedBDeltaX64 = liquidityX64.mul(feeGrowthInsideBX64.sub(feeGrowthCheckpointBX64));
 
     // TODO should this be floor or ceil?
-    const updatedFeeOwedAU64 = feeOwedAU64.add(BNUtils.ceilX64(feeOwedADeltaX64));
-    const updatedFeeOwedBU64 = feeOwedBU64.add(BNUtils.ceilX64(feeOwedBDeltaX64));
+    const updatedFeeOwedAU64 = feeOwedAU64.add(BNUtils.x64ToU64Floor(feeOwedADeltaX64));
+    const updatedFeeOwedBU64 = feeOwedBU64.add(BNUtils.x64ToU64Floor(feeOwedBDeltaX64));
 
     return {
       feeOwedA: TokenAmount.from(this.tokenA, updatedFeeOwedAU64),
@@ -273,7 +273,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return {
       maxTokenA: tokenAmount,
       maxTokenB: TokenAmount.zero(this.tokenB),
-      liquidity: BNUtils.ceilX64(liquidityX64),
+      liquidity: BNUtils.x64ToU64Floor(liquidityX64),
     };
   }
 
@@ -320,9 +320,9 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     invariant(liquidityX64 !== undefined, "Liquidity is undefined");
 
     return {
-      maxTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
-      maxTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
-      liquidity: BNUtils.ceilX64(liquidityX64),
+      maxTokenA: TokenAmount.from(this.tokenA, BNUtils.x64ToU64Floor(tokenAAmountX64)),
+      maxTokenB: TokenAmount.from(this.tokenB, BNUtils.x64ToU64Floor(tokenBAmountX64)),
+      liquidity: BNUtils.x64ToU64Floor(liquidityX64),
     };
   }
 
@@ -352,7 +352,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return {
       maxTokenA: TokenAmount.zero(this.tokenA),
       maxTokenB: tokenAmount,
-      liquidity: BNUtils.ceilX64(liquidityX64),
+      liquidity: BNUtils.x64ToU64Floor(liquidityX64),
     };
   }
 
@@ -372,7 +372,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       .div(sqrtPriceLowerX64.mul(sqrtPriceUpperX64));
 
     return {
-      minTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
+      minTokenA: TokenAmount.from(this.tokenA, BNUtils.x64ToU64Floor(tokenAAmountX64)),
       minTokenB: TokenAmount.zero(this.tokenB),
       liquidity,
     };
@@ -396,8 +396,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const tokenBAmountX64 = liquidityX64.mul(sqrtPriceX64.sub(sqrtPriceLowerX64));
 
     return {
-      minTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
-      minTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
+      minTokenA: TokenAmount.from(this.tokenA, BNUtils.x64ToU64Floor(tokenAAmountX64)),
+      minTokenB: TokenAmount.from(this.tokenB, BNUtils.x64ToU64Floor(tokenBAmountX64)),
       liquidity,
     };
   }
@@ -417,7 +417,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     return {
       minTokenA: TokenAmount.zero(this.tokenA),
-      minTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
+      minTokenB: TokenAmount.from(this.tokenB, BNUtils.x64ToU64Floor(tokenBAmountX64)),
       liquidity,
     };
   }
@@ -447,8 +447,14 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     tickLower: Tick;
     tickUpper: Tick;
   }> {
+    const { whirlpool } = await this.getWhirlpoolAndPosition();
+
     if (tickLowerIndex === tickUpperIndex) {
-      const tickAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
+      const tickAddress = TickArray.getAddressContainingTickIndex(
+        tickLowerIndex,
+        whirlpool,
+        this.cache.programId
+      );
       const tickArray = await this.cache.getTickArray(tickAddress);
       invariant(!!tickArray, "OrcaPostion - tickArray does not exist");
       return {
@@ -457,8 +463,16 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       };
     }
 
-    const tickLowerAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
-    const tickUpperAddress = TickArray.getAddressContainingTickIndex(tickUpperIndex);
+    const tickLowerAddress = TickArray.getAddressContainingTickIndex(
+      tickLowerIndex,
+      whirlpool,
+      this.cache.programId
+    );
+    const tickUpperAddress = TickArray.getAddressContainingTickIndex(
+      tickUpperIndex,
+      whirlpool,
+      this.cache.programId
+    );
 
     const [tickArrayLower, tickArrayUpper] = await Promise.all([
       await this.cache.getTickArray(tickLowerAddress),
