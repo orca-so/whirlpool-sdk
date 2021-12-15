@@ -1,13 +1,12 @@
-import { OrcaWhirlpool, OrcaWhirlpoolArgs, Percentage, q64 } from "../../public";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs, Percentage } from "../../public";
 import { TickArrayAccount, TickArray, WhirlpoolAccount, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
-import { u64 } from "@solana/spl-token";
-import { Token, TokenPrice } from "../utils";
+import { Token, TokenPrice, TickMath, BNUtils } from "../utils";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
-import { TickMath } from "../utils";
 import { OrcaCache } from "../cache";
 import { PublicKey } from "@solana/web3.js";
 import { defaultSlippagePercentage } from "../../constants";
+import { u64 } from "@solana/spl-token";
 
 /**
  * Random notes: nft represents the authority to a specific position
@@ -63,17 +62,20 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     tickUpperIndex: number,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }> {
-    const { sqrtPrice } = await this.getWhirlpool();
+    const { sqrtPriceX64: sqrtPrice } = await this.getWhirlpool();
 
     const sqrtPriceLower = TickMath.sqrtPriceAtTick(tickLowerIndex);
     const sqrtPriceUpper = TickMath.sqrtPriceAtTick(tickUpperIndex);
 
-    const qTokenAmount = q64.fromU64(tokenAmount);
+    const tokenAmountX64 = BNUtils.u64ToX64(tokenAmount);
 
     // 3.2.1 Example 1: Amount of assets from a range
-    const Lx = qTokenAmount.mul(sqrtPrice).mul(sqrtPriceUpper).div(sqrtPriceUpper.sub(sqrtPrice));
-    const y = Lx.mul(sqrtPrice.sub(sqrtPriceLower));
-    const u64Y = q64.toU64(y as q64); // TODO fix forced type
+    const LxX64 = tokenAmountX64
+      .mul(sqrtPrice)
+      .mul(sqrtPriceUpper)
+      .div(sqrtPriceUpper.sub(sqrtPrice));
+    const yX64 = LxX64.mul(sqrtPrice.sub(sqrtPriceLower));
+    const yU64 = BNUtils.ceilX64(yX64);
 
     throw new Error("TODO - implement");
   }

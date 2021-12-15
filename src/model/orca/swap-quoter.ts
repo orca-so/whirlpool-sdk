@@ -1,10 +1,8 @@
-import { u64 } from "@solana/spl-token";
+import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { Percentage, q64, u128 } from "../..";
+import { Percentage } from "../..";
 import { TickArray, TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
-import { TickMath } from "../utils/math";
-import { Token } from "../utils/token";
-import { TokenAmount } from "../utils/token/amount";
+import { Token, TokenAmount, TickMath } from "../utils";
 
 /**
  * TODO: scuba
@@ -116,11 +114,11 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
-    amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
+    amountCalculated: new BN(0), // u64
+    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidity, // u64
+    currLiquidity: input.whirlpool.liquidityU64, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -131,7 +129,7 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
   // Since A is deposited and B is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) decreases
   const sqrtPriceLimitX64 = state.currSqrtPriceX64.sub(deltaSqrtPriceX64);
 
-  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.gt(sqrtPriceLimitX64)) {
+  while (state.amountRemaining.gt(new BN(0)) && state.currSqrtPriceX64.gt(sqrtPriceLimitX64)) {
     // Find the prev initialized tick since we're gonna be moving the price down when swapping A to B due to price being sqrt(B/A)
     const prevTickIndex = await state.currTickArray.getPrevInitializedTick(state.currTickIndex);
     const prevTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(prevTickIndex);
@@ -255,10 +253,10 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidity, // u64
+    currLiquidity: input.whirlpool.liquidityU64, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -384,10 +382,10 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
   const state = {
     amountRemaining: input.amount.output.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidity, // u64
+    currLiquidity: input.whirlpool.liquidityU64, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -508,10 +506,10 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
   const state = {
     amountRemaining: input.amount.output.toU64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPrice, // q64x64 repr as u128
+    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidity, // u64
+    currLiquidity: input.whirlpool.liquidityU64, // u64
   };
 
   const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
@@ -606,7 +604,7 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
     if (nextSqrtPriceX64.eq(nextTickSqrtPriceX64)) {
       // When moving to the right tick, we increase liquidity by nextTick.liquidityNet
       // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
-      state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNet); // Sample impl for now
+      state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNetI64); // Sample impl for now
       state.currTickIndex = nextTickIndex;
     }
   }

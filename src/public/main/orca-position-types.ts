@@ -28,6 +28,7 @@ export type CollectFeesQuote<A extends Token, B extends Token> = {
   feeOwedB: TokenAmount<B>;
 };
 
+// TODO add third token type
 export type CollectRewardsQuote<A extends Token, B extends Token> = {
   rewardsOwedA: TokenAmount<A>;
   rewardsOwedB: TokenAmount<B>;

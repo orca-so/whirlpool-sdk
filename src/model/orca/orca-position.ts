@@ -8,14 +8,12 @@ import {
   PositionStatus,
   RemoveLiquidityQuote,
   Percentage,
-  q64,
   TransactionPayload,
+  Owner,
 } from "../../public";
-import { Token, TokenAmount } from "../utils";
+import { Token, TokenAmount, TickMath, BNUtils } from "../utils";
 import invariant from "tiny-invariant";
-import { u64 } from "@solana/spl-token";
 import { defaultSlippagePercentage, NUM_REWARDS } from "../../constants";
-import { Owner } from "../../public/utils/web3/key-utils";
 import {
   PositionAccount,
   Position,
@@ -24,8 +22,9 @@ import {
   WhirlpoolAccount,
   Whirlpool,
 } from "../entities";
-import { TickMath } from "../utils";
 import { OrcaCache } from "../cache";
+import { u64 } from "@solana/spl-token";
+import BN from "bn.js";
 
 export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaPosition<A, B> {
   private readonly cache: OrcaCache;
@@ -109,15 +108,15 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
   public async getCollectFeesQuote(): Promise<CollectFeesQuote<A, B>> {
     const { position, whirlpool } = await this.getWhirlpoolAndPosition();
 
-    const { tickCurrentIndex, feeGrowthGlobalA, feeGrowthGlobalB } = whirlpool;
+    const { tickCurrentIndex, feeGrowthGlobalAX64, feeGrowthGlobalBX64 } = whirlpool;
     const {
       tickLower: tickLowerIndex,
       tickUpper: tickUpperIndex,
-      liquidity,
-      feeOwedA,
-      feeOwedB,
-      feeGrowthCheckpointA,
-      feeGrowthCheckpointB,
+      liquidityU64: liquidity,
+      feeOwedAU64,
+      feeOwedBU64,
+      feeGrowthCheckpointAX64,
+      feeGrowthCheckpointBX64,
     } = position;
 
     const { tickLower, tickUpper } = await this.getTicksLowerAndUpper(
@@ -127,43 +126,44 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // Calculate the fee growths inside the position
 
-    let feeGrowthBelowA: q64 | null = null;
-    let feeGrowthBelowB: q64 | null = null;
+    let feeGrowthBelowAX64: BN | null = null;
+    let feeGrowthBelowBX64: BN | null = null;
 
     if (tickCurrentIndex < tickLowerIndex) {
-      feeGrowthBelowA = feeGrowthGlobalA.sub(tickLower.feeGrowthOutsideA);
-      feeGrowthBelowB = feeGrowthGlobalB.sub(tickLower.feeGrowthOutsideB);
+      feeGrowthBelowAX64 = feeGrowthGlobalAX64.sub(tickLower.feeGrowthOutsideAX64);
+      feeGrowthBelowBX64 = feeGrowthGlobalBX64.sub(tickLower.feeGrowthOutsideBX64);
     } else {
-      feeGrowthBelowA = tickLower.feeGrowthOutsideA;
-      feeGrowthBelowB = tickLower.feeGrowthOutsideB;
+      feeGrowthBelowAX64 = tickLower.feeGrowthOutsideAX64;
+      feeGrowthBelowBX64 = tickLower.feeGrowthOutsideBX64;
     }
 
-    let feeGrowthAboveA: q64 | null = null;
-    let feeGrowthAboveB: q64 | null = null;
+    let feeGrowthAboveAX64: BN | null = null;
+    let feeGrowthAboveBX64: BN | null = null;
 
     if (tickCurrentIndex < tickUpperIndex) {
-      feeGrowthAboveA = tickUpper.feeGrowthOutsideA;
-      feeGrowthAboveB = tickUpper.feeGrowthOutsideB;
+      feeGrowthAboveAX64 = tickUpper.feeGrowthOutsideAX64;
+      feeGrowthAboveBX64 = tickUpper.feeGrowthOutsideBX64;
     } else {
-      feeGrowthAboveA = feeGrowthGlobalA.sub(tickUpper.feeGrowthOutsideA);
-      feeGrowthAboveB = feeGrowthGlobalB.sub(tickUpper.feeGrowthOutsideB);
+      feeGrowthAboveAX64 = feeGrowthGlobalAX64.sub(tickUpper.feeGrowthOutsideAX64);
+      feeGrowthAboveBX64 = feeGrowthGlobalBX64.sub(tickUpper.feeGrowthOutsideBX64);
     }
 
-    const feeGrowthInsideA: q64 = feeGrowthGlobalA.sub(feeGrowthBelowA).sub(feeGrowthAboveA);
-    const feeGrowthInsideB: q64 = feeGrowthGlobalB.sub(feeGrowthBelowB).sub(feeGrowthAboveB);
+    const feeGrowthInsideAX64 = feeGrowthGlobalAX64.sub(feeGrowthBelowAX64).sub(feeGrowthAboveAX64);
+    const feeGrowthInsideBX64 = feeGrowthGlobalBX64.sub(feeGrowthBelowBX64).sub(feeGrowthAboveBX64);
 
     // Calculate the updated fees owed
 
-    const liquidityX64: q64 = q64.fromU64(liquidity);
-    const feeOwedADeltaX64: q64 = liquidityX64.mul(feeGrowthInsideA.sub(feeGrowthCheckpointA));
-    const feeOwedBDeltaX64: q64 = liquidityX64.mul(feeGrowthInsideB.sub(feeGrowthCheckpointB));
+    const liquidityX64 = BNUtils.u64ToX64(liquidity);
+    const feeOwedADeltaX64 = liquidityX64.mul(feeGrowthInsideAX64.sub(feeGrowthCheckpointAX64));
+    const feeOwedBDeltaX64 = liquidityX64.mul(feeGrowthInsideBX64.sub(feeGrowthCheckpointBX64));
 
-    const updatedFeeOwedA: u64 = feeOwedA.add(q64.toU64(feeOwedADeltaX64));
-    const updatedFeeOwedB: u64 = feeOwedB.add(q64.toU64(feeOwedBDeltaX64));
+    // TODO should this be floor or ceil?
+    const updatedFeeOwedAU64 = feeOwedAU64.add(BNUtils.ceilX64(feeOwedADeltaX64));
+    const updatedFeeOwedBU64 = feeOwedBU64.add(BNUtils.ceilX64(feeOwedBDeltaX64));
 
     return {
-      feeOwedA: TokenAmount.from(this.tokenA, updatedFeeOwedA),
-      feeOwedB: TokenAmount.from(this.tokenB, updatedFeeOwedB),
+      feeOwedA: TokenAmount.from(this.tokenA, updatedFeeOwedAU64),
+      feeOwedB: TokenAmount.from(this.tokenB, updatedFeeOwedBU64),
     };
   }
 
@@ -174,7 +174,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const {
       tickLower: tickLowerIndex,
       tickUpper: tickUpperIndex,
-      liquidity,
+      liquidityU64,
       rewardInfos,
     } = position;
 
@@ -186,49 +186,54 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     // Calculate the reward growths inside the position
 
     const range = [...Array(NUM_REWARDS).keys()];
-    const rewardGrowthsBelow: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
-    const rewardGrowthsAbove: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+    const rewardGrowthsBelowX64: [BN, BN, BN] = [new BN(0), new BN(0), new BN(0)];
+    const rewardGrowthsAboveX64: [BN, BN, BN] = [new BN(0), new BN(0), new BN(0)];
 
     for (const i of range) {
       if (tickCurrentIndex < tickLowerIndex) {
-        rewardGrowthsBelow[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
-          tickLower.rewardGrowthsOutside[i]
+        rewardGrowthsBelowX64[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
+          tickLower.rewardGrowthsOutsideX64[i]
         );
       } else {
-        rewardGrowthsBelow[i] = tickLower.rewardGrowthsOutside[i];
+        rewardGrowthsBelowX64[i] = tickLower.rewardGrowthsOutsideX64[i];
       }
 
       if (tickCurrentIndex < tickUpperIndex) {
-        rewardGrowthsAbove[i] = tickUpper.rewardGrowthsOutside[i];
+        rewardGrowthsAboveX64[i] = tickUpper.rewardGrowthsOutsideX64[i];
       } else {
-        rewardGrowthsAbove[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
-          tickUpper.rewardGrowthsOutside[i]
+        rewardGrowthsAboveX64[i] = whirlpoolRewardsInfos[i].growthGlobalX64.sub(
+          tickUpper.rewardGrowthsOutsideX64[i]
         );
       }
     }
 
-    const rewardGrowthsInside: [[q64, boolean], [q64, boolean], [q64, boolean]] = [
-      [new q64(0), false],
-      [new q64(0), false],
-      [new q64(0), false],
+    const rewardGrowthsInsideX64: [[BN, boolean], [BN, boolean], [BN, boolean]] = [
+      [new BN(0), false],
+      [new BN(0), false],
+      [new BN(0), false],
     ];
     for (const i of range) {
       if (Whirlpool.isRewardInitialized(whirlpoolRewardsInfos[i])) {
-        rewardGrowthsInside[i] = whirlpoolRewardsInfos[i].growthGlobalX64
-          .sub(rewardGrowthsBelow[i])
-          .sub(rewardGrowthsAbove[i]);
+        rewardGrowthsInsideX64[i] = [
+          whirlpoolRewardsInfos[i].growthGlobalX64
+            .sub(rewardGrowthsBelowX64[i])
+            .sub(rewardGrowthsAboveX64[i]),
+          true,
+        ];
       }
     }
 
     // Calculate the updated rewards owed
 
-    const liquidityX64: q64 = new q64(liquidity);
-    const updatedRewardInfos: [q64, q64, q64] = [new q64(0), new q64(0), new q64(0)];
+    const liquidityX64 = BNUtils.u64ToX64(liquidityU64);
+    const updatedRewardInfosX64: [BN, BN, BN] = [new BN(0), new BN(0), new BN(0)];
 
     for (const i of range) {
-      if (rewardGrowthsInside[i][1]) {
-        updatedRewardInfos[i] = rewardInfos[i].amountOwed.add(
-          liquidityX64.mul(rewardGrowthsInside[i][0].sub(rewardInfos[i].growthInsideCheckpoint))
+      if (rewardGrowthsInsideX64[i][1]) {
+        updatedRewardInfosX64[i] = rewardInfos[i].amountOwedU64.add(
+          liquidityX64.mul(
+            rewardGrowthsInsideX64[i][0].sub(rewardInfos[i].growthInsideCheckpointX64)
+          )
         );
       }
     }
@@ -257,7 +262,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // TODO: Use slippage tolerance here
 
-    const tokenAAmountX64 = q64.fromU64(tokenAmount.toU64());
+    const tokenAAmountX64 = BNUtils.u64ToX64(tokenAmount.toU64());
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
     // Equation (5) from math paper
@@ -268,7 +273,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return {
       maxTokenA: tokenAmount,
       maxTokenB: TokenAmount.zero(this.tokenB),
-      liquidity: q64.toU64(liquidityX64),
+      liquidity: BNUtils.ceilX64(liquidityX64),
     };
   }
 
@@ -280,9 +285,9 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // TODO: Use slippage tolerance here
 
-    const tokenAmountX64 = q64.fromU64(tokenAmount.toU64());
+    const tokenAmountX64 = BNUtils.u64ToX64(tokenAmount.toU64());
 
-    const sqrtPriceX64 = whirlpool.sqrtPrice;
+    const sqrtPriceX64 = whirlpool.sqrtPriceX64;
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
 
@@ -290,7 +295,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       ? [tokenAmountX64, undefined]
       : [undefined, tokenAmountX64];
 
-    let liquidityX64: q64 | undefined = undefined;
+    let liquidityX64: BN | undefined = undefined;
 
     if (tokenAAmountX64) {
       // Derived from equation (11) from math paper
@@ -315,9 +320,9 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     invariant(liquidityX64 !== undefined, "Liquidity is undefined");
 
     return {
-      maxTokenA: TokenAmount.from(this.tokenA, q64.toU64(tokenAAmountX64)),
-      maxTokenB: TokenAmount.from(this.tokenB, q64.toU64(tokenBAmountX64)),
-      liquidity: q64.toU64(liquidityX64),
+      maxTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
+      maxTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
+      liquidity: BNUtils.ceilX64(liquidityX64),
     };
   }
 
@@ -338,7 +343,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     // TODO: Use slippage tolerance here
 
-    const tokenBAmountX64 = q64.fromU64(tokenAmount.toU64());
+    const tokenBAmountX64 = BNUtils.u64ToX64(tokenAmount.toU64());
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
     // Equation (9) from math paper
@@ -347,7 +352,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     return {
       maxTokenA: TokenAmount.zero(this.tokenA),
       maxTokenB: tokenAmount,
-      liquidity: q64.toU64(liquidityX64),
+      liquidity: BNUtils.ceilX64(liquidityX64),
     };
   }
 
@@ -358,7 +363,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     // TODO: Use slippage tolerance here
 
     const { position } = await this.getWhirlpoolAndPosition();
-    const liquidityX64 = q64.fromU64(liquidity);
+    const liquidityX64 = BNUtils.u64ToX64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
 
@@ -367,7 +372,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
       .div(sqrtPriceLowerX64.mul(sqrtPriceUpperX64));
 
     return {
-      minTokenA: TokenAmount.from(this.tokenA, q64.toU64(tokenAAmountX64)),
+      minTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
       minTokenB: TokenAmount.zero(this.tokenB),
       liquidity,
     };
@@ -380,8 +385,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     // TODO: Use slippage tolerance here
 
     const { whirlpool, position } = await this.getWhirlpoolAndPosition();
-    const liquidityX64 = q64.fromU64(liquidity);
-    const sqrtPriceX64 = whirlpool.sqrtPrice;
+    const liquidityX64 = BNUtils.u64ToX64(liquidity);
+    const sqrtPriceX64 = whirlpool.sqrtPriceX64;
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
 
@@ -391,8 +396,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     const tokenBAmountX64 = liquidityX64.mul(sqrtPriceX64.sub(sqrtPriceLowerX64));
 
     return {
-      minTokenA: TokenAmount.from(this.tokenA, q64.toU64(tokenAAmountX64)),
-      minTokenB: TokenAmount.from(this.tokenB, q64.toU64(tokenBAmountX64)),
+      minTokenA: TokenAmount.from(this.tokenA, BNUtils.ceilX64(tokenAAmountX64)),
+      minTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
       liquidity,
     };
   }
@@ -404,7 +409,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     // TODO: Use slippage tolerance here
 
     const { position } = await this.getWhirlpoolAndPosition();
-    const liquidityX64 = q64.fromU64(liquidity);
+    const liquidityX64 = BNUtils.u64ToX64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
 
@@ -412,7 +417,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
 
     return {
       minTokenA: TokenAmount.zero(this.tokenA),
-      minTokenB: TokenAmount.from(this.tokenB, q64.toU64(tokenBAmountX64)),
+      minTokenB: TokenAmount.from(this.tokenB, BNUtils.ceilX64(tokenBAmountX64)),
       liquidity,
     };
   }
@@ -442,6 +447,16 @@ export class OrcaPositionImpl<A extends Token, B extends Token> implements OrcaP
     tickLower: Tick;
     tickUpper: Tick;
   }> {
+    if (tickLowerIndex === tickUpperIndex) {
+      const tickAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
+      const tickArray = await this.cache.getTickArray(tickAddress);
+      invariant(!!tickArray, "OrcaPostion - tickArray does not exist");
+      return {
+        tickLower: TickArray.getTick(tickArray, tickLowerIndex),
+        tickUpper: TickArray.getTick(tickArray, tickUpperIndex),
+      };
+    }
+
     const tickLowerAddress = TickArray.getAddressContainingTickIndex(tickLowerIndex);
     const tickUpperAddress = TickArray.getAddressContainingTickIndex(tickUpperIndex);
 

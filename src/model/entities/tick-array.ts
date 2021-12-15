@@ -1,23 +1,21 @@
-import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import { q64 } from "../../public";
 import { TICK_ARRAY_SIZE } from "../../constants";
 import { PDA } from "../utils/pda";
-import { ParsableEntity, PositionAccount, staticImplements } from ".";
+import { ParsableEntity, staticImplements } from ".";
 
 export const TickMin = 0;
 export const TickMax = TICK_ARRAY_SIZE - 1;
 
 export interface Tick {
   readonly initialized: number;
-  readonly liquidityNet: BN; // i64 TODO
-  readonly liquidityGross: u64;
+  readonly liquidityNetI64: BN;
+  readonly liquidityGrossU64: BN;
 
-  readonly feeGrowthOutsideA: q64;
-  readonly feeGrowthOutsideB: q64;
+  readonly feeGrowthOutsideAX64: BN;
+  readonly feeGrowthOutsideBX64: BN;
 
-  readonly rewardGrowthsOutside: [q64, q64, q64];
+  readonly rewardGrowthsOutsideX64: [BN, BN, BN];
 }
 
 export interface TickArrayAccount {
