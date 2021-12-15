@@ -60,6 +60,6 @@ export class Position {
       return null;
     }
 
-    throw new Error("TODO - implement");
+    throw new Error("TODO - import from contract code");
   }
 }

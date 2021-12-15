@@ -123,11 +123,9 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
     const whirlpool = await this.getWhirlpool();
-    const startTick = TickArray.findStartTick(tickIndex, whirlpool.tickArrayStart);
-    // invariant(!!startTick, "loadTickArray - tick_array does not exist");
+    const startTick = TickArray.findStartTickWith(tickIndex, whirlpool.tickArrayStart);
 
     const tickArrayAddress = TickArray.deriveAddress(this.address, startTick, this.cache.programId);
-
     const tickArray = await this.cache.getTickArray(tickArrayAddress);
     invariant(!!tickArray, "loadTickArray - tick_array does not exist");
 

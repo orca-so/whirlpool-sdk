@@ -7,8 +7,8 @@ import { TickMath } from "../utils";
 import invariant from "tiny-invariant";
 
 enum TickSearchDirection {
-  left,
-  right,
+  Left,
+  Right,
 }
 
 export const TickMin = 0;
@@ -30,7 +30,6 @@ export interface TickArrayAccount {
   readonly whirlpool: PublicKey;
   readonly startTick: number;
   readonly ticks: Tick[];
-  readonly programId: PublicKey; // TODO most likely delete
 }
 
 /**
@@ -55,8 +54,6 @@ export class TickOutOfRangeError extends Error {
   }
 }
 
-// SCUBA-ATAMARI: @scuba How do we account for tick spacing here?
-
 @staticImplements<ParsableEntity<TickArrayAccount>>()
 export class TickArray {
   private constructor() {}
@@ -65,18 +62,18 @@ export class TickArray {
     account: TickArrayAccount,
     currentTickIndex: number
   ): number {
-    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.left);
+    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
   }
 
   public static getNextInitializedTickIndex(
     account: TickArrayAccount,
     currentTickIndex: number
   ): number {
-    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.right);
+    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.Right);
   }
 
   public static getTick(account: TickArrayAccount, tickIndex: number): Tick {
-    invariant(TickArray.isValidTickIndex(tickIndex), "Tick index out of range");
+    invariant(TickArray.isValidTickIndex(tickIndex), "getTick - tick index out of range");
 
     const tickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, tickIndex);
     invariant(
@@ -93,13 +90,33 @@ export class TickArray {
     whilrpoolAccountAddress: PublicKey,
     whirlpoolProgramAddress: PublicKey
   ): PublicKey {
-    const startTick = TickArray.findStartTick(tickIndex, whirlpoolTickStart);
+    const startTick = TickArray.findStartTickWith(tickIndex, whirlpoolTickStart);
     return TickArray.deriveAddress(whilrpoolAccountAddress, startTick, whirlpoolProgramAddress);
   }
 
-  // SCUBA-ATAMARI: @scuba can you add a comment here referring to where you derived this logic from in the whitepaper/smart contracts?
-  public static findStartTick(tickIndex: number, baseTickStart: number): number {
+  /**
+   * Find the startTick of a tick array containing tickIndex.
+   * E.g.:
+   *   Given
+   *     tickIndex = 5042, baseTickStart = 500, TICK_ARRAY_SIZE = 1000
+   *   We calculate
+   *     delta = Math.floor(Math.abs(5042 - 500) / 1000) = 4
+   *     direction = 5042 - 500 > 0 ? 1 : -1 = 1
+   *     result = 500 + 1 * 4 * 1000 = 4500
+   *   We see that
+   *     baseTickStart = 500, and TICK_ARRAY_SIZE = 1000
+   *     which means, we have the following tick arrays
+   *       [500, 1499] [1500, 2499] [2500, 3499] [3500 4499] [4500, 5499] and so on
+   *     tickIndex = 5042 exists in [4500, 5499] and 4500 is the startIndex of this tick array
+   *
+   * @param tickIndex - desired tickIndex
+   * @param baseTickStart - a valid startTick
+   * @returns startTick containing tickIndex
+   */
+  public static findStartTickWith(tickIndex: number, baseTickStart: number): number {
+    // delta tells us number of hops we need to make in terms of tick arrays
     const delta = Math.floor(Math.abs(tickIndex - baseTickStart) / TICK_ARRAY_SIZE);
+    // direction tells us if we should move left or right
     const direction = tickIndex - baseTickStart > 0 ? 1 : -1;
     return baseTickStart + direction * delta * TICK_ARRAY_SIZE;
   }
@@ -112,13 +129,12 @@ export class TickArray {
     return PDA.derive(whirlpoolProgram, ["tick_array", whirlpool, startTick.toString()]).publicKey;
   }
 
-  // SCUBA-ATAMARI: @scuba we probably don't need this since deserialization is taken care of by the low level SDK (should sync on this)
   public static parse(accountData: Buffer | undefined | null): TickArrayAccount | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
-    throw new Error("TODO - implement");
+    throw new Error("TODO - import from contract code");
   }
 
   private static isValidTickIndex(tickIndex: number) {
@@ -137,7 +153,6 @@ export class TickArray {
     return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
   }
 
-  // SCUBA-ATAMARI: @scuba Check this logic
   private static tickIndexToTickArrayIndex(account: TickArrayAccount, tickIndex: number): number {
     invariant(TickArray.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
     const tickArrayIndex = tickIndex - account.startTick;
@@ -146,7 +161,6 @@ export class TickArray {
     return tickArrayIndex;
   }
 
-  // SCUBA-ATAMARI: @scuba Check this logic
   private static tickArrayIndexToTickIndex(
     account: TickArrayAccount,
     tickArrayIndex: number
@@ -165,7 +179,7 @@ export class TickArray {
   ): number {
     const currentTickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, currentTickIndex);
 
-    const increment = searchDirection === TickSearchDirection.right ? 1 : -1;
+    const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
     let nextInitializedTickArrayIndex = currentTickArrayIndex + increment;
     while (
