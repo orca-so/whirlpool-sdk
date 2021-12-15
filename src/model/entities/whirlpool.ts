@@ -1,15 +1,15 @@
 import { PublicKey } from "@solana/web3.js";
-import { u64 } from "@solana/spl-token";
-import { Percentage, q64 } from "../../public";
+import { Percentage } from "../../public";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements } from "./types";
+import BN from "bn.js";
 
 export interface WhirlpoolRewardInfo {
   readonly mint: PublicKey;
   readonly vault: PublicKey;
   readonly authority: PublicKey;
-  readonly emissionsPerSecondX64: q64;
-  readonly growthGlobalX64: q64;
+  readonly emissionsPerSecondX64: BN;
+  readonly growthGlobalX64: BN;
 }
 
 export interface WhirlpoolAccount {
@@ -19,23 +19,23 @@ export interface WhirlpoolAccount {
   readonly feeRate: number;
   readonly protocolFeeRate: number;
 
-  readonly liquidity: u64;
-  readonly sqrtPrice: q64;
+  readonly liquidityU64: BN;
+  readonly sqrtPriceX64: BN;
   readonly tickArrayStart: number;
   readonly tickCurrentIndex: number;
 
-  readonly protocolFeeOwedA: u64;
-  readonly protocolFeeOwedB: u64;
+  readonly protocolFeeOwedAU64: BN;
+  readonly protocolFeeOwedBU64: BN;
 
   readonly tokenMintA: PublicKey;
   readonly tokenVaultA: PublicKey;
-  readonly feeGrowthGlobalA: q64;
+  readonly feeGrowthGlobalAX64: BN;
 
   readonly tokenMintB: PublicKey;
   readonly tokenVaultB: PublicKey;
-  readonly feeGrowthGlobalB: q64;
+  readonly feeGrowthGlobalBX64: BN;
 
-  readonly rewardLastUpdatedTimestamp: u64;
+  readonly rewardLastUpdatedTimestampU64: BN;
 
   readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
 }

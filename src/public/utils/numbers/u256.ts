@@ -2,11 +2,6 @@ import BN from "bn.js";
 import invariant from "tiny-invariant";
 
 export class u256 extends BN {
-  public static readonly MAX: u256 = new u256(
-    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    "hex"
-  );
-
   /**
    * Convert to Buffer representation
    */

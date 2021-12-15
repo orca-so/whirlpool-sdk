@@ -1,27 +1,27 @@
 import { PublicKey } from "@solana/web3.js";
-import { u64 } from "@solana/spl-token";
-import { PositionStatus, q64 } from "../../public";
+import { PositionStatus } from "../../public";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements, WhirlpoolAccount } from ".";
+import BN from "bn.js";
 
 export interface PositionRewardInfo {
-  readonly growthInsideCheckpoint: q64;
-  readonly amountOwed: u64;
+  readonly growthInsideCheckpointX64: BN;
+  readonly amountOwedU64: BN;
 }
 
 export interface PositionAccount {
   readonly whirlpool: PublicKey;
 
   readonly positionMint: PublicKey;
-  readonly liquidity: u64;
+  readonly liquidityU64: BN;
   readonly tickLower: number;
   readonly tickUpper: number;
 
-  readonly feeGrowthCheckpointA: q64;
-  readonly feeOwedA: u64;
+  readonly feeGrowthCheckpointAX64: BN;
+  readonly feeOwedAU64: BN;
 
-  readonly feeGrowthCheckpointB: q64;
-  readonly feeOwedB: u64;
+  readonly feeGrowthCheckpointBX64: BN;
+  readonly feeOwedBU64: BN;
 
   readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
 }
