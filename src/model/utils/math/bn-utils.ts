@@ -12,37 +12,37 @@ export class BNUtils {
   );
 
   /**
-   * Convert u64 value to x64 by shifting left 64 bits.
+   * Convert u64 value to q64.64 by shifting left 64 bits.
    *
-   * @param valueU64 u64 big number
-   * @returns x64 big number
+   * @param value_U64 u64 big number
+   * @returns q64.64 big number
    */
-  public static u64ToX64(valueU64: BN): BN {
-    return valueU64.shln(64);
+  public static u64ToQ64x64(value_U64: BN): BN {
+    return value_U64.shln(64);
   }
 
   /**
-   * Convert x64 value to u64 by shifting right 64 bits.
+   * Convert q64.64 value to u64 by shifting right 64 bits.
    *
-   * @param valueX64 x64 big number
+   * @param value_Q64x64 q64.64 big number
    * @returns u64 big number
    */
-  public static floorX64(valueX64: BN): BN {
-    const intValue = valueX64.shrn(64);
+  public static floorQ64x64(value_Q64x64: BN): BN {
+    const intValue = value_Q64x64.shrn(64);
     invariant(intValue.bitLength() <= 64, "value exeeds u64");
     return intValue;
   }
 
   /**
-   * Convert x64 value to u64 by shifting right 64 bits,
+   * Convert q64.64 value to u64 by shifting right 64 bits,
    * then add 1 if the fractional value is greater than 0.
    *
-   * @param valueX64 x64 big number
+   * @param value_Q64x64 _Q64x64 big number
    * @returns u64 big number
    */
-  public static ceilX64(valueX64: BN): BN {
-    const intValue = valueX64.shrn(64);
-    const fractionValue = valueX64.and(BNUtils.u64MAX); // MASK by u64 max value
+  public static ceilQ64x64(value_Q64x64: BN): BN {
+    const intValue = value_Q64x64.shrn(64);
+    const fractionValue = value_Q64x64.and(BNUtils.u64MAX); // MASK by u64 max value
 
     // add 1 to intValue if fractional bits are greater than 0
     if (fractionValue.gt(new BN(0))) {

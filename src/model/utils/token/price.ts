@@ -30,10 +30,10 @@ export class TokenPrice<Base extends Token, Quote extends Token> {
     base: Base,
     quoteAmount: TokenAmount<Quote>
   ): TokenPrice<Base, Quote> {
-    return new TokenPrice(base, quoteAmount.token, quoteAmount.toU64());
+    return new TokenPrice(base, quoteAmount.token, quoteAmount.to_U64());
   }
 
-  public toU64(): u64 {
+  public to_U64(): u64 {
     return this.price;
   }
 

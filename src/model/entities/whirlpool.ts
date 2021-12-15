@@ -8,8 +8,8 @@ export interface WhirlpoolRewardInfo {
   readonly mint: PublicKey;
   readonly vault: PublicKey;
   readonly authority: PublicKey;
-  readonly emissionsPerSecondX64: BN;
-  readonly growthGlobalX64: BN;
+  readonly emissionsPerSecond_Q64x64: BN;
+  readonly growthGlobal_Q64x64: BN;
 }
 
 export interface WhirlpoolAccount {
@@ -19,23 +19,23 @@ export interface WhirlpoolAccount {
   readonly feeRate: number;
   readonly protocolFeeRate: number;
 
-  readonly liquidityU64: BN;
-  readonly sqrtPriceX64: BN;
+  readonly liquidity_U64: BN;
+  readonly sqrtPrice_Q64x64: BN;
   readonly tickArrayStart: number;
   readonly tickCurrentIndex: number;
 
-  readonly protocolFeeOwedAU64: BN;
-  readonly protocolFeeOwedBU64: BN;
+  readonly protocolFeeOwedA_U64: BN;
+  readonly protocolFeeOwedB_U64: BN;
 
   readonly tokenMintA: PublicKey;
   readonly tokenVaultA: PublicKey;
-  readonly feeGrowthGlobalAX64: BN;
+  readonly feeGrowthGlobalA_Q64x64: BN;
 
   readonly tokenMintB: PublicKey;
   readonly tokenVaultB: PublicKey;
-  readonly feeGrowthGlobalBX64: BN;
+  readonly feeGrowthGlobalB_Q64x64: BN;
 
-  readonly rewardLastUpdatedTimestampU64: BN;
+  readonly rewardLastUpdatedTimestamp_U64: BN;
 
   readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
 }

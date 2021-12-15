@@ -9,13 +9,13 @@ export const TickMax = TICK_ARRAY_SIZE - 1;
 
 export interface Tick {
   readonly initialized: number;
-  readonly liquidityNetI64: BN;
-  readonly liquidityGrossU64: BN;
+  readonly liquidityNet_I64: BN;
+  readonly liquidityGross_U64: BN;
 
-  readonly feeGrowthOutsideAX64: BN;
-  readonly feeGrowthOutsideBX64: BN;
+  readonly feeGrowthOutsideA_Q64x64: BN;
+  readonly feeGrowthOutsideB_Q64x64: BN;
 
-  readonly rewardGrowthsOutsideX64: [BN, BN, BN];
+  readonly rewardGrowthsOutside_Q64x64: [BN, BN, BN];
 }
 
 export interface TickArrayAccount {

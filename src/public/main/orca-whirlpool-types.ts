@@ -22,7 +22,7 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
 
   // getOpenPositionQuoteByPrice: (
   //   tokenMint: PublicKey,
-  //   tokenAmount: OrcaU64,
+  //   tokenAmount: Orca_U64,
   //   priceLower: OrcaU256,
   //   priceUpper: OrcaU256,
   //   slippageTolerence?: Percentage
@@ -34,7 +34,7 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   //   tokenAccountA: AccountInfo,
   //   tokenAccountB: AccountInfo,
   //   token: any,
-  //   tokenAmount: OrcaU64,
+  //   tokenAmount: Orca_U64,
   //   tickLowerIndex: number,
   //   tickUpperIndex: number,
   //   slippageTolerence?: Percentage
@@ -49,7 +49,7 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
   //   owner: Owner,
   //   tokenAccountA: AccountInfo,
   //   tokenAccountB: AccountInfo,
-  //   amount: OrcaU64,
+  //   amount: Orca_U64,
   //   slippageTolerence?: Percentage
   // ) => Promise<any>;
 

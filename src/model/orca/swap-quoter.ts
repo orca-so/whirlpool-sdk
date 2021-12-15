@@ -113,44 +113,49 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
   const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
-    amountRemaining: input.amount.input.toU64(), // u64
+    amountRemaining: input.amount.input.to_U64(), // u64
     amountCalculated: new BN(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
+    currSqrtPrice_Q64x64: input.whirlpool.sqrtPrice_Q64x64, // q64_Q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidityU64, // u64
+    currLiquidity: input.whirlpool.liquidity_U64, // u64
   };
 
-  const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
-  const slippageToleranceDenominatorX64 = q64.fromU64(input.slippageTolerance.denominator);
-  const deltaSqrtPriceX64 = state.currSqrtPriceX64
-    .mul(slippageToleranceNumeratorX64)
-    .div(slippageToleranceDenominatorX64);
+  const slippageToleranceNumerator_Q64x64 = q64.from_U64(input.slippageTolerance.numerator);
+  const slippageToleranceDenominator_Q64x64 = q64.from_U64(input.slippageTolerance.denominator);
+  const deltaSqrtPrice_Q64x64 = state.currSqrtPrice_Q64x64
+    .mul(slippageToleranceNumerator_Q64x64)
+    .div(slippageToleranceDenominator_Q64x64);
   // Since A is deposited and B is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) decreases
-  const sqrtPriceLimitX64 = state.currSqrtPriceX64.sub(deltaSqrtPriceX64);
+  const sqrtPriceLimit_Q64x64 = state.currSqrtPrice_Q64x64.sub(deltaSqrtPrice_Q64x64);
 
-  while (state.amountRemaining.gt(new BN(0)) && state.currSqrtPriceX64.gt(sqrtPriceLimitX64)) {
+  while (
+    state.amountRemaining.gt(new BN(0)) &&
+    state.currSqrtPrice_Q64x64.gt(sqrtPriceLimit_Q64x64)
+  ) {
     // Find the prev initialized tick since we're gonna be moving the price down when swapping A to B due to price being sqrt(B/A)
     const prevTickIndex = await state.currTickArray.getPrevInitializedTick(state.currTickIndex);
-    const prevTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(prevTickIndex);
+    const prevTickSqrtPrice_Q64x64 = TickMath.sqrtPriceAtTick(prevTickIndex);
     const prevTick = state.currTickArray.getTick(prevTickIndex);
 
     // Clamp the target price to max(price limit, prev tick's price)
-    const targetSqrtPriceX64 = new q64(q64.max(prevTickSqrtPriceX64, sqrtPriceLimitX64));
+    const targetSqrtPrice_Q64x64 = new q64(
+      q64.max(prevTickSqrtPrice_Q64x64, sqrtPriceLimit_Q64x64)
+    );
 
     // Find how much of token A we can deposit such that the sqrtPrice of the whirlpool moves down to targetSqrtPrice
     // Use eq 6.16 from univ3 whitepaper: ΔX = Δ(1/√P)·L => deltaA = liquidity / sqrt(lower) - liquidity / sqrt(upper)
     // Simplified equation: deltaA = liquidity * (sqrt(upper) - sqrt(lower)) / sqrt(upper) / sqrt(lower)
     // Analyzing the precisions here: (u64 * q64.64) / (q64.64 * q64.64)
     // => we need to bump up the u64 to q64.64 or u128 , i.e. state.currLiquidity
-    const currLiquidityX64 = q64.fromU64(state.currLiquidity);
+    const currLiquidity_Q64x64 = q64.from_U64(state.currLiquidity);
     const tokenARoomAvailable = new u64(
-      currLiquidityX64
+      currLiquidity_Q64x64
         .mulDivRoundingUp(
-          state.currSqrtPriceX64.subU128(targetSqrtPriceX64),
-          state.currSqrtPriceX64
+          state.currSqrtPrice_Q64x64.subU128(targetSqrtPrice_Q64x64),
+          state.currSqrtPrice_Q64x64
         )
-        .divRoundingUp(targetSqrtPriceX64)
+        .divRoundingUp(targetSqrtPrice_Q64x64)
     );
 
     // Since we're swapping A to B and the user specified input (i.e. A), we subtract the base fees from the remaining amount
@@ -160,10 +165,10 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     // This^ is the actual token A we're gonna deposit into the pool
 
     // Now we calculate the next sqrt price after fully or partially swapping tokenAToSwap to B within the tick we're in rn
-    let nextSqrtPriceX64: q64;
+    let nextSqrtPrice_Q64x64: q64;
     if (remainingAToSwap.gte(tokenARoomAvailable)) {
       // We're gonna need to use all the room available here, so next sqrt price is the target we used to compute the room in the first place
-      nextSqrtPriceX64 = targetSqrtPriceX64;
+      nextSqrtPrice_Q64x64 = targetSqrtPrice_Q64x64;
     } else {
       // We can swap the entire remaining token A amount to B within state.currentTick without moving to the previous tick
       // To compute this, we use eq 6.15 from univ3 whitepaper:
@@ -174,34 +179,37 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
       //  => sqrt(lower) = (state.currLiquidity * sqrt(upper)) / (tokenAToSwap*sqrt(upper) + state.currLiquidity)
       // Precision analysis raw: (u64 * q64.64) / (u64 * q64.64 + u64)
       // Precision analysis modified: (q64.64 * q64.64) / (u64 * q64.64 + q64.64)
-      nextSqrtPriceX64 = new q64(
-        currLiquidityX64
-          .mul(state.currSqrtPriceX64)
-          .div(remainingAToSwap.mul(state.currSqrtPriceX64).add(currLiquidityX64))
+      nextSqrtPrice_Q64x64 = new q64(
+        currLiquidity_Q64x64
+          .mul(state.currSqrtPrice_Q64x64)
+          .div(remainingAToSwap.mul(state.currSqrtPrice_Q64x64).add(currLiquidity_Q64x64))
       );
     }
 
-    const currentTickFullyUsed = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+    const currentTickFullyUsed = nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64);
 
     // Use eq 6.14 from univ3 whitepaper
     // ΔY = Δ√P·L
     // Shave off decimals after math, hence the right shift
-    const deltaB = state.currSqrtPriceX64.sub(nextSqrtPriceX64).mul(state.currLiquidity).shrn(64);
+    const deltaB = state.currSqrtPrice_Q64x64
+      .sub(nextSqrtPrice_Q64x64)
+      .mul(state.currLiquidity)
+      .shrn(64);
 
     const deltaA = currentTickFullyUsed
       ? tokenARoomAvailable
-      : // Same math used to find tokenARoomAvailable, just uses nextSqrtPriceX64 instead
+      : // Same math used to find tokenARoomAvailable, just uses nextSqrtPrice_Q64x64 instead
         new u64(
-          currLiquidityX64
+          currLiquidity_Q64x64
             .mulDivRoundingUp(
-              state.currSqrtPriceX64.subU128(nextSqrtPriceX64),
-              state.currSqrtPriceX64
+              state.currSqrtPrice_Q64x64.subU128(nextSqrtPrice_Q64x64),
+              state.currSqrtPrice_Q64x64
             )
-            .divRoundingUp(targetSqrtPriceX64)
+            .divRoundingUp(targetSqrtPrice_Q64x64)
         );
 
     let feeAmount: u64;
-    if (!nextSqrtPriceX64.eq(targetSqrtPriceX64)) {
+    if (!nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64)) {
       // Revisit this once smart contract logic is final
       feeAmount = state.amountRemaining.sub(deltaA);
     } else {
@@ -213,12 +221,12 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
 
     // State updates
 
-    state.currSqrtPriceX64 = nextSqrtPriceX64;
+    state.currSqrtPrice_Q64x64 = nextSqrtPrice_Q64x64;
     state.amountRemaining = state.amountRemaining.sub(deltaA.add(feeAmount));
     state.amountCalculated = state.amountCalculated.add(deltaB);
 
     // Cross ticks to the previous (i.e. to the left) initialized one
-    if (nextSqrtPriceX64.eq(prevTickSqrtPriceX64)) {
+    if (nextSqrtPrice_Q64x64.eq(prevTickSqrtPrice_Q64x64)) {
       // When moving to the left tick, we subtract liquidity by prevTick.liquidityNet
       // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
       state.currLiquidity = state.currLiquidity.sub(prevTick.liquidityNet); // Sample impl for now
@@ -226,10 +234,10 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     }
   }
 
-  const inputAmountSwapped = input.amount.input.toU64().sub(state.amountRemaining);
+  const inputAmountSwapped = input.amount.input.to_U64().sub(state.amountRemaining);
 
   return {
-    sqrtPriceLimitX64: new q64(sqrtPriceLimitX64),
+    sqrtPriceLimit_Q64x64: new q64(sqrtPriceLimit_Q64x64),
     minAmountOut: TokenAmount.from(input.tokenB, state.amountCalculated),
     amountIn: TokenAmount.from(input.tokenA, inputAmountSwapped),
   };
@@ -251,37 +259,42 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
   const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
-    amountRemaining: input.amount.input.toU64(), // u64
+    amountRemaining: input.amount.input.to_U64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
+    currSqrtPrice_Q64x64: input.whirlpool.sqrtPrice_Q64x64, // q64_Q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidityU64, // u64
+    currLiquidity: input.whirlpool.liquidity_U64, // u64
   };
 
-  const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
-  const slippageToleranceDenominatorX64 = q64.fromU64(input.slippageTolerance.denominator);
-  const deltaSqrtPriceX64 = state.currSqrtPriceX64
-    .mul(slippageToleranceNumeratorX64)
-    .div(slippageToleranceDenominatorX64);
+  const slippageToleranceNumerator_Q64x64 = q64.from_U64(input.slippageTolerance.numerator);
+  const slippageToleranceDenominator_Q64x64 = q64.from_U64(input.slippageTolerance.denominator);
+  const deltaSqrtPrice_Q64x64 = state.currSqrtPrice_Q64x64
+    .mul(slippageToleranceNumerator_Q64x64)
+    .div(slippageToleranceDenominator_Q64x64);
   // Since B is deposited and A is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) increases
-  const sqrtPriceLimitX64 = state.currSqrtPriceX64.add(deltaSqrtPriceX64);
+  const sqrtPriceLimit_Q64x64 = state.currSqrtPrice_Q64x64.add(deltaSqrtPrice_Q64x64);
 
-  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.lt(sqrtPriceLimitX64)) {
+  while (
+    state.amountRemaining.gt(new u64(0)) &&
+    state.currSqrtPrice_Q64x64.lt(sqrtPriceLimit_Q64x64)
+  ) {
     // Find the next initialized tick since we're gonna be moving the price up when swapping B to A due to price being sqrt(B/A)
     const nextTickIndex = await state.currTickArray.getNextInitializedTick(state.currTickIndex);
-    const nextTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
+    const nextTickSqrtPrice_Q64x64 = TickMath.sqrtPriceAtTick(nextTickIndex);
     const nextTick = state.currTickArray.getTick(nextTickIndex);
 
     // Clamp the target price to min(price limit, next tick's price)
-    const targetSqrtPriceX64 = new q64(q64.min(nextTickSqrtPriceX64, sqrtPriceLimitX64));
+    const targetSqrtPrice_Q64x64 = new q64(
+      q64.min(nextTickSqrtPrice_Q64x64, sqrtPriceLimit_Q64x64)
+    );
 
     // Find how much of token B we can deposit such that the sqrtPrice of the whirlpool moves up to targetSqrtPrice
     // Use eq 6.14 from univ3 whitepaper: ΔY = ΔP·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
     // Analyzing the precisions here: (q64.64 - q64.64) * q64.0 => q128.64
     // We need to shave off decimal part, hence q128.64 >> 64 => q128.0
-    const tokenBRoomAvailable = targetSqrtPriceX64
-      .sub(state.currSqrtPriceX64)
+    const tokenBRoomAvailable = targetSqrtPrice_Q64x64
+      .sub(state.currSqrtPrice_Q64x64)
       .mul(state.currLiquidity)
       .shrn(64);
 
@@ -292,10 +305,10 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
     // This^ is the actual token B we're gonna deposit into the pool
 
     // Now we calculate the next sqrt price after fully or partially swapping remainingBToSwap to A within the tick we're in rn
-    let nextSqrtPriceX64: q64;
+    let nextSqrtPrice_Q64x64: q64;
     if (remainingBToSwap.gte(tokenBRoomAvailable)) {
       // We're gonna need to use all the room available here, so next sqrt price is the target we used to compute the room in the first place
-      nextSqrtPriceX64 = targetSqrtPriceX64;
+      nextSqrtPrice_Q64x64 = targetSqrtPrice_Q64x64;
     } else {
       // We can swap the entire remaining token B amount to A within state.currentTick without moving to the next tick
       // To compute this, we use eq 6.13 from univ3 whitepaper:
@@ -304,13 +317,13 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
       //  => sqrt(upper) = (remainingBToSwap / state.currLiquidity) + sqrt(lower)
       // Precision analysis raw: (q64.0 / q64.0) + q64.64
       // Precision analysis modified: (q64.64 / q64.0) + q64.64
-      const remainingBToSwapX64 = remainingBToSwap.shln(64);
-      nextSqrtPriceX64 = new q64(
-        remainingBToSwapX64.div(state.currLiquidity).add(state.currSqrtPriceX64)
+      const remainingBToSwap_Q64x64 = remainingBToSwap.shln(64);
+      nextSqrtPrice_Q64x64 = new q64(
+        remainingBToSwap_Q64x64.div(state.currLiquidity).add(state.currSqrtPrice_Q64x64)
       );
     }
 
-    const currentTickFullyUsed = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+    const currentTickFullyUsed = nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64);
 
     // Use eq 6.16 from univ3 whitepaper to find deltaA for given remainingBToSwap
     // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
@@ -318,19 +331,19 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
     // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / sqrt(upper) / sqrt(lower)
     // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
     // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
-    const currLiquidityX64 = state.currLiquidity.shln(64);
-    const deltaA = currLiquidityX64
-      .mul(nextSqrtPriceX64.sub(state.currSqrtPriceX64))
-      .div(nextSqrtPriceX64)
-      .div(state.currSqrtPriceX64);
+    const currLiquidity_Q64x64 = state.currLiquidity.shln(64);
+    const deltaA = currLiquidity_Q64x64
+      .mul(nextSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64))
+      .div(nextSqrtPrice_Q64x64)
+      .div(state.currSqrtPrice_Q64x64);
 
     const deltaB = currentTickFullyUsed
       ? tokenBRoomAvailable
-      : // Same math used to find tokenBRoomAvailable, just uses nextSqrtPriceX64 instead
-        nextSqrtPriceX64.sub(state.currSqrtPriceX64).mul(state.currLiquidity).shrn(64);
+      : // Same math used to find tokenBRoomAvailable, just uses nextSqrtPrice_Q64x64 instead
+        nextSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64).mul(state.currLiquidity).shrn(64);
 
     let feeAmount: u64;
-    if (!nextSqrtPriceX64.eq(targetSqrtPriceX64)) {
+    if (!nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64)) {
       // Revisit this once smart contract logic is final
       feeAmount = state.amountRemaining.sub(deltaB);
     } else {
@@ -342,12 +355,12 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
 
     // State updates
 
-    state.currSqrtPriceX64 = nextSqrtPriceX64;
+    state.currSqrtPrice_Q64x64 = nextSqrtPrice_Q64x64;
     state.amountRemaining = state.amountRemaining.sub(deltaB.add(feeAmount));
     state.amountCalculated = state.amountCalculated.add(deltaA);
 
     // Cross ticks to the next (i.e. to the right) initialized one
-    if (nextSqrtPriceX64.eq(nextTickSqrtPriceX64)) {
+    if (nextSqrtPrice_Q64x64.eq(nextTickSqrtPrice_Q64x64)) {
       // When moving to the right tick, we increase liquidity by nextTick.liquidityNet
       // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
       state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNet); // Sample impl for now
@@ -355,10 +368,10 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
     }
   }
 
-  const inputAmountSwapped = input.amount.input.toU64().sub(state.amountRemaining);
+  const inputAmountSwapped = input.amount.input.to_U64().sub(state.amountRemaining);
 
   return {
-    sqrtPriceLimitX64: new q64(sqrtPriceLimitX64),
+    sqrtPriceLimit_Q64x64: new q64(sqrtPriceLimit_Q64x64),
     minAmountOut: TokenAmount.from(input.tokenA, state.amountCalculated),
     amountIn: TokenAmount.from(input.tokenB, inputAmountSwapped),
   };
@@ -380,37 +393,42 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
   const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
-    amountRemaining: input.amount.output.toU64(), // u64
+    amountRemaining: input.amount.output.to_U64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
+    currSqrtPrice_Q64x64: input.whirlpool.sqrtPrice_Q64x64, // q64_Q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidityU64, // u64
+    currLiquidity: input.whirlpool.liquidity_U64, // u64
   };
 
-  const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
-  const slippageToleranceDenominatorX64 = q64.fromU64(input.slippageTolerance.denominator);
-  const deltaSqrtPriceX64 = state.currSqrtPriceX64
-    .mul(slippageToleranceNumeratorX64)
-    .div(slippageToleranceDenominatorX64);
+  const slippageToleranceNumerator_Q64x64 = q64.from_U64(input.slippageTolerance.numerator);
+  const slippageToleranceDenominator_Q64x64 = q64.from_U64(input.slippageTolerance.denominator);
+  const deltaSqrtPrice_Q64x64 = state.currSqrtPrice_Q64x64
+    .mul(slippageToleranceNumerator_Q64x64)
+    .div(slippageToleranceDenominator_Q64x64);
   // Since A is deposited and B is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) decreases
-  const sqrtPriceLimitX64 = state.currSqrtPriceX64.sub(deltaSqrtPriceX64);
+  const sqrtPriceLimit_Q64x64 = state.currSqrtPrice_Q64x64.sub(deltaSqrtPrice_Q64x64);
 
-  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.gt(sqrtPriceLimitX64)) {
+  while (
+    state.amountRemaining.gt(new u64(0)) &&
+    state.currSqrtPrice_Q64x64.gt(sqrtPriceLimit_Q64x64)
+  ) {
     // Find the prev initialized tick since we're gonna be moving the price down when swapping A to B due to price being sqrt(B/A)
     const prevTickIndex = await state.currTickArray.getPrevInitializedTick(state.currTickIndex);
-    const prevTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(prevTickIndex);
+    const prevTickSqrtPrice_Q64x64 = TickMath.sqrtPriceAtTick(prevTickIndex);
     const prevTick = state.currTickArray.getTick(prevTickIndex);
 
     // Clamp the target price to max(price limit, prev tick's price)
-    const targetSqrtPriceX64 = new q64(q64.max(prevTickSqrtPriceX64, sqrtPriceLimitX64));
+    const targetSqrtPrice_Q64x64 = new q64(
+      q64.max(prevTickSqrtPrice_Q64x64, sqrtPriceLimit_Q64x64)
+    );
 
     // Find how much of token B we can withdraw such that the sqrtPrice of the whirlpool moves down to targetSqrtPrice
     // Use eq 6.14 from univ3 whitepaper: ΔY = ΔP·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
     // Analyzing the precisions here: (q64.64 - q64.64) * q64.0 => q128.64
     // We need to shave off decimal part, hence q128.64 >> 64 => q128.0
-    const tokenBRoomAvailable = targetSqrtPriceX64
-      .sub(state.currSqrtPriceX64)
+    const tokenBRoomAvailable = targetSqrtPrice_Q64x64
+      .sub(state.currSqrtPrice_Q64x64)
       .mul(state.currLiquidity)
       .shrn(64);
 
@@ -418,10 +436,10 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
     const remainingBToWithdraw = state.amountRemaining;
 
     // Now we calculate the next sqrt price after fully or partially swapping A to remainingBToWithdraw within the tick we're in rn
-    let nextSqrtPriceX64: q64;
+    let nextSqrtPrice_Q64x64: q64;
     if (remainingBToWithdraw.gte(tokenBRoomAvailable)) {
       // We're gonna need to use all the room available here, so next sqrt price is the target we used to compute the room in the first place
-      nextSqrtPriceX64 = targetSqrtPriceX64;
+      nextSqrtPrice_Q64x64 = targetSqrtPrice_Q64x64;
     } else {
       // We can get entire remaining B by swapping just within this tick
       // To compute this, we use eq 6.13 from univ3 whitepaper:
@@ -430,13 +448,13 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
       //  => sqrt(lower) = sqrt(upper) - (remainingBToWitdhraw / state.currLiquidity)
       // Precision analysis raw: q64.64 - (q64.0 / q64.0)
       // Precision analysis modified: q64.64 - (q64.64 / q64.0)
-      const remainingBToWithdrawX64 = remainingBToWithdraw.shln(64);
-      nextSqrtPriceX64 = new q64(
-        state.currSqrtPriceX64.sub(remainingBToWithdrawX64.div(state.currLiquidity))
+      const remainingBToWithdraw_Q64x64 = remainingBToWithdraw.shln(64);
+      nextSqrtPrice_Q64x64 = new q64(
+        state.currSqrtPrice_Q64x64.sub(remainingBToWithdraw_Q64x64.div(state.currLiquidity))
       );
     }
 
-    const currentTickFullyUsed = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+    const currentTickFullyUsed = nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64);
 
     // Use eq 6.16 from univ3 whitepaper to find deltaA for given remainingBToWithdraw
     // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
@@ -444,16 +462,16 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
     // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / sqrt(upper) / sqrt(lower)
     // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
     // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
-    const currLiquidityX64 = state.currLiquidity.shln(64);
-    const deltaA = currLiquidityX64
-      .mul(nextSqrtPriceX64.sub(state.currSqrtPriceX64))
-      .div(nextSqrtPriceX64)
-      .div(state.currSqrtPriceX64);
+    const currLiquidity_Q64x64 = state.currLiquidity.shln(64);
+    const deltaA = currLiquidity_Q64x64
+      .mul(nextSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64))
+      .div(nextSqrtPrice_Q64x64)
+      .div(state.currSqrtPrice_Q64x64);
 
     const deltaB = currentTickFullyUsed
       ? tokenBRoomAvailable
-      : // Same math used to find tokenBRoomAvailable, just uses nextSqrtPriceX64 instead
-        nextSqrtPriceX64.sub(state.currSqrtPriceX64).mul(state.currLiquidity).shrn(64);
+      : // Same math used to find tokenBRoomAvailable, just uses nextSqrtPrice_Q64x64 instead
+        nextSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64).mul(state.currLiquidity).shrn(64);
 
     const amountIn = deltaA;
     const amountOut = u64.min(deltaB, state.amountRemaining);
@@ -465,12 +483,12 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
 
     // State updates
 
-    state.currSqrtPriceX64 = nextSqrtPriceX64;
+    state.currSqrtPrice_Q64x64 = nextSqrtPrice_Q64x64;
     state.amountRemaining = state.amountRemaining.sub(amountOut);
     state.amountCalculated = state.amountCalculated.add(amountIn.add(feeAmount));
 
     // Cross ticks to the prev (i.e. to the left) initialized one
-    if (nextSqrtPriceX64.eq(prevTickSqrtPriceX64)) {
+    if (nextSqrtPrice_Q64x64.eq(prevTickSqrtPrice_Q64x64)) {
       // When moving to the left tick, we decrease liquidity by nextTick.liquidityNet
       // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
       state.currLiquidity = state.currLiquidity.sub(prevTick.liquidityNet); // Sample impl for now
@@ -479,10 +497,10 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
   }
 
   const inputAmount = state.amountCalculated;
-  const outputAmount = input.amount.output.toU64().sub(state.amountRemaining);
+  const outputAmount = input.amount.output.to_U64().sub(state.amountRemaining);
 
   return {
-    sqrtPriceLimitX64: new q64(sqrtPriceLimitX64),
+    sqrtPriceLimit_Q64x64: new q64(sqrtPriceLimit_Q64x64),
     minAmountOut: TokenAmount.from(input.tokenB, outputAmount),
     amountIn: TokenAmount.from(input.tokenA, inputAmount),
   };
@@ -504,33 +522,38 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
   const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
 
   const state = {
-    amountRemaining: input.amount.output.toU64(), // u64
+    amountRemaining: input.amount.output.to_U64(), // u64
     amountCalculated: new u64(0), // u64
-    currSqrtPriceX64: input.whirlpool.sqrtPriceX64, // q64x64 repr as u128
+    currSqrtPrice_Q64x64: input.whirlpool.sqrtPrice_Q64x64, // q64_Q64x64 repr as u128
     currTickArray: input.currentTickArray,
     currTickIndex: input.whirlpool.tickCurrentIndex, // i32 repr as number
-    currLiquidity: input.whirlpool.liquidityU64, // u64
+    currLiquidity: input.whirlpool.liquidity_U64, // u64
   };
 
-  const slippageToleranceNumeratorX64 = q64.fromU64(input.slippageTolerance.numerator);
-  const slippageToleranceDenominatorX64 = q64.fromU64(input.slippageTolerance.denominator);
-  const deltaSqrtPriceX64 = state.currSqrtPriceX64
-    .mul(slippageToleranceNumeratorX64)
-    .div(slippageToleranceDenominatorX64);
+  const slippageToleranceNumerator_Q64x64 = q64.from_U64(input.slippageTolerance.numerator);
+  const slippageToleranceDenominator_Q64x64 = q64.from_U64(input.slippageTolerance.denominator);
+  const deltaSqrtPrice_Q64x64 = state.currSqrtPrice_Q64x64
+    .mul(slippageToleranceNumerator_Q64x64)
+    .div(slippageToleranceDenominator_Q64x64);
   // Since B is deposited and A is withdrawn in this swap type, sqrt(B/A) (sqrtPrice) increases
-  const sqrtPriceLimitX64 = state.currSqrtPriceX64.add(deltaSqrtPriceX64);
+  const sqrtPriceLimit_Q64x64 = state.currSqrtPrice_Q64x64.add(deltaSqrtPrice_Q64x64);
 
-  while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.lt(sqrtPriceLimitX64)) {
+  while (
+    state.amountRemaining.gt(new u64(0)) &&
+    state.currSqrtPrice_Q64x64.lt(sqrtPriceLimit_Q64x64)
+  ) {
     // Find the next initialized tick since we're gonna be moving the price up when swapping B to A due to price being sqrt(B/A)
     const nextTickIndex = await TickArray.getNextInitializedTick(
       state.currTickArray,
       state.currTickIndex
     );
-    const nextTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
+    const nextTickSqrtPrice_Q64x64 = TickMath.sqrtPriceAtTick(nextTickIndex);
     const nextTick = TickArray.getTick(state.currTickArray, nextTickIndex);
 
     // Clamp the target price to min(price limit, next tick's price)
-    const targetSqrtPriceX64 = new q64(q64.min(nextTickSqrtPriceX64, sqrtPriceLimitX64));
+    const targetSqrtPrice_Q64x64 = new q64(
+      q64.min(nextTickSqrtPrice_Q64x64, sqrtPriceLimit_Q64x64)
+    );
 
     // Find how much of token A we can withdraw such that the sqrtPrice of the whirlpool moves up to targetSqrtPrice
     // Use eq 6.16 from univ3 whitepaper to find deltaA
@@ -540,18 +563,18 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
     // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
     // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
     const tokenARoomAvailable = state.currLiquidity
-      .mul(targetSqrtPriceX64.sub(state.currSqrtPriceX64))
-      .div(targetSqrtPriceX64)
-      .div(state.currSqrtPriceX64);
+      .mul(targetSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64))
+      .div(targetSqrtPrice_Q64x64)
+      .div(state.currSqrtPrice_Q64x64);
 
     // Since we're swapping B to A and the user specified output (i.e. A), we DON'T subtract the base fees from the remaining amount
     const remainingAToWithdraw = state.amountRemaining;
 
     // Now we calculate the next sqrt price after fully or partially swapping B to A within the tick we're in rn
-    let nextSqrtPriceX64: q64;
+    let nextSqrtPrice_Q64x64: q64;
     if (remainingAToWithdraw.gte(tokenARoomAvailable)) {
       // We're gonna need to use all the room available here, so next sqrt price is the target we used to compute the room in the first place
-      nextSqrtPriceX64 = targetSqrtPriceX64;
+      nextSqrtPrice_Q64x64 = targetSqrtPrice_Q64x64;
     } else {
       // We can get the entire remaining A we need from B by swapping just within this tick
       // To compute this, we use eq 6.15 from univ3 whitepaper:
@@ -561,19 +584,22 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
       //  => sqrt(upper) =  (state.currLiquidity * sqrt(lower)) / (state.currLiquidity - sqrt(lower)*remainingAToWithdraw)
       // Precision analysis raw: (u64 * q64.64) / (u64 - q64.64 * u64)
       // Precision analysis modified: (q64.64 * q64.64) / (q64.64 - q64.64 * u64)
-      const currLiquidityX64 = state.currLiquidity.shln(64);
-      nextSqrtPriceX64 = currLiquidityX64
-        .mul(state.currSqrtPriceX64)
-        .div(currLiquidityX64.sub(sqrtPriceLimitX64.mul(remainingAToWithdraw)));
+      const currLiquidity_Q64x64 = state.currLiquidity.shln(64);
+      nextSqrtPrice_Q64x64 = currLiquidity_Q64x64
+        .mul(state.currSqrtPrice_Q64x64)
+        .div(currLiquidity_Q64x64.sub(sqrtPriceLimit_Q64x64.mul(remainingAToWithdraw)));
     }
 
-    const currentTickFullyUsed = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+    const currentTickFullyUsed = nextSqrtPrice_Q64x64.eq(targetSqrtPrice_Q64x64);
 
     // Use eq 6.14 from univ3 whitepaper to find deltaB for transition from sqrt(lower) to sqrt(upper)
     // ΔY = Δ√P·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
     // Analyzing the precisions here: (q64.64 - q64.64) * q64.0 => q128.64
     // We need to shave off decimal part, hence q128.64 >> 64 => q128.0
-    const deltaB = nextSqrtPriceX64.sub(state.currSqrtPriceX64).mul(state.currLiquidity).shrn(64);
+    const deltaB = nextSqrtPrice_Q64x64
+      .sub(state.currSqrtPrice_Q64x64)
+      .mul(state.currLiquidity)
+      .shrn(64);
 
     // Use eq 6.16 from univ3 whitepaper to find deltaA for given remainingBToWithdraw
     // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
@@ -581,13 +607,13 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
     // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / sqrt(upper) / sqrt(lower)
     // Precision analysis raw: (q64.0 * (q64.64 - q64.64)) / q64.64 / q64.64
     // Precision analysis modified: (q64.64 * (q64.64 - q64.64)) / q64.64 / q64.64
-    const currLiquidityX64 = state.currLiquidity.shln(64);
+    const currLiquidity_Q64x64 = state.currLiquidity.shln(64);
     const deltaA = currentTickFullyUsed
       ? tokenARoomAvailable
-      : currLiquidityX64
-          .mul(nextSqrtPriceX64.sub(state.currSqrtPriceX64))
-          .div(nextSqrtPriceX64)
-          .div(state.currSqrtPriceX64);
+      : currLiquidity_Q64x64
+          .mul(nextSqrtPrice_Q64x64.sub(state.currSqrtPrice_Q64x64))
+          .div(nextSqrtPrice_Q64x64)
+          .div(state.currSqrtPrice_Q64x64);
 
     const amountIn = deltaB;
     const amountOut = u64.min(deltaA, state.amountRemaining);
@@ -596,24 +622,24 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
 
     // State updates
 
-    state.currSqrtPriceX64 = nextSqrtPriceX64;
+    state.currSqrtPrice_Q64x64 = nextSqrtPrice_Q64x64;
     state.amountRemaining = state.amountRemaining.sub(amountOut);
     state.amountCalculated = state.amountCalculated.add(amountIn.add(feeAmount));
 
     // Cross ticks to the next (i.e. to the right) initialized one
-    if (nextSqrtPriceX64.eq(nextTickSqrtPriceX64)) {
+    if (nextSqrtPrice_Q64x64.eq(nextTickSqrtPrice_Q64x64)) {
       // When moving to the right tick, we increase liquidity by nextTick.liquidityNet
       // TODO(scuba): Make sure implementation matches final logic^ since prevTick.liquidityNet isn't an i64 yet
-      state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNetI64); // Sample impl for now
+      state.currLiquidity = state.currLiquidity.add(nextTick.liquidityNet_I64); // Sample impl for now
       state.currTickIndex = nextTickIndex;
     }
   }
 
   const inputAmount = state.amountCalculated;
-  const outputAmount = input.amount.output.toU64().sub(state.amountRemaining);
+  const outputAmount = input.amount.output.to_U64().sub(state.amountRemaining);
 
   return {
-    sqrtPriceLimitX64: new q64(sqrtPriceLimitX64),
+    sqrtPriceLimit_Q64x64: new q64(sqrtPriceLimit_Q64x64),
     minAmountOut: TokenAmount.from(input.tokenA, outputAmount),
     amountIn: TokenAmount.from(input.tokenB, inputAmount),
   };
@@ -626,7 +652,7 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
 export type SwapAmount<A extends Token, B extends Token> = InputAmount<A, B> | OutputAmount<A, B>;
 
 export type SwapQuote<A extends Token, B extends Token> = {
-  sqrtPriceLimitX64: q64; // sqrt(b/a)
+  sqrtPriceLimit_Q64x64: q64; // sqrt(b/a)
   minAmountOut: TokenAmount<A> | TokenAmount<B>;
   amountIn: TokenAmount<A> | TokenAmount<B>; // order can be partially filled
 };

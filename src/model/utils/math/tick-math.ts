@@ -71,16 +71,16 @@ export abstract class TickMath {
     if (tick > 0) ratioU256 = BNUtils.u256MAX.div(ratioU256);
 
     // Cast back to Q64.64. Any value within tick range will fit in a u128.
-    const ratioX64 = ratioU256.shrn(64);
-    invariant(ratioX64.bitLength() <= 128, "ratio exceeds 128 bits");
+    const ratio_Q64x64 = ratioU256.shrn(64);
+    invariant(ratio_Q64x64.bitLength() <= 128, "ratio exceeds 128 bits");
 
-    return ratioX64;
+    return ratio_Q64x64;
   }
 
-  public static readonly MAX_SQRT_PRICE_X64 = new BN("79226673515401279992447579061");
-  public static readonly MIN_SQRT_PRICE_X64 = new BN("4295048016");
+  public static readonly MAX_SQRT_PRICE__Q64x64 = new BN("79226673515401279992447579061");
+  public static readonly MIN_SQRT_PRICE__Q64x64 = new BN("4295048016");
 
-  public static readonly LOG_B_2_X64 = new BN("255738958999603826347141");
+  public static readonly LOG_B_2__Q64x64 = new BN("255738958999603826347141");
   public static readonly BIT_PRECISION: number = 14;
   public static readonly LOG_B_P_ERR_MARGIN_LOWER_X128 = new BN(
     "3402823669209384634633746074317682114"
@@ -94,21 +94,27 @@ export abstract class TickMath {
    * and #getSqrtRatioAtTick(tick + 1) > sqrtRatioX96
    * @param sqrtRatio the sqrt ratio as a Q64.96 for which to compute the tick
    */
-  public static tickAtSqrtPrice(sqrtPriceX64: BN): number {
-    invariant(sqrtPriceX64.gte(TickMath.MIN_SQRT_PRICE_X64), "sqrtPriceX64 is too small");
-    invariant(sqrtPriceX64.lte(TickMath.MAX_SQRT_PRICE_X64), "sqrtPriceX64 is too large");
+  public static tickAtSqrtPrice(sqrtPrice_Q64x64: BN): number {
+    invariant(
+      sqrtPrice_Q64x64.gte(TickMath.MIN_SQRT_PRICE__Q64x64),
+      "sqrtPrice_Q64x64 is too small"
+    );
+    invariant(
+      sqrtPrice_Q64x64.lte(TickMath.MAX_SQRT_PRICE__Q64x64),
+      "sqrtPrice_Q64x64 is too large"
+    );
 
-    // Invert sqrt_price_x64 if we are dealing with a number less than 1
+    // Invert sqrt_price__Q64x64 if we are dealing with a number less than 1
     let negateResult = false;
-    let ratioX64 = sqrtPriceX64.clone();
-    if (ratioX64.lte(BNUtils.u64MAX)) {
+    let ratio_Q64x64 = sqrtPrice_Q64x64.clone();
+    if (ratio_Q64x64.lte(BNUtils.u64MAX)) {
       negateResult = true;
-      ratioX64 = BNUtils.u128MAX.div(ratioX64);
+      ratio_Q64x64 = BNUtils.u128MAX.div(ratio_Q64x64);
     }
 
     // Determine log_b(sqrt_ratio). First by calculating integer portion (msb)
     // msb always > 128. Any input with msb under 128 are inverted at the start
-    const ratioX128 = ratioX64.shln(64);
+    const ratioX128 = ratio_Q64x64.shln(64);
     const msb = ratioX128.bitLength() - 1;
 
     // get fractional value (r/2^msb), msb always > 128
@@ -116,7 +122,7 @@ export abstract class TickMath {
     // We begin the iteration from bit 127 (0.5 in Q128.128)
     const bitU128 = new BN("80000000000000000000000000000000", "hex");
     let precision: number = 0;
-    const log2pIntegerX64 = new BN(msb - 128).shln(64);
+    const log2pInteger_Q64x64 = new BN(msb - 128).shln(64);
 
     // Log2 iterative approximation for the fractional part
     // Go through each 2^(j) bit where j < 128 in a Q128.128 number
@@ -132,11 +138,11 @@ export abstract class TickMath {
       precision += 1;
     }
 
-    const log2pFractionX64 = log2pFractionX128.shrn(64);
-    const log2pX64 = log2pIntegerX64.add(log2pFractionX64);
+    const log2pFraction_Q64x64 = log2pFractionX128.shrn(64);
+    const log2p_Q64x64 = log2pInteger_Q64x64.add(log2pFraction_Q64x64);
 
     // Transform from base 2 to base b
-    const logbpX128 = log2pX64.mul(TickMath.LOG_B_2_X64);
+    const logbpX128 = log2p_Q64x64.mul(TickMath.LOG_B_2__Q64x64);
 
     // TODO saturating sub
     // https://github.com/orca-so/whirlpool/pull/30/files
@@ -161,8 +167,8 @@ export abstract class TickMath {
     // Otherwise, the actual value is between tick_low & tick_high, so a floor value
     // (tick_low) is returned
     if (tickLow !== tickHigh) {
-      const actualTickHighSqrtPriceX64 = TickMath.sqrtPriceAtTick(tickHigh);
-      if (actualTickHighSqrtPriceX64.lte(ratioX64)) {
+      const actualTickHighSqrtPrice_Q64x64 = TickMath.sqrtPriceAtTick(tickHigh);
+      if (actualTickHighSqrtPrice_Q64x64.lte(ratio_Q64x64)) {
         resultTick = tickHigh;
       }
     }

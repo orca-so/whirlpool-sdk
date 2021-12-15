@@ -62,20 +62,20 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     tickUpperIndex: number,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }> {
-    const { sqrtPriceX64: sqrtPrice } = await this.getWhirlpool();
+    const { sqrtPrice_Q64x64: sqrtPrice } = await this.getWhirlpool();
 
     const sqrtPriceLower = TickMath.sqrtPriceAtTick(tickLowerIndex);
     const sqrtPriceUpper = TickMath.sqrtPriceAtTick(tickUpperIndex);
 
-    const tokenAmountX64 = BNUtils.u64ToX64(tokenAmount);
+    const tokenAmount_Q64x64 = BNUtils.u64ToQ64x64(tokenAmount);
 
     // 3.2.1 Example 1: Amount of assets from a range
-    const LxX64 = tokenAmountX64
+    const Lx_Q64x64 = tokenAmount_Q64x64
       .mul(sqrtPrice)
       .mul(sqrtPriceUpper)
       .div(sqrtPriceUpper.sub(sqrtPrice));
-    const yX64 = LxX64.mul(sqrtPrice.sub(sqrtPriceLower));
-    const yU64 = BNUtils.ceilX64(yX64);
+    const y_Q64x64 = Lx_Q64x64.mul(sqrtPrice.sub(sqrtPriceLower));
+    const y_U64 = BNUtils.ceilQ64x64(y_Q64x64);
 
     throw new Error("TODO - implement");
   }
