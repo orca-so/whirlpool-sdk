@@ -46,6 +46,35 @@ export class OrcaCacheImpl implements OrcaCache {
     return this.get(address, TokenEntity, refresh);
   }
 
+  public async getUserTokens(user: PublicKey): Promise<any> {
+    const { value: userTokenAccountsInfo } = await this._connection.getParsedTokenAccountsByOwner(
+      user,
+      {
+        programId: TOKEN_PROGRAM_ID,
+      }
+    );
+
+    const mintsAndNulls = userTokenAccountsInfo.map((accountInfo) => {
+      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
+      if (amount !== "1") {
+        return null;
+      }
+
+      return new PublicKey(accountInfo.account.data.parsed.info.mint);
+    });
+    const mints = mintsAndNulls.filter((address): address is PublicKey => address !== null);
+
+    const addresses = mints.map((mint) => Position.deriveAddress(mint, this.programId));
+    const infos = addresses.map((address) => ({ address, entity: Position }));
+    await this.fetchAll(infos);
+
+    const allAccounts = await Promise.all(addresses.map((address) => this.getPosition(address)));
+    const validAccounts = allAccounts.filter(
+      (account): account is PositionAccount => account !== null
+    );
+    return validAccounts;
+  }
+
   private async get<T extends CachedAccount>(
     address: PublicKey,
     entity: ParsableEntity<T>,

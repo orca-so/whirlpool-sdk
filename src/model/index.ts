@@ -13,6 +13,7 @@ export class OrcaImpl implements Orca {
     this.cache = new OrcaCacheImpl(connection, network, cacheStrategy);
     this.factory = new OrcaFactory();
   }
+
   public async initializeWithWhitelist(): Promise<void> {
     const whitelistedWhirlpools: PublicKey[] = []; // TODO
     const infos = whitelistedWhirlpools.map((address) => ({ address, entity: Whirlpool }));
@@ -39,7 +40,14 @@ export class OrcaImpl implements Orca {
     throw new Error("Method not implemented.");
   }
 
-  public async listPositions(wallet: PublicKey): Promise<any> {
+  public async listPositions(user: PublicKey): Promise<any> {
+    // 1. get list of user tokens <-- cached?
+    // 2. get list of mints with amount === 1
+    // 3. get list of derivedAddress
+    // 4. get list of valid Positions <-- cached?
+
+    // const { value: userTokenAccountsInfo } = await this.co
+
     throw new Error("Method not implemented.");
   }
 }
