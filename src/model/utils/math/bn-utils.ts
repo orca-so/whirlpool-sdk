@@ -62,8 +62,8 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static mulX64(aX64: BN, bX64: BN): BN {
-    const resultU256 = aX64.mul(bX64);
-    return resultU256.shrn(64); // TODO just make sure this is correct, and what if we overflow?
+    const resultX128 = aX64.mul(bX64);
+    return resultX128.shrn(64); // TODO just make sure this is correct, and what if we overflow?
   }
 
   /**
@@ -74,9 +74,10 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static divFloorX64(aX64: BN, bX64: BN): BN {
-    invariant(aX64.bitLength() <= 128, "divFloorX64 - aX64 exceeds x64");
-    invariant(bX64.bitLength() <= 128, "divFloorX64 - bX64 exceeds x64");
-    throw new Error("TODO - implement");
+    // SCUBA-ATAMARI: @scuba I think we should treat the BN in this utils file as a BNx64 (arbitrary size on the integer part) since we're gonna use this for
+    // q64x64, q96x64, q128x64, q192x64 (so even if we're checking for overflow here it should probably be for a u256 or q192x64)
+    const aX128 = aX64.shln(64);
+    return aX128.div(bX64);
   }
 
   /**
@@ -87,9 +88,8 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static divCeilX64(aX64: BN, bX64: BN): BN {
-    invariant(aX64.bitLength() <= 128, "divCeilX64 - aX64 exceeds x64");
-    invariant(bX64.bitLength() <= 128, "divCeilX64 - bX64 exceeds x64");
-    throw new Error("TODO - implement");
+    const aX128 = aX64.shln(64);
+    return aX128.divRound(bX64);
   }
 
   /**
