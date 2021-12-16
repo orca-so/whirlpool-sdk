@@ -1,4 +1,4 @@
-import { Connection } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { OrcaNetwork } from "..";
 import { OrcaImpl } from "../../model";
 
@@ -10,6 +10,12 @@ export type Orca = {
   getWhirlpool: (args: any) => any;
 
   getPosition: (args: any) => any;
+
+  listTokens(): Promise<any>;
+
+  listWhirlpools(): Promise<any>;
+
+  listPositions(wallet: PublicKey): Promise<any>;
 };
 
 /**

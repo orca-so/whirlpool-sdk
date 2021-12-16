@@ -626,6 +626,7 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
 export type SwapAmount<A extends Token, B extends Token> = InputAmount<A, B> | OutputAmount<A, B>;
 
 export type SwapQuote<A extends Token, B extends Token> = {
+  // TODO listOfTickArrayAddresses <-- bad name, pls rename
   sqrtPriceLimitX64: q64; // sqrt(b/a)
   minAmountOut: TokenAmount<A> | TokenAmount<B>;
   amountIn: TokenAmount<A> | TokenAmount<B>; // order can be partially filled

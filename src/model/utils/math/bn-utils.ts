@@ -18,6 +18,7 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static u64ToX64(valueU64: BN): BN {
+    invariant(valueU64.bitLength() <= 64, "u64ToX64 - valueU64 exceeds u64");
     return valueU64.shln(64);
   }
 
@@ -27,9 +28,9 @@ export class BNUtils {
    * @param valueX64 x64 big number
    * @returns u64 big number
    */
-  public static floorX64(valueX64: BN): BN {
+  public static x64ToU64Floor(valueX64: BN): BN {
+    invariant(valueX64.bitLength() <= 128, "x64ToU64Floor - valueX64 exceeds x64");
     const intValue = valueX64.shrn(64);
-    invariant(intValue.bitLength() <= 64, "value exeeds u64");
     return intValue;
   }
 
@@ -40,7 +41,8 @@ export class BNUtils {
    * @param valueX64 x64 big number
    * @returns u64 big number
    */
-  public static ceilX64(valueX64: BN): BN {
+  public static x64ToU64Ceil(valueX64: BN): BN {
+    invariant(valueX64.bitLength() <= 128, "x64ToU64Ceil - valueX64 exceeds x64");
     const intValue = valueX64.shrn(64);
     const fractionValue = valueX64.and(BNUtils.u64MAX); // MASK by u64 max value
 
@@ -50,5 +52,53 @@ export class BNUtils {
     }
 
     return intValue;
+  }
+
+  /**
+   * Multiply two x64 big numbers, by first multiplying then shifting.
+   *
+   * @param aX64 x64 big number
+   * @param bX64 x64 big number
+   * @returns x64 big number
+   */
+  public static mulX64(aX64: BN, bX64: BN): BN {
+    const resultU256 = aX64.mul(bX64);
+    return resultU256.shrn(64); // TODO just make sure this is correct, and what if we overflow?
+  }
+
+  /**
+   * Divide two x64 big numbers, by , then floor.
+   *
+   * @param aX64 x64 big number
+   * @param bX64 x64 big number
+   * @returns x64 big number
+   */
+  public static divFloorX64(aX64: BN, bX64: BN): BN {
+    invariant(aX64.bitLength() <= 128, "divFloorX64 - aX64 exceeds x64");
+    invariant(bX64.bitLength() <= 128, "divFloorX64 - bX64 exceeds x64");
+    throw new Error("TODO - implement");
+  }
+
+  /**
+   * Divide two x64 big numbers, by , then ceil.
+   *
+   * @param aX64 x64 big number
+   * @param bX64 x64 big number
+   * @returns x64 big number
+   */
+  public static divCeilX64(aX64: BN, bX64: BN): BN {
+    invariant(aX64.bitLength() <= 128, "divCeilX64 - aX64 exceeds x64");
+    invariant(bX64.bitLength() <= 128, "divCeilX64 - bX64 exceeds x64");
+    throw new Error("TODO - implement");
+  }
+
+  /**
+   * Calculate sqrt of a x64 big number.
+   *
+   * @param valueX64 x64 big number
+   * @returns x64 big number
+   */
+  public static sqrtX64(valueX64: BN): BN {
+    throw new Error("TODO - implement");
   }
 }

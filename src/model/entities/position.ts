@@ -31,12 +31,8 @@ export class Position {
   private constructor() {}
 
   // TODO maybe add typing to the return so only getPosition() can receive
-  public static deriveAddress(
-    whirlpool: PublicKey,
-    positionMint: PublicKey,
-    whirlpoolProgram: PublicKey
-  ): PublicKey {
-    return PDA.derive(whirlpoolProgram, ["position", whirlpool, positionMint]).publicKey;
+  public static deriveAddress(positionMint: PublicKey, programId: PublicKey): PublicKey {
+    return PDA.derive(programId, ["position", positionMint]).publicKey;
   }
 
   public static getPositionStatus(
@@ -60,6 +56,6 @@ export class Position {
       return null;
     }
 
-    throw new Error("TODO - implement");
+    throw new Error("TODO - import from contract code");
   }
 }
