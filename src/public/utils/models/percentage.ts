@@ -1,6 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import Decimal from "decimal.js";
 
+// TODO: Rename this to Fraction
 export class Percentage {
   readonly numerator: u64;
   readonly denominator: u64;
