@@ -39,6 +39,8 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
     slippageTolerence?: Percentage
   ) => Promise<SwapQuote<A, B>>;
 
+  // TODO this needs to do some precalculation on sdk side to pass in tick array
+  // accounts that need to be traversed by contract
   getSwapTransaction: (
     owner: Owner,
     tokenAccountA: any,

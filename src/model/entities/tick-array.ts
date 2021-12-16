@@ -56,15 +56,13 @@ export class TickOutOfRangeError extends Error {
 
 /**
  * SCUBA-ATAMARI:
- * account for tick-spacing
- * so for example tickarray[0] = 0.0005
- *                tickarray[1] = 0.0010
- * given tick-spacing of 0.0005
+ * TODO account for tick-spacing
  */
 @staticImplements<ParsableEntity<TickArrayAccount>>()
 export class TickArray {
   private constructor() {}
 
+  // NOTE: within this tick array
   public static getPrevInitializedTickIndex(
     account: TickArrayAccount,
     currentTickIndex: number
@@ -72,6 +70,7 @@ export class TickArray {
     return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
   }
 
+  // NOTE: within this tick array
   public static getNextInitializedTickIndex(
     account: TickArrayAccount,
     currentTickIndex: number

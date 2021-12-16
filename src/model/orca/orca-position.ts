@@ -36,6 +36,8 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
   private readonly whirlpoolAddress: PublicKey;
   private readonly positionAddress: PublicKey;
 
+  // TODO need to do some cleanup, now that we don't need to pass in any whirlpool related information
+  //      we can get it from position account because it stores whirlpoolAddress in the position account
   constructor(cache: OrcaCache, { tokenA, tokenB, positionMint }: OrcaPositionArgs<A, B>) {
     invariant(!tokenA.equals(tokenB), "tokens must be different");
 
@@ -173,6 +175,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
     };
   }
 
+  // TODO A, B, C and different so change to R1, R2, R3
   public async getCollectRewardsQuote(): Promise<CollectRewardsQuote<A, B, C>> {
     const { position, whirlpool } = await this.getWhirlpoolAndPosition();
 

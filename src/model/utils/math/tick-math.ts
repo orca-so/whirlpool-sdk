@@ -25,6 +25,7 @@ export abstract class TickMath {
     invariant(Number.isInteger(tick), "tick is not an integer");
     invariant(absTick <= TickMath.MAX_TICK, "tick is too large");
 
+    // TODO will need to revisit for -1
     let ratioU256 =
       (absTick & 0x1) != 0
         ? new BN("fffcb933bd6fad37aa2d162d1a594001", "hex")
