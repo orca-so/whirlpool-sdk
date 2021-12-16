@@ -63,7 +63,7 @@ export class BNUtils {
    */
   public static mulX64(aX64: BN, bX64: BN): BN {
     const resultU256 = aX64.mul(bX64);
-    return resultU256.shrn(128);
+    return resultU256.shrn(64); // TODO just make sure this is correct, and what if we overflow?
   }
 
   /**
