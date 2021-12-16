@@ -11,6 +11,9 @@ export class BNUtils {
     "hex"
   );
 
+  // TODO should we keep x0ToX64 or make them more specific like u64ToX64, etc.
+  //      same for x64ToX0Floor and x64ToX0Ceil
+
   /**
    * Convert u64 value to x64 by shifting left 64 bits.
    *
@@ -76,7 +79,7 @@ export class BNUtils {
   public static divX64(aX64: BN, bX64: BN): BN {
     // SCUBA-ATAMARI: @scuba I think we should treat the BN in this utils file as a BNx64 (arbitrary size on the integer part) since we're gonna use this for
     // q64x64, q96x64, q128x64, q192x64 (so even if we're checking for overflow here it should probably be for a u256 or q192x64)
-    const aX128 = aX64.shln(64);
+    const aX128 = aX64.shln(64); // TODO https://en.wikipedia.org/wiki/Fixed-point_arithmetic#Division
     return aX128.div(bX64);
   }
 
@@ -88,7 +91,7 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static divRoundX64(aX64: BN, bX64: BN): BN {
-    const aX128 = aX64.shln(64);
+    const aX128 = aX64.shln(64); // TODO https://en.wikipedia.org/wiki/Fixed-point_arithmetic#Division
     return aX128.divRound(bX64);
   }
 
@@ -102,6 +105,12 @@ export class BNUtils {
     throw new Error("TODO - implement");
   }
 
+  /**
+   * Caution: does not take fixed points into account in comparison
+   *
+   * @param bns list of big numbers
+   * @returns sorted list of big numbers
+   */
   public static sort(...bns: BN[]): BN[] {
     return bns.sort((a, b) => {
       if (a.lt(b)) {
