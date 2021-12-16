@@ -1,4 +1,4 @@
-import { TickMath } from "./tick-math";
+import { Token, TokenPrice } from "..";
 
 /**
  * Returns a price object corresponding to the input tick and the base/quote token
@@ -11,7 +11,7 @@ export function tickToPrice(
   baseToken: Token,
   quoteToken: Token,
   tick: number
-): Price<Token, Token> {
+): TokenPrice<Token, Token> {
   throw new Error("TODO - implement");
 }
 
@@ -20,6 +20,6 @@ export function tickToPrice(
  * @param price for which to return the closest tick that represents a price less than or equal to the input price,
  * i.e. the price of the returned tick is less than or equal to the input price
  */
-export function priceToClosestTick(price: Price<Token, Token>): number {
+export function priceToClosestTick(price: TokenPrice<Token, Token>): number {
   throw new Error("TODO - implement");
 }
