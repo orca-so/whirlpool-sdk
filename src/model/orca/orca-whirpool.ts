@@ -1,4 +1,4 @@
-import { OrcaWhirlpool, OrcaWhirlpoolArgs, Percentage } from "../../public";
+import { OrcaWhirlpool, OrcaWhirlpoolArgs, Owner, Percentage } from "../../public";
 import { TickArrayAccount, TickArray, WhirlpoolAccount, Whirlpool } from "../entities";
 import invariant from "tiny-invariant";
 import { Token, TokenPrice, TickMath, BNUtils } from "../utils";
@@ -32,7 +32,9 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
   }
 
   // create whirlpool and tickarray accounts
-  async getInitPoolTransaction(initialPrice: TokenPrice<A, B> | TokenPrice<B, A>): Promise<any> {
+  public async getInitPoolTransaction(
+    initialPrice: TokenPrice<A, B> | TokenPrice<B, A>
+  ): Promise<any> {
     // TODO(atamari): Confirm that token A is base and token B is quote always
 
     // from yutaro feedback:
@@ -55,7 +57,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     throw new Error("TODO - implement");
   }
 
-  async getOpenPositionQuote(
+  public async getOpenPositionQuote(
     token: A | B,
     tokenAmount: u64,
     tickLowerIndex: number,
@@ -80,29 +82,16 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     throw new Error("TODO - implement");
   }
 
-  async getOpenPositionQuoteByPrice(
-    token: A | B,
+  public async getOpenPositionTransaction(
+    owner: Owner,
+    tokenAccountA: any,
+    tokenAccountB: any,
+    token: any,
     tokenAmount: any,
-    // priceLower: OrcaU256,
-    // priceUpper: OrcaU256,
-    slippageTolerence?: Percentage
-  ): Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }> {
-    invariant(
-      token.mint.equals(this.tokenA.mint) || token.mint.equals(this.tokenB.mint),
-      "invalid mint"
-    );
-    throw new Error("TODO - implement");
-    // const lowerTickIndex = this._nearestTickIndexAbove(priceLower);
-    // const upperTickIndex = this._nearestTickIndexBelow(priceUpper);
-
-    // return this.getOpenPositionQuote(
-    //   tokenMint,
-    //   tokenAmount,
-    //   lowerTickIndex,
-    //   upperTickIndex,
-    //   slippageTolerence
-    // );
-  }
+    tickLowerIndex: number,
+    tickUpperIndex: number,
+    slippageTolerence?: Percentage | undefined
+  ): Promise<any> {}
 
   public async getSwapQuote(
     swapAmount: SwapAmount<A, B>,
@@ -121,7 +110,25 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     });
   }
 
-  async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
+  public async getSwapTransaction(
+    owner: Owner,
+    tokenAccountA: any,
+    tokenAccountB: any,
+    amount: any,
+    slippageTolerence?: Percentage | undefined
+  ): Promise<any> {
+    throw new Error("TODO");
+  }
+
+  public async getLiquidityDistribution(): Promise<any> {
+    throw new Error("TODO");
+  }
+
+  public async getSuggestedPriceRange(conservative: boolean): Promise<any> {
+    throw new Error("TODO");
+  }
+
+  public async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
     const whirlpool = await this.getWhirlpool();
 
     const tickArrayAddress = TickArray.getAddressContainingTickIndex(

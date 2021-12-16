@@ -1,6 +1,6 @@
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import { TransactionPayload } from "..";
+import { Owner, TransactionPayload } from "..";
 import { Token } from "../../model/utils/token";
 import { Percentage } from "../utils/models/percentage";
 import { TickArrayAccount } from "../../model/entities";
@@ -12,6 +12,8 @@ export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
 };
 
 export interface OrcaWhirlpool<A extends Token, B extends Token> {
+  getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
+
   getOpenPositionQuote: (
     token: A | B,
     tokenAmount: u64,
@@ -20,47 +22,37 @@ export interface OrcaWhirlpool<A extends Token, B extends Token> {
     slippageTolerence?: Percentage
   ) => Promise<{ maxTokenA: u64; maxTokenB: u64; liquidity: u64 }>;
 
-  // getOpenPositionQuoteByPrice: (
-  //   tokenMint: PublicKey,
-  //   tokenAmount: OrcaU64,
-  //   priceLower: OrcaU256,
-  //   priceUpper: OrcaU256,
-  //   slippageTolerence?: Percentage
-  // ) => Promise<{ maxTokenA: number; maxTokenB: number; liquidity: number }>;
-
-  // // create lp position
-  // getOpenPositionTransaction: (
-  //   owner: Owner,
-  //   tokenAccountA: AccountInfo,
-  //   tokenAccountB: AccountInfo,
-  //   token: any,
-  //   tokenAmount: OrcaU64,
-  //   tickLowerIndex: number,
-  //   tickUpperIndex: number,
-  //   slippageTolerence?: Percentage
-  // ) => Promise<any>;
+  // create lp position
+  getOpenPositionTransaction: (
+    owner: Owner,
+    tokenAccountA: any,
+    tokenAccountB: any,
+    token: any,
+    tokenAmount: any,
+    tickLowerIndex: number,
+    tickUpperIndex: number,
+    slippageTolerence?: Percentage
+  ) => Promise<any>;
 
   getSwapQuote: (
     swapAmount: SwapAmount<A, B>,
     slippageTolerence?: Percentage
   ) => Promise<SwapQuote<A, B>>;
 
-  // getSwapTransaction: (
-  //   owner: Owner,
-  //   tokenAccountA: AccountInfo,
-  //   tokenAccountB: AccountInfo,
-  //   amount: OrcaU64,
-  //   slippageTolerence?: Percentage
-  // ) => Promise<any>;
+  getSwapTransaction: (
+    owner: Owner,
+    tokenAccountA: any,
+    tokenAccountB: any,
+    amount: any,
+    slippageTolerence?: Percentage
+  ) => Promise<any>;
 
   loadTickArray: (tickIndex: number) => Promise<TickArrayAccount>;
 
-  // // return distribution of liquidity
-  // // required to visualize liquidity in UI
-  // getLiquidityDistribution: () => Promise<any>;
+  // return distribution of liquidity
+  // required to visualize liquidity in UI
+  getLiquidityDistribution: () => Promise<any>;
 
-  // // return the suggested price range
-  // getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
-
-  getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
+  // return the suggested price range
+  getSuggestedPriceRange: (conservative: boolean) => Promise<any>;
 }

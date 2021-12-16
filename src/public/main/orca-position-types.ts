@@ -28,10 +28,10 @@ export type CollectFeesQuote<A extends Token, B extends Token> = {
   feeOwedB: TokenAmount<B>;
 };
 
-// TODO add third token type
-export type CollectRewardsQuote<A extends Token, B extends Token> = {
-  rewardsOwedA: TokenAmount<A>;
-  rewardsOwedB: TokenAmount<B>;
+export type CollectRewardsQuote<A extends Token, B extends Token, C extends Token> = {
+  rewardOwedA?: TokenAmount<A>;
+  rewardOwedB?: TokenAmount<B>;
+  rewardOwedC?: TokenAmount<C>;
 };
 
 export enum PositionStatus {
@@ -40,7 +40,7 @@ export enum PositionStatus {
   AboveRange,
 }
 
-export interface OrcaPosition<A extends Token, B extends Token> {
+export interface OrcaPosition<A extends Token, B extends Token, C extends Token> {
   getAddLiquidityQuote: (
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
@@ -63,7 +63,7 @@ export interface OrcaPosition<A extends Token, B extends Token> {
 
   getCollectFeesQuote: () => Promise<CollectFeesQuote<A, B>>;
 
-  getCollectRewardsQuote: () => Promise<CollectRewardsQuote<A, B>>;
+  getCollectRewardsQuote: () => Promise<CollectRewardsQuote<A, B, C>>;
 
   getCollectFeesAndRewardsTransaction: (owner: Owner) => Promise<TransactionPayload>;
 }

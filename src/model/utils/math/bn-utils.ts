@@ -62,8 +62,6 @@ export class BNUtils {
    * @returns x64 big number
    */
   public static mulX64(aX64: BN, bX64: BN): BN {
-    invariant(aX64.bitLength() <= 128, "mulX64 - aX64 exceeds x64");
-    invariant(bX64.bitLength() <= 128, "mulX64 - bX64 exceeds x64");
     const resultU256 = aX64.mul(bX64);
     return resultU256.shrn(128);
   }

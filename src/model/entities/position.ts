@@ -32,11 +32,11 @@ export class Position {
 
   // TODO maybe add typing to the return so only getPosition() can receive
   public static deriveAddress(
-    whirlpool: PublicKey,
+    whirlpoolAddress: PublicKey,
     positionMint: PublicKey,
-    whirlpoolProgram: PublicKey
+    programId: PublicKey
   ): PublicKey {
-    return PDA.derive(whirlpoolProgram, ["position", whirlpool, positionMint]).publicKey;
+    return PDA.derive(programId, ["position", whirlpoolAddress, positionMint]).publicKey;
   }
 
   public static getPositionStatus(
