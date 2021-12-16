@@ -48,16 +48,23 @@ export class Whirlpool {
     return !PublicKey.default.equals(rewardInfo.mint);
   }
 
-  // Should ideally return a fraction (but our percentage class is a fraction, so using that for now)
   public static getFeeRate(account: WhirlpoolAccount): Percentage {
-    // TODO: This method should parse this.account.feeRate which is a number (u16) and generate a Fraction that can be easily used by the caller for math
-    throw new Error("TODO - Implement");
+    /**
+     * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L9-L11
+     * // Stored as hundredths of a basis point
+     * // u16::MAX corresponds to ~6.5%
+     * pub fee_rate: u16,
+     */
+    return Percentage.fromFraction(account.feeRate, 1e6);
   }
 
-  // Should ideally return a fraction (but our percentage class is a fraction, so using that for now)
   public static getProtocolFeeRate(account: WhirlpoolAccount): Percentage {
-    // TODO: This method should parse this.account.protocolFeeRate which is a number (u16) and generate a Fraction that can be easily used by the caller for math
-    throw new Error("TODO - Implement");
+    /**
+     * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L13-L14
+     * // Denominator for portion of fee rate taken (1/x)%
+     * pub protocol_fee_rate: u16,
+     */
+    return Percentage.fromFraction(1, account.protocolFeeRate * 100);
   }
 
   public static deriveAddress(

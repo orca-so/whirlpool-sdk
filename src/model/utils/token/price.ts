@@ -38,7 +38,12 @@ export class TokenPrice<Base extends Token, Quote extends Token> {
   }
 
   public toDecimal(): Decimal {
-    return new Decimal(this.price.toString()).div(new Decimal(10).pow(this.quoteToken.decimals));
+    // Create a decimal with 100 significant digits (more digits than u256::max)
+    const Decimal100 = Decimal.clone({ precision: 100 });
+
+    return new Decimal100(this.price.toString()).div(
+      new Decimal100(10).pow(this.quoteToken.decimals)
+    );
   }
 
   public invert(): TokenPrice<Quote, Base> {
