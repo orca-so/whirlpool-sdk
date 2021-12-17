@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import invariant from "tiny-invariant";
 import { Percentage } from "../..";
-import { TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
+import { TickArray, TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
 import { BNUtils, TickMath, Token, TokenAmount } from "../utils";
 import { xor } from "../utils/misc/boolean";
 
@@ -92,6 +92,7 @@ class SwapSimulator<A extends Token, B extends Token> {
       amount: specifiedTokenAmount,
       liquidity: currentLiquidity,
       tickIndex: currentTickIndex,
+      tickArray: currentTickArrayAccount,
     } = input;
 
     const currentSqrtPriceX64 = TickMath.sqrtPriceAtTick(currentTickIndex);
@@ -100,6 +101,7 @@ class SwapSimulator<A extends Token, B extends Token> {
       slippageTolerance
     );
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
+      currentTickArrayAccount,
       currentTickIndex,
       currentSqrtPriceX64,
       sqrtPriceSlippageX64
@@ -168,26 +170,34 @@ class SwapSimulator<A extends Token, B extends Token> {
   private static readonly functionsBySwapDirection = {
     [SwapDirection.AtoB]: {
       // TODO: Account for edge case where we're at MIN_TICK
+      // TODO: Account for moving between tick arrays (support one adjacent tick array to the left)
       calculateTargetSqrtPrice: (
+        currentTickArrayAccount: TickArrayAccount,
         currentTickIndex: number,
         currentSqrtPriceX64: BN,
         sqrtPriceSlippageX64: BN
       ) =>
         BN.max(
           currentSqrtPriceX64.sub(sqrtPriceSlippageX64),
-          TickMath.sqrtPriceAtTick(currentTickIndex - 1)
+          TickMath.sqrtPriceAtTick(
+            TickArray.getPrevInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
+          )
         ),
     },
     [SwapDirection.BtoA]: {
       // TODO: Account for edge case where we're at MAX_TICK
+      // TODO: Account for moving between tick arrays (support one adjacent tick array to the right)
       calculateTargetSqrtPrice: (
+        currentTickArrayAccount: TickArrayAccount,
         currentTickIndex: number,
         currentSqrtPriceX64: BN,
         sqrtPriceSlippageX64: BN
       ) =>
         BN.min(
           currentSqrtPriceX64.add(sqrtPriceSlippageX64),
-          TickMath.sqrtPriceAtTick(currentTickIndex + 1)
+          TickMath.sqrtPriceAtTick(
+            TickArray.getNextInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
+          )
         ),
     },
   };
