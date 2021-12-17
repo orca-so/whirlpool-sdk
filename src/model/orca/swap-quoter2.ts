@@ -123,7 +123,7 @@ class SwapSimulator<A extends Token, B extends Token> {
     );
 
     const nextSqrtPriceX64 = specifiedTokenDelta.gte(specifiedTokenMaxDelta)
-      ? targetSqrtPriceX64
+      ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
       : calculateNextSqrtPriceGivenTokenDelta(
           specifiedTokenMaxDelta,
           currentLiquidity,
