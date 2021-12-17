@@ -74,7 +74,7 @@ export class OrcaCacheImpl implements OrcaCache {
 
   public async fetchAll(
     infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
-  ): Promise<void> {
+  ): Promise<[string, CachedAccount | null][]> {
     const addresses: string[] = infos.map((info) => info.address.toBase58());
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
@@ -85,13 +85,19 @@ export class OrcaCacheImpl implements OrcaCache {
     invariant(results !== null, "fetchAll no results");
     invariant(addresses.length === results.length, "fetchAll not enough results");
 
+    const returnValue: [string, CachedAccount | null][] = [];
+
     for (const [idx, { address, entity }] of infos.entries()) {
       const data: Buffer | null = results[idx].result.value.data;
       const value = entity.parse(data);
 
       const key = address.toBase58();
       this._cache[key] = { entity, value };
+
+      returnValue.push([key, value]);
     }
+
+    return returnValue;
   }
 
   public async refreshAll(): Promise<void> {
