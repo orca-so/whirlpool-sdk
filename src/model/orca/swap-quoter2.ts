@@ -122,17 +122,13 @@ class SwapSimulator<A extends Token, B extends Token> {
       feeRate
     );
 
-    let nextSqrtPriceX64: BN;
-    if (specifiedTokenDelta.gte(specifiedTokenMaxDelta)) {
-      // Fully utilize this tick range
-      nextSqrtPriceX64 = targetSqrtPriceX64;
-    } else {
-      nextSqrtPriceX64 = calculateNextSqrtPriceGivenTokenDelta(
-        specifiedTokenDelta,
-        currentLiquidity,
-        currentSqrtPriceX64
-      );
-    }
+    const nextSqrtPriceX64 = specifiedTokenDelta.gte(specifiedTokenMaxDelta)
+      ? targetSqrtPriceX64
+      : calculateNextSqrtPriceGivenTokenDelta(
+          specifiedTokenMaxDelta,
+          currentLiquidity,
+          currentSqrtPriceX64
+        );
 
     TODO("Complete");
   }
