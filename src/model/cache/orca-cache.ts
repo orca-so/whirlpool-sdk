@@ -46,35 +46,6 @@ export class OrcaCacheImpl implements OrcaCache {
     return this.get(address, TokenEntity, refresh);
   }
 
-  public async getUserTokens(user: PublicKey): Promise<any> {
-    const { value: userTokenAccountsInfo } = await this._connection.getParsedTokenAccountsByOwner(
-      user,
-      {
-        programId: TOKEN_PROGRAM_ID,
-      }
-    );
-
-    const mintsAndNulls = userTokenAccountsInfo.map((accountInfo) => {
-      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
-      if (amount !== "1") {
-        return null;
-      }
-
-      return new PublicKey(accountInfo.account.data.parsed.info.mint);
-    });
-    const mints = mintsAndNulls.filter((address): address is PublicKey => address !== null);
-
-    const addresses = mints.map((mint) => Position.deriveAddress(mint, this.programId));
-    const infos = addresses.map((address) => ({ address, entity: Position }));
-    await this.fetchAll(infos);
-
-    const allAccounts = await Promise.all(addresses.map((address) => this.getPosition(address)));
-    const validAccounts = allAccounts.filter(
-      (account): account is PositionAccount => account !== null
-    );
-    return validAccounts;
-  }
-
   private async get<T extends CachedAccount>(
     address: PublicKey,
     entity: ParsableEntity<T>,
@@ -103,7 +74,7 @@ export class OrcaCacheImpl implements OrcaCache {
 
   public async fetchAll(
     infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
-  ): Promise<void> {
+  ): Promise<[string, CachedAccount | null][]> {
     const addresses: string[] = infos.map((info) => info.address.toBase58());
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
@@ -114,13 +85,19 @@ export class OrcaCacheImpl implements OrcaCache {
     invariant(results !== null, "fetchAll no results");
     invariant(addresses.length === results.length, "fetchAll not enough results");
 
+    const returnValue: [string, CachedAccount | null][] = [];
+
     for (const [idx, { address, entity }] of infos.entries()) {
       const data: Buffer | null = results[idx].result.value.data;
       const value = entity.parse(data);
 
       const key = address.toBase58();
       this._cache[key] = { entity, value };
+
+      returnValue.push([key, value]);
     }
+
+    return returnValue;
   }
 
   public async refreshAll(): Promise<void> {

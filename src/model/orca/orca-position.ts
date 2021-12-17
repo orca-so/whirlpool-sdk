@@ -26,39 +26,23 @@ import { OrcaCache } from "../cache";
 import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
 
-export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
-  implements OrcaPosition<A, B, C>
-{
+// TODO restructure
+// TODO add methods to expose account information
+//      but do not expose the account itself since it will complicate caching
+//      client shouldn't have direct access to account. rather call methods (i.e. orcaPosition.getLowerTick())
+export class OrcaPositionImpl implements OrcaPosition {
   private readonly cache: OrcaCache;
-  private readonly tokenA: A;
-  private readonly tokenB: B;
-  private readonly tokenC: C;
-  private readonly whirlpoolAddress: PublicKey;
-  private readonly positionAddress: PublicKey;
+  // private readonly tokenA: A;
+  // private readonly tokenB: B;
+  // private readonly whirlpoolAddress: PublicKey;
+  private readonly address: PublicKey;
 
-  // TODO need to do some cleanup, now that we don't need to pass in any whirlpool related information
-  //      we can get it from position account because it stores whirlpoolAddress in the position account
-  constructor(cache: OrcaCache, { tokenA, tokenB, positionMint }: OrcaPositionArgs<A, B>) {
-    invariant(!tokenA.equals(tokenB), "tokens must be different");
-
-    [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
+  constructor(cache: OrcaCache, { positionMint }: OrcaPositionArgs) {
     this.cache = cache;
-
-    this.whirlpoolAddress = Whirlpool.deriveAddress(
-      this.cache.whirlpoolsConfig,
-      this.tokenA.mint,
-      this.tokenB.mint,
-      this.cache.programId
-    );
-
-    this.positionAddress = Position.deriveAddress(
-      this.whirlpoolAddress,
-      positionMint,
-      this.cache.programId
-    );
+    this.address = Position.deriveAddress(positionMint, this.cache.programId);
   }
 
-  public async getAddLiquidityQuote(
+  public async getAddLiquidityQuote<A extends Token, B extends Token>(
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<AddLiquidityQuote<A, B>> {
@@ -176,7 +160,11 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
   }
 
   // TODO A, B, C and different so change to R1, R2, R3
-  public async getCollectRewardsQuote(): Promise<CollectRewardsQuote<A, B, C>> {
+  public async getCollectRewardsQuote<
+    R1 extends Token,
+    R2 extends Token,
+    R3 extends Token
+  >(): Promise<CollectRewardsQuote<R1, R2, R3>> {
     const { position, whirlpool } = await this.getWhirlpoolAndPosition();
 
     const { tickCurrentIndex, rewardInfos: whirlpoolRewardsInfos } = whirlpool;
@@ -250,22 +238,23 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
 
     const rewardExistsA = rewardGrowthsInsideX64[0][1];
     const rewardExistsB = rewardGrowthsInsideX64[1][1];
-    const rewardExistsC =
-      rewardGrowthsInsideX64[2][1] && !this.tokenC.mint.equals(PublicKey.default);
+    const rewardExistsC = rewardGrowthsInsideX64[2][1];
 
     const rewardOwedAU64 = BNUtils.x64ToU64Floor(updatedRewardInfosX64[0]);
     const rewardOwedBU64 = BNUtils.x64ToU64Floor(updatedRewardInfosX64[1]);
     const rewardOwedCU64 = BNUtils.x64ToU64Floor(updatedRewardInfosX64[2]);
 
-    const rewardOwedA = rewardExistsA ? TokenAmount.from(this.tokenA, rewardOwedAU64) : undefined;
-    const rewardOwedB = rewardExistsB ? TokenAmount.from(this.tokenB, rewardOwedBU64) : undefined;
-    const rewardOwedC = rewardExistsC ? TokenAmount.from(this.tokenC, rewardOwedCU64) : undefined;
+    // const rewardOwedA = rewardExistsA ? TokenAmount.from(this.tokenA, rewardOwedAU64) : undefined;
+    // const rewardOwedB = rewardExistsB ? TokenAmount.from(this.tokenB, rewardOwedBU64) : undefined;
+    // const rewardOwedC = rewardExistsC ? TokenAmount.from(this.tokenC, rewardOwedCU64) : undefined;
 
-    return {
-      rewardOwedA,
-      rewardOwedB,
-      rewardOwedC,
-    };
+    // return {
+    //   rewardOwedA,
+    //   rewardOwedB,
+    //   rewardOwedC,
+    // };
+
+    throw new Error("TODO - get token info, create token, return token amount");
   }
 
   public async getCollectFeesAndRewardsTransaction(owner: Owner): Promise<TransactionPayload> {
@@ -438,7 +427,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
     const liquidityX64 = BNUtils.u64ToX64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
@@ -452,22 +441,47 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
     };
   }
 
-  private async getWhirlpoolAndPosition(): Promise<{
-    whirlpool: WhirlpoolAccount;
-    position: PositionAccount;
-  }> {
-    const [whirlpool, position] = await Promise.all([
-      this.cache.getWhirlpool(this.whirlpoolAddress),
-      this.cache.getPosition(this.positionAddress),
-    ]);
+  public async getPositionMint(): Promise<PublicKey> {
+    return (await this.getPosition()).positionMint;
+  }
 
-    invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
+  public async getTickLower(): Promise<number> {
+    return (await this.getPosition()).tickLower;
+  }
+
+  public async getTickUpper(): Promise<number> {
+    return (await this.getPosition()).tickUpper;
+  }
+
+  public async getTokenA(): Promise<Token> {
+    const whirlpool = await this.getWhirlpool();
+    const tokenMintA = whirlpool.tokenMintA;
+    throw new Error("TODO");
+  }
+
+  public async getTokenB(): Promise<Token> {
+    const whirlpool = await this.getWhirlpool();
+    const tokenMintB = whirlpool.tokenMintB;
+    throw new Error("TODO");
+  }
+
+  public async getCurrentPrice(): Promise<any> {
+    const whirlpool = await this.getWhirlpool();
+    const sqrtPriceX64 = whirlpool.sqrtPriceX64;
+    throw new Error("TODO");
+  }
+
+  private async getPosition(): Promise<PositionAccount> {
+    const position = await this.cache.getPosition(this.address);
     invariant(!!position, "OrcaPosition - position does not exist");
+    return position;
+  }
 
-    return {
-      whirlpool,
-      position,
-    };
+  private async getWhirlpool(): Promise<WhirlpoolAccount> {
+    const position = await this.getPosition();
+    const whirlpool = await this.cache.getWhirlpool(position.whirlpool);
+    invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
+    return whirlpool;
   }
 
   private async getTicksLowerAndUpper(
@@ -477,7 +491,7 @@ export class OrcaPositionImpl<A extends Token, B extends Token, C extends Token>
     tickLower: Tick;
     tickUpper: Tick;
   }> {
-    const { whirlpool } = await this.getWhirlpoolAndPosition();
+    const whirlpool = await this.getWhirlpool();
 
     if (tickLowerIndex === tickUpperIndex) {
       const tickAddress = TickArray.getAddressContainingTickIndex(

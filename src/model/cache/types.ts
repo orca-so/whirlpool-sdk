@@ -87,7 +87,7 @@ export interface OrcaCache {
    */
   fetchAll: (
     infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
-  ) => Promise<void>;
+  ) => Promise<[string, CachedAccount | null][]>;
 
   /**
    * Update the cached value of all entities currently in the cache.

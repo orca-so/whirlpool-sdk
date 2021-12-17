@@ -5,9 +5,7 @@ import { Token } from "../../model/utils";
 import { TokenAmount } from "../../model/utils/token/amount";
 import { Owner } from "../utils/web3/key-utils";
 
-export type OrcaPositionArgs<A extends Token, B extends Token> = {
-  tokenA: A;
-  tokenB: B;
+export type OrcaPositionArgs = {
   positionMint: PublicKey;
 };
 
@@ -28,10 +26,10 @@ export type CollectFeesQuote<A extends Token, B extends Token> = {
   feeOwedB: TokenAmount<B>;
 };
 
-export type CollectRewardsQuote<A extends Token, B extends Token, C extends Token> = {
-  rewardOwedA?: TokenAmount<A>;
-  rewardOwedB?: TokenAmount<B>;
-  rewardOwedC?: TokenAmount<C>;
+export type CollectRewardsQuote<R1 extends Token, R2 extends Token, R3 extends Token> = {
+  rewardOwedA?: TokenAmount<R1>;
+  rewardOwedB?: TokenAmount<R2>;
+  rewardOwedC?: TokenAmount<R3>;
 };
 
 export enum PositionStatus {
@@ -40,30 +38,32 @@ export enum PositionStatus {
   AboveRange,
 }
 
-export interface OrcaPosition<A extends Token, B extends Token, C extends Token> {
-  getAddLiquidityQuote: (
+export interface OrcaPosition {
+  getAddLiquidityQuote<A extends Token, B extends Token>(
     tokenAmount: TokenAmount<A> | TokenAmount<B>,
     slippageTolerence?: Percentage
-  ) => Promise<AddLiquidityQuote<A, B>>;
+  ): Promise<AddLiquidityQuote<A, B>>;
 
-  getAddLiquidityTransaction(
+  getAddLiquidityTransaction<A extends Token, B extends Token>(
     owner: Owner,
     quote: AddLiquidityQuote<A, B>
   ): Promise<TransactionPayload>;
 
-  getRemoveLiquidityQuote: (
+  getRemoveLiquidityQuote<A extends Token, B extends Token>(
     liquidity: u64,
     slippageTolerence?: Percentage
-  ) => Promise<RemoveLiquidityQuote<A, B>>;
+  ): Promise<RemoveLiquidityQuote<A, B>>;
 
-  getRemoveLiquidityTransaction(
+  getRemoveLiquidityTransaction<A extends Token, B extends Token>(
     owner: Owner,
     quote: RemoveLiquidityQuote<A, B>
   ): Promise<TransactionPayload>;
 
-  getCollectFeesQuote: () => Promise<CollectFeesQuote<A, B>>;
+  getCollectFeesQuote<A extends Token, B extends Token>(): Promise<CollectFeesQuote<A, B>>;
 
-  getCollectRewardsQuote: () => Promise<CollectRewardsQuote<A, B, C>>;
+  getCollectRewardsQuote<R1 extends Token, R2 extends Token, R3 extends Token>(): Promise<
+    CollectRewardsQuote<R1, R2, R3>
+  >;
 
-  getCollectFeesAndRewardsTransaction: (owner: Owner) => Promise<TransactionPayload>;
+  getCollectFeesAndRewardsTransaction(owner: Owner): Promise<TransactionPayload>;
 }
