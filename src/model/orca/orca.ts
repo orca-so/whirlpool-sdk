@@ -43,6 +43,8 @@ export class OrcaImpl implements Orca {
     throw new Error("Method not implemented.");
   }
 
+  // maybe crate OrcaUser that keys off of wallet address and cache the result
+  // will there be other values cached by wallet address?
   public async listPositions(wallet: PublicKey): Promise<OrcaPosition[]> {
     const { value: tokenAccountsInfo } = await this.connection.getParsedTokenAccountsByOwner(
       wallet,

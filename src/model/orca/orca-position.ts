@@ -30,6 +30,7 @@ import BN from "bn.js";
 // TODO add methods to expose account information
 //      but do not expose the account itself since it will complicate caching
 //      client shouldn't have direct access to account. rather call methods (i.e. orcaPosition.getLowerTick())
+//      basically need to make it easy to implement react component
 export class OrcaPositionImpl implements OrcaPosition {
   private readonly cache: OrcaCache;
   // private readonly tokenA: A;
