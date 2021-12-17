@@ -46,7 +46,8 @@ export class OrcaPositionImpl implements OrcaPosition {
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
     const positionStatus = Position.getPositionStatus(whirlpool, position);
 
     switch (positionStatus) {
@@ -72,7 +73,8 @@ export class OrcaPositionImpl implements OrcaPosition {
     liquidity: u64,
     slippageTolerence = defaultSlippagePercentage
   ): Promise<RemoveLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
     const positionStatus = Position.getPositionStatus(whirlpool, position);
 
     switch (positionStatus) {
@@ -95,7 +97,8 @@ export class OrcaPositionImpl implements OrcaPosition {
   }
 
   public async getCollectFeesQuote(): Promise<CollectFeesQuote<A, B>> {
-    const { position, whirlpool } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
 
     const { tickCurrentIndex, feeGrowthGlobalAX64, feeGrowthGlobalBX64 } = whirlpool;
     const {
@@ -165,7 +168,8 @@ export class OrcaPositionImpl implements OrcaPosition {
     R2 extends Token,
     R3 extends Token
   >(): Promise<CollectRewardsQuote<R1, R2, R3>> {
-    const { position, whirlpool } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
 
     const { tickCurrentIndex, rewardInfos: whirlpoolRewardsInfos } = whirlpool;
     const {
@@ -265,7 +269,7 @@ export class OrcaPositionImpl implements OrcaPosition {
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
 
     if (!this.isTokenAAmount(tokenAmount)) {
       // Cannot deposit Token B into position when price is below position's range
@@ -298,7 +302,8 @@ export class OrcaPositionImpl implements OrcaPosition {
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
 
     // TODO: Use slippage tolerance here
 
@@ -348,7 +353,7 @@ export class OrcaPositionImpl implements OrcaPosition {
     tokenAmount: TokenAmount<A | B>,
     slippageTolerence: Percentage
   ): Promise<AddLiquidityQuote<A, B>> {
-    const { position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
 
     if (!this.isTokenBAmount(tokenAmount)) {
       // Cannot deposit Token A into position when price is above position's range
@@ -380,7 +385,7 @@ export class OrcaPositionImpl implements OrcaPosition {
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
     const liquidityX64 = BNUtils.u64ToX64(liquidity);
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
     const sqrtPriceUpperX64 = TickMath.sqrtPriceAtTick(position.tickUpper);
@@ -403,7 +408,9 @@ export class OrcaPositionImpl implements OrcaPosition {
   ): Promise<RemoveLiquidityQuote<A, B>> {
     // TODO: Use slippage tolerance here
 
-    const { whirlpool, position } = await this.getWhirlpoolAndPosition();
+    const position = await this.getPosition();
+    const whirlpool = await this.getWhirlpool();
+
     const liquidityX64 = BNUtils.u64ToX64(liquidity);
     const sqrtPriceX64 = whirlpool.sqrtPriceX64;
     const sqrtPriceLowerX64 = TickMath.sqrtPriceAtTick(position.tickLower);
