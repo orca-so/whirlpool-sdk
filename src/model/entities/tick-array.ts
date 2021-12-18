@@ -1,10 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
 import { TICK_ARRAY_SIZE } from "../../constants";
 import { PDA } from "../utils/pda";
-import { ParsableEntity, staticImplements, Whirlpool, WhirlpoolAccount } from ".";
+import { ParsableEntity, staticImplements, WhirlpoolEntity } from ".";
 import { TickMath } from "../utils";
 import invariant from "tiny-invariant";
+import { Tick, TickArrayAccount, WhirlpoolAccount } from "../..";
 
 enum TickSearchDirection {
   Left,
@@ -13,24 +13,6 @@ enum TickSearchDirection {
 
 export const TickMin = 0;
 export const TickMax = TICK_ARRAY_SIZE - 1;
-
-export interface Tick {
-  readonly index: number;
-  readonly initialized: boolean;
-  readonly liquidityNetI64: BN;
-  readonly liquidityGrossU64: BN;
-
-  readonly feeGrowthOutsideAX64: BN;
-  readonly feeGrowthOutsideBX64: BN;
-
-  readonly rewardGrowthsOutsideX64: [BN, BN, BN];
-}
-
-export interface TickArrayAccount {
-  readonly whirlpool: PublicKey;
-  readonly startTick: number;
-  readonly ticks: Tick[];
-}
 
 /**
  * Tick is outside the given tick array's range (inclusive)
@@ -59,7 +41,7 @@ export class TickOutOfRangeError extends Error {
  * TODO account for tick-spacing
  */
 @staticImplements<ParsableEntity<TickArrayAccount>>()
-export class TickArray {
+export class TickArrayEntity {
   private constructor() {}
 
   // NOTE: within this tick array
@@ -67,7 +49,7 @@ export class TickArray {
     account: TickArrayAccount,
     currentTickIndex: number
   ): number {
-    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
+    return TickArrayEntity.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
   }
 
   // NOTE: within this tick array
@@ -75,13 +57,17 @@ export class TickArray {
     account: TickArrayAccount,
     currentTickIndex: number
   ): number {
-    return TickArray.findInitializedTick(account, currentTickIndex, TickSearchDirection.Right);
+    return TickArrayEntity.findInitializedTick(
+      account,
+      currentTickIndex,
+      TickSearchDirection.Right
+    );
   }
 
   public static getTick(account: TickArrayAccount, tickIndex: number): Tick {
-    invariant(TickArray.isValidTickIndex(tickIndex), "getTick - tick index out of range");
+    invariant(TickArrayEntity.isValidTickIndex(tickIndex), "getTick - tick index out of range");
 
-    const tickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, tickIndex);
+    const tickArrayIndex = TickArrayEntity.tickIndexToTickArrayIndex(account, tickIndex);
     invariant(
       tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length,
       "Tick array index out of bounds"
@@ -95,14 +81,14 @@ export class TickArray {
     whirlpool: WhirlpoolAccount,
     programId: PublicKey
   ): PublicKey {
-    const startTick = TickArray.findStartTickWith(tickIndex, whirlpool.tickArrayStart);
-    const whirlpoolAddress = Whirlpool.deriveAddress(
+    const startTick = TickArrayEntity.findStartTickWith(tickIndex, whirlpool.tickArrayStart);
+    const whirlpoolAddress = WhirlpoolEntity.deriveAddress(
       whirlpool.whirlpoolsConfig,
       programId,
       whirlpool.tokenMintA,
       whirlpool.tokenMintB
     );
-    return TickArray.deriveAddress(whirlpoolAddress, startTick, programId);
+    return TickArrayEntity.deriveAddress(whirlpoolAddress, startTick, programId);
   }
 
   /**
@@ -154,7 +140,7 @@ export class TickArray {
 
   private static isValidTickIndexWithinAccount(account: TickArrayAccount, tickIndex: number) {
     invariant(
-      TickArray.isValidTickIndex(tickIndex),
+      TickArrayEntity.isValidTickIndex(tickIndex),
       `tickIndex out of range [${TickMath.MIN_TICK}, ${TickMath.MAX_TICK}]`
     );
     return tickIndex >= account.startTick && tickIndex < account.startTick + TICK_ARRAY_SIZE;
@@ -165,9 +151,15 @@ export class TickArray {
   }
 
   private static tickIndexToTickArrayIndex(account: TickArrayAccount, tickIndex: number): number {
-    invariant(TickArray.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+    invariant(
+      TickArrayEntity.isValidTickIndexWithinAccount(account, tickIndex),
+      "Invalid tickIndex"
+    );
     const tickArrayIndex = tickIndex - account.startTick;
-    invariant(TickArray.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+    invariant(
+      TickArrayEntity.isValidTickArrayIndex(account, tickArrayIndex),
+      "Invalid tickArrayIndex"
+    );
 
     return tickArrayIndex;
   }
@@ -176,9 +168,15 @@ export class TickArray {
     account: TickArrayAccount,
     tickArrayIndex: number
   ): number {
-    invariant(TickArray.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+    invariant(
+      TickArrayEntity.isValidTickArrayIndex(account, tickArrayIndex),
+      "Invalid tickArrayIndex"
+    );
     const tickIndex = account.startTick + tickArrayIndex;
-    invariant(TickArray.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+    invariant(
+      TickArrayEntity.isValidTickIndexWithinAccount(account, tickIndex),
+      "Invalid tickIndex"
+    );
 
     return tickIndex;
   }
@@ -188,7 +186,10 @@ export class TickArray {
     currentTickIndex: number,
     searchDirection: TickSearchDirection
   ): number {
-    const currentTickArrayIndex = TickArray.tickIndexToTickArrayIndex(account, currentTickIndex);
+    const currentTickArrayIndex = TickArrayEntity.tickIndexToTickArrayIndex(
+      account,
+      currentTickIndex
+    );
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
@@ -198,15 +199,15 @@ export class TickArray {
       nextInitializedTickArrayIndex < account.ticks.length
     ) {
       if (account.ticks[nextInitializedTickArrayIndex].initialized) {
-        return TickArray.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex);
+        return TickArrayEntity.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex);
       }
 
       nextInitializedTickArrayIndex += increment;
     }
 
     if (
-      TickArray.isValidTickIndex(
-        TickArray.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex)
+      TickArrayEntity.isValidTickIndex(
+        TickArrayEntity.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex)
       )
     ) {
       throw new TickArrayOutOfBoundsError(account.ticks);

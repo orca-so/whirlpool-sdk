@@ -5,15 +5,9 @@ import {
   u64,
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import BN from "bn.js";
 import { ParsableEntity, staticImplements } from ".";
+import { TokenAccount } from "../..";
 import { PDA } from "../utils";
-
-export interface TokenAccount {
-  readonly mint: PublicKey;
-  readonly owner: PublicKey;
-  readonly amount: BN;
-}
 
 @staticImplements<ParsableEntity<TokenAccount>>()
 export class TokenEntity {

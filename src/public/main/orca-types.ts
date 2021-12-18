@@ -3,19 +3,12 @@ import { OrcaNetwork } from "..";
 import { OrcaImpl } from "../../model";
 
 export type Orca = {
-  initializeWithWhitelist(): Promise<void>;
-
-  refreshCache(): Promise<void>;
-
-  getWhirlpool: (args: any) => any;
-
-  getPosition: (args: any) => any;
-
-  listTokens(): Promise<any>;
-
-  listWhirlpools(): Promise<any>;
-
-  listPositions(wallet: PublicKey): Promise<any>;
+  // refreshCache(): Promise<void>;
+  // getWhirlpool: (args: any) => any;
+  // getPosition: (args: any) => any;
+  // listTokens(): Promise<any>;
+  // listWhirlpools(): Promise<any>;
+  // listPositions(wallet: PublicKey): Promise<any>;
 };
 
 /**

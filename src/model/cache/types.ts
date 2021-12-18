@@ -1,11 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
-import {
-  ParsableEntity,
-  PositionAccount,
-  TickArrayAccount,
-  TokenAccount,
-  WhirlpoolAccount,
-} from "../entities";
+import { PositionAccount, TickArrayAccount, TokenAccount, WhirlpoolAccount } from "../..";
+import { ParsableEntity } from "../entities";
 
 /**
  * Determines if OrcaCache should utilize the internal cache or not.
@@ -74,24 +69,25 @@ export interface OrcaCache {
    */
   getToken: (address: PublicKey, refresh?: boolean) => Promise<TokenAccount | null>;
 
-  /**
-   * Check if an account is in the cache
-   * TODO: not sure if we need this. delete?
-   */
-  isCached: (address: PublicKey) => boolean;
+  listWhirlpools: (
+    addresses: PublicKey[],
+    refresh?: boolean
+  ) => Promise<(WhirlpoolAccount | null)[]>;
 
-  /**
-   * Fetch and add to cache the list of accounts.
-   * Uses batched rpc request for network efficient fetch.
-   * Use case: initializing the cache with a list of whitelisted accounts
-   */
-  fetchAll: (
-    infos: { address: PublicKey; entity: ParsableEntity<CachedAccount> }[]
-  ) => Promise<[string, CachedAccount | null][]>;
+  listPositions: (addresses: PublicKey[], refresh?: boolean) => Promise<(PositionAccount | null)[]>;
+
+  listTickArrays: (
+    addresses: PublicKey[],
+    refresh?: boolean
+  ) => Promise<(TickArrayAccount | null)[]>;
+
+  listTokens: (addresses: PublicKey[], refresh?: boolean) => Promise<(TokenAccount | null)[]>;
 
   /**
    * Update the cached value of all entities currently in the cache.
    * Uses batched rpc request for network efficient fetch.
    */
   refreshAll: () => Promise<void>;
+
+  listUserPositions: (wallet: PublicKey, refresh?: boolean) => Promise<PositionAccount[]>;
 }
