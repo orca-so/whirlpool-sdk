@@ -64,9 +64,7 @@ type SwapStepSimulationInput = {
 };
 
 type SwapStepSimulationOutput = {
-  crossedTickArray: boolean;
-  crossedTick: boolean;
-  liquidityDelta: BN;
+  currentTickIndex: number;
   input: BN;
   output: BN;
 };
@@ -86,8 +84,13 @@ class SwapSimulator<A extends Token, B extends Token> {
   public simulateSwapStep(input: SwapStepSimulationInput): SwapStepSimulationOutput {
     const { slippageTolerance, swapDirection, amountSpecified, feeRate } = this.config;
     const { calculateTargetSqrtPrice } = SwapSimulator.functionsBySwapDirection[swapDirection];
-    const { calculateSpecifiedTokenDelta, calculateNextSqrtPriceGivenTokenDelta } =
-      SwapSimulator.functionsBySwapType[swapDirection][amountSpecified];
+    const { resolveInputAndOutputDeltas } =
+      SwapSimulator.functionsByAmountSpecified[amountSpecified];
+    const {
+      calculateSpecifiedTokenDelta,
+      calculateOtherTokenDelta,
+      calculateNextSqrtPriceGivenTokenDelta,
+    } = SwapSimulator.functionsBySwapType[swapDirection][amountSpecified];
     const {
       amount: specifiedTokenAmount,
       liquidity: currentLiquidity,
@@ -100,37 +103,60 @@ class SwapSimulator<A extends Token, B extends Token> {
       currentSqrtPriceX64,
       slippageTolerance
     );
+
+    // TODO: This function call throws an error if targetSqrtPrice is in another tick array, so handle that here
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
       currentTickArrayAccount,
       currentTickIndex,
       currentSqrtPriceX64,
       sqrtPriceSlippageX64
     );
-    const [sqrtPriceLowerX64, sqrtPriceUpperX64] = BNUtils.sort(
-      currentSqrtPriceX64,
-      targetSqrtPriceX64
-    );
 
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
-      sqrtPriceLowerX64,
-      sqrtPriceUpperX64
+      BN.min(currentSqrtPriceX64, targetSqrtPriceX64),
+      BN.max(currentSqrtPriceX64, targetSqrtPriceX64)
     );
 
-    const specifiedTokenDelta = SwapSimulator.calculateAmountAfterFees(
+    const specifiedTokenGivenDelta = SwapSimulator.calculateAmountAfterFees(
       specifiedTokenAmount,
       feeRate
     );
 
-    const nextSqrtPriceX64 = specifiedTokenDelta.gte(specifiedTokenMaxDelta)
+    const nextSqrtPriceX64 = specifiedTokenGivenDelta.gte(specifiedTokenMaxDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
       : calculateNextSqrtPriceGivenTokenDelta(
-          specifiedTokenMaxDelta,
+          specifiedTokenGivenDelta,
           currentLiquidity,
           currentSqrtPriceX64
         );
 
-    TODO("Complete");
+    const needToMoveToNextInitializedTick = nextSqrtPriceX64.eq(targetSqrtPriceX64);
+
+    const otherTokenDelta = calculateOtherTokenDelta(
+      currentLiquidity,
+      BN.min(currentSqrtPriceX64, nextSqrtPriceX64),
+      BN.max(currentSqrtPriceX64, nextSqrtPriceX64)
+    );
+
+    const specifiedTokenActualDelta = needToMoveToNextInitializedTick
+      ? specifiedTokenMaxDelta
+      : calculateSpecifiedTokenDelta(
+          currentLiquidity,
+          BN.min(currentSqrtPriceX64, nextSqrtPriceX64),
+          BN.max(currentSqrtPriceX64, nextSqrtPriceX64)
+        );
+
+    const [inputDelta, outputDelta] = resolveInputAndOutputDeltas(
+      specifiedTokenActualDelta,
+      otherTokenDelta
+    );
+
+    return {
+      currentTickIndex: TickMath.tickAtSqrtPrice(nextSqrtPriceX64),
+      input: inputDelta,
+      output: outputDelta,
+    };
   }
 
   // ** UTILS **
@@ -289,15 +315,32 @@ class SwapSimulator<A extends Token, B extends Token> {
     },
   };
 
+  private static readonly functionsByAmountSpecified = {
+    [AmountSpecified.Input]: {
+      resolveInputAndOutputDeltas: (specifiedTokenDelta: BN, otherTokenDelta: BN) => [
+        specifiedTokenDelta,
+        otherTokenDelta,
+      ],
+    },
+    [AmountSpecified.Output]: {
+      resolveInputAndOutputDeltas: (specifiedTokenDelta: BN, otherTokenDelta: BN) => [
+        otherTokenDelta,
+        specifiedTokenDelta,
+      ],
+    },
+  };
+
   private static readonly functionsBySwapType = {
     [SwapDirection.AtoB]: {
       [AmountSpecified.Input]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Up),
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Down), // Is the rounding correct?
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateLowerSqrtPriceGivenTokenADelta,
       },
       [AmountSpecified.Output]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Down),
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Up), // Is the rounding correct?
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateLowerSqrtPriceGivenTokenBDelta,
       },
@@ -305,11 +348,13 @@ class SwapSimulator<A extends Token, B extends Token> {
     [SwapDirection.BtoA]: {
       [AmountSpecified.Input]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Up),
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Down), // Is the rounding correct?
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateUpperSqrtPriceGivenTokenBDelta,
       },
       [AmountSpecified.Output]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Down),
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Up), // Is the rounding correct?
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateUpperSqrtPriceGivenTokenADelta,
       },
