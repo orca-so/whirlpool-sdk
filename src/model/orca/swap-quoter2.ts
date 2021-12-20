@@ -141,7 +141,7 @@ class SwapSimulator<A extends Token, B extends Token> {
   }
 
   private static calculateAmountAfterFees(amount: BN, feeRate: Percentage): BN {
-    const fees = amount.mul(feeRate.numerator).div(feeRate.denominator);
+    const fees = amount.mul(feeRate.numerator).divRound(feeRate.denominator);
     return amount.sub(fees);
   }
 
