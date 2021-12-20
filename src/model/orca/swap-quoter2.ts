@@ -1,7 +1,8 @@
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import invariant from "tiny-invariant";
 import { Percentage } from "../..";
-import { TickArrayAccount } from "../../public/accounts";
+import { Tick, TickArrayAccount } from "../../public/accounts";
 import { TickArrayEntity } from "../entities";
 import { BNUtils, TickMath, Token, TokenAmount } from "../utils";
 import { xor } from "../utils/misc/boolean";
@@ -38,6 +39,7 @@ type SwapSimulatorConfig<A extends Token, B extends Token> = {
   feeRate: Percentage;
   protocolFeeRate: Percentage;
   slippageTolerance: Percentage;
+  fetchTickArrayAccount: (tickIndex: number) => Promise<TickArrayAccount>;
 };
 
 type SwapState = {
@@ -59,7 +61,7 @@ type SwapSimulationInput = {
 type SwapSimulationOutput = {
   sqrtPriceLimitX64: BN;
   amountIn: BN;
-  amountOutMinimum: BN;
+  amountOut: BN;
   sqrtPriceAfterSwapX64: BN;
 };
 
@@ -77,7 +79,7 @@ type SwapStepSimulationOutput = {
   output: BN;
 };
 
-class SwapSimulator<A extends Token, B extends Token> {
+export class SwapSimulator<A extends Token, B extends Token> {
   private readonly config: SwapSimulatorConfig<A, B>;
 
   public constructor(config: SwapSimulatorConfig<A, B>) {
@@ -87,8 +89,12 @@ class SwapSimulator<A extends Token, B extends Token> {
   // ** METHODS **
 
   public async simulateSwap(input: SwapSimulationInput): Promise<SwapSimulationOutput> {
-    const { swapDirection, slippageTolerance } = this.config;
-    const { calculateSqrtPriceLimit } = SwapSimulator.functionsBySwapDirection[swapDirection];
+    const { swapDirection, amountSpecified, slippageTolerance, fetchTickArrayAccount } =
+      this.config;
+    const { calculateSqrtPriceLimit, calculateNewLiquidity } =
+      SwapSimulator.functionsBySwapDirection[swapDirection];
+    const { resolveSpecifiedAndOtherAmounts, resolveInputAndOutputAmounts } =
+      SwapSimulator.functionsByAmountSpecified[amountSpecified];
 
     const { currentTickIndex, currentTickArray, currentLiquidity, amount: specifiedAmount } = input;
 
@@ -113,19 +119,61 @@ class SwapSimulator<A extends Token, B extends Token> {
         liquidity: state.liquidity,
       };
 
-      const swapStepSimulationOutput: SwapStepSimulationOutput =
-        this.simulateSwapStep(swapStepSimulationInput);
+      const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
+        swapStepSimulationInput
+      );
+
+      const { input, output } = swapStepSimulationOutput;
+      const [specifiedAmountUsed, otherAmountCalculated] = resolveSpecifiedAndOtherAmounts(
+        input,
+        output
+      );
+
+      state.specifiedAmountLeft = state.specifiedAmountLeft.sub(specifiedAmountUsed);
+      state.otherAmountCalculated = state.otherAmountCalculated.add(otherAmountCalculated);
 
       if (swapStepSimulationOutput.currentTickIndex !== state.tickIndex) {
-        state.tickIndex = swapStepSimulationOutput.currentTickIndex;
+        // Moving between ticks
+        const nextTickIndex = swapStepSimulationOutput.currentTickIndex;
+        state.tickIndex = nextTickIndex;
+        state.sqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
+        const currentTick = TickArrayEntity.getTick(state.tickArray, state.tickIndex);
+
+        let nextTick: Tick;
+        try {
+          nextTick = TickArrayEntity.getTick(state.tickArray, nextTickIndex);
+        } catch {
+          // Need to update tick array
+          state.tickArray = await fetchTickArrayAccount(nextTickIndex);
+          nextTick = TickArrayEntity.getTick(state.tickArray, nextTickIndex);
+        }
+
+        state.liquidity = calculateNewLiquidity(
+          state.liquidity,
+          currentTick.liquidityNetI64,
+          nextTick.liquidityNetI64
+        );
       }
     }
+
+    const [inputAmount, outputAmount] = resolveInputAndOutputAmounts(
+      state.specifiedAmountLeft,
+      state.otherAmountCalculated
+    );
+
+    return {
+      sqrtPriceAfterSwapX64: state.sqrtPriceX64,
+      amountIn: inputAmount,
+      amountOut: outputAmount,
+      sqrtPriceLimitX64,
+    };
   }
 
   public async simulateSwapStep(input: SwapStepSimulationInput): Promise<SwapStepSimulationOutput> {
     const { swapDirection, amountSpecified, feeRate } = this.config;
     const { calculateTargetSqrtPrice } = SwapSimulator.functionsBySwapDirection[swapDirection];
-    const { resolveInputAndOutputDeltas } =
+
+    const { resolveInputAndOutputAmounts } =
       SwapSimulator.functionsByAmountSpecified[amountSpecified];
     const {
       calculateSpecifiedTokenDelta,
@@ -184,14 +232,14 @@ class SwapSimulator<A extends Token, B extends Token> {
           BN.max(currentSqrtPriceX64, nextSqrtPriceX64)
         );
 
-    const [inputDelta, outputDelta] = resolveInputAndOutputDeltas(
+    const [inputDelta, outputDelta] = resolveInputAndOutputAmounts(
       specifiedTokenActualDelta,
       otherTokenDelta
     );
 
     return {
       currentTickIndex: TickMath.tickAtSqrtPrice(nextSqrtPriceX64),
-      input: inputDelta,
+      input: SwapSimulator.calculateAmountWithFees(inputDelta, feeRate),
       output: outputDelta,
     };
   }
@@ -206,6 +254,11 @@ class SwapSimulator<A extends Token, B extends Token> {
   private static calculateAmountAfterFees(amount: BN, feeRate: Percentage): BN {
     const fees = amount.mul(feeRate.numerator).divRound(feeRate.denominator);
     return amount.sub(fees);
+  }
+
+  private static calculateAmountWithFees(amount: BN, feeRate: Percentage): BN {
+    const fees = amount.mul(feeRate.numerator).divRound(feeRate.denominator);
+    return amount.add(fees);
   }
 
   private static calculateTokenADelta =
@@ -355,32 +408,58 @@ class SwapSimulator<A extends Token, B extends Token> {
     );
   }
 
+  private static addNextTickLiquidityNet(
+    currentLiquidity: BN,
+    currentTickLiquidityNet: BN,
+    nextTickLiquidityNet: BN
+  ): BN {
+    return currentLiquidity.add(nextTickLiquidityNet);
+  }
+
+  private static subCurrentTickLiquidityNet(
+    currentLiquidity: BN,
+    currentTickLiquidityNet: BN,
+    prevTickLiquidityNet: BN
+  ): BN {
+    return currentLiquidity.sub(currentTickLiquidityNet);
+  }
+
   private static readonly functionsBySwapDirection = {
     [SwapDirection.AtoB]: {
       // TODO: Account for edge case where we're at MIN_TICK
       // TODO: Account for moving between tick arrays (support one adjacent tick array to the left)
       calculateTargetSqrtPrice: SwapSimulator.calculateSqrtPriceAtPrevInitializedTick,
       calculateSqrtPriceLimit: SwapSimulator.calculateLowerSqrtPriceAfterSlippage,
+      calculateNewLiquidity: SwapSimulator.subCurrentTickLiquidityNet,
     },
     [SwapDirection.BtoA]: {
       // TODO: Account for edge case where we're at MAX_TICK
       // TODO: Account for moving between tick arrays (support one adjacent tick array to the right)
       calculateTargetSqrtPrice: SwapSimulator.calculateSqrtPriceAtNextInitializedTick,
       calculateSqrtPriceLimit: SwapSimulator.calculateUpperSqrtPriceAfterSlippage,
+      calculateNewLiquidity: SwapSimulator.addNextTickLiquidityNet,
     },
   };
 
   private static readonly functionsByAmountSpecified = {
     [AmountSpecified.Input]: {
-      resolveInputAndOutputDeltas: (specifiedTokenDelta: BN, otherTokenDelta: BN) => [
-        specifiedTokenDelta,
-        otherTokenDelta,
+      resolveInputAndOutputAmounts: (specifiedTokenAmount: BN, otherTokenAmount: BN) => [
+        specifiedTokenAmount,
+        otherTokenAmount,
+      ],
+      resolveSpecifiedAndOtherAmounts: (inputAmount: BN, outputAmount: BN) => [
+        inputAmount,
+        outputAmount,
       ],
     },
     [AmountSpecified.Output]: {
-      resolveInputAndOutputDeltas: (specifiedTokenDelta: BN, otherTokenDelta: BN) => [
-        otherTokenDelta,
-        specifiedTokenDelta,
+      resolveInputAndOutputAmounts: (specifiedTokenAmount: BN, otherTokenAmount: BN) => [
+        otherTokenAmount,
+        specifiedTokenAmount,
+      ],
+      resolveSpecifiedAndOtherAmounts: (inputAmount: BN, outputAmount: BN) => [
+        outputAmount,
+        inputAmount,
       ],
     },
   };
