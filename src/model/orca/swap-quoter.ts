@@ -122,10 +122,10 @@ export class SwapSimulator<A extends Token, B extends Token> {
 
       if (swapStepSimulationOutput.currentTickIndex !== state.tickIndex) {
         // Moving between ticks
+        const currentTick = TickArrayEntity.getTick(state.tickArray, state.tickIndex);
         const nextTickIndex = swapStepSimulationOutput.currentTickIndex;
         state.tickIndex = nextTickIndex;
         state.sqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
-        const currentTick = TickArrayEntity.getTick(state.tickArray, state.tickIndex);
 
         let nextTick: Tick;
         try {
