@@ -1,7 +1,8 @@
 import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { Percentage, TickArrayAccount } from "../..";
-import { TickArrayEntity, WhirlpoolEntity } from "../entities";
+import { Percentage } from "../..";
+import { TickArrayAccount } from "../../public/accounts";
+import { TickArrayEntity } from "../entities";
 import { BNUtils, TickMath, Token, TokenAmount } from "../utils";
 import { xor } from "../utils/misc/boolean";
 
@@ -44,19 +45,26 @@ type SwapState = {
   tickArray: TickArrayAccount;
   tickIndex: number;
   liquidity: BN;
-  amountRemaining: BN; // either the input remaining to be swapped or output remaining to be swapped for
-  amountCalculated: BN; // either the output of this swap or the input that needs to be swapped to receive the specified output
+  specifiedAmountLeft: BN; // either the input remaining to be swapped or output remaining to be swapped for
+  otherAmountCalculated: BN; // either the output of this swap or the input that needs to be swapped to receive the specified output
 };
 
 type SwapSimulationInput = {
-  // TODO
+  amount: BN;
+  currentTickArray: TickArrayAccount;
+  currentTickIndex: number;
+  currentLiquidity: BN;
 };
 
 type SwapSimulationOutput = {
-  // TODO
+  sqrtPriceLimitX64: BN;
+  amountIn: BN;
+  amountOutMinimum: BN;
+  sqrtPriceAfterSwapX64: BN;
 };
 
 type SwapStepSimulationInput = {
+  sqrtPriceLimitX64: BN;
   tickArray: TickArrayAccount;
   tickIndex: number;
   liquidity: BN;
@@ -77,12 +85,45 @@ class SwapSimulator<A extends Token, B extends Token> {
   }
 
   // ** METHODS **
-  public simulateSwap(input: SwapSimulationInput): SwapSimulationOutput {
-    TODO("Implement");
+
+  public async simulateSwap(input: SwapSimulationInput): Promise<SwapSimulationOutput> {
+    const { swapDirection, slippageTolerance } = this.config;
+    const { calculateSqrtPriceLimit } = SwapSimulator.functionsBySwapDirection[swapDirection];
+
+    const { currentTickIndex, currentTickArray, currentLiquidity, amount: specifiedAmount } = input;
+
+    const currentSqrtPriceX64 = TickMath.sqrtPriceAtTick(currentTickIndex);
+    const sqrtPriceLimitX64 = calculateSqrtPriceLimit(currentSqrtPriceX64, slippageTolerance);
+
+    const state: SwapState = {
+      sqrtPriceX64: currentSqrtPriceX64,
+      tickIndex: currentTickIndex,
+      tickArray: currentTickArray,
+      liquidity: currentLiquidity,
+      specifiedAmountLeft: specifiedAmount,
+      otherAmountCalculated: new BN(0),
+    };
+
+    while (state.specifiedAmountLeft.gt(new BN(0)) && !state.sqrtPriceX64.eq(sqrtPriceLimitX64)) {
+      const swapStepSimulationInput: SwapStepSimulationInput = {
+        sqrtPriceLimitX64,
+        amount: state.specifiedAmountLeft,
+        tickArray: state.tickArray,
+        tickIndex: state.tickIndex,
+        liquidity: state.liquidity,
+      };
+
+      const swapStepSimulationOutput: SwapStepSimulationOutput =
+        this.simulateSwapStep(swapStepSimulationInput);
+
+      if (swapStepSimulationOutput.currentTickIndex !== state.tickIndex) {
+        state.tickIndex = swapStepSimulationOutput.currentTickIndex;
+      }
+    }
   }
 
-  public simulateSwapStep(input: SwapStepSimulationInput): SwapStepSimulationOutput {
-    const { slippageTolerance, swapDirection, amountSpecified, feeRate } = this.config;
+  public async simulateSwapStep(input: SwapStepSimulationInput): Promise<SwapStepSimulationOutput> {
+    const { swapDirection, amountSpecified, feeRate } = this.config;
     const { calculateTargetSqrtPrice } = SwapSimulator.functionsBySwapDirection[swapDirection];
     const { resolveInputAndOutputDeltas } =
       SwapSimulator.functionsByAmountSpecified[amountSpecified];
@@ -96,20 +137,16 @@ class SwapSimulator<A extends Token, B extends Token> {
       liquidity: currentLiquidity,
       tickIndex: currentTickIndex,
       tickArray: currentTickArrayAccount,
+      sqrtPriceLimitX64,
     } = input;
 
     const currentSqrtPriceX64 = TickMath.sqrtPriceAtTick(currentTickIndex);
-    const sqrtPriceSlippageX64 = SwapSimulator.calculateSqrtPriceSlippage(
-      currentSqrtPriceX64,
-      slippageTolerance
-    );
 
     // TODO: This function call throws an error if targetSqrtPrice is in another tick array, so handle that here
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
       currentTickArrayAccount,
       currentTickIndex,
-      currentSqrtPriceX64,
-      sqrtPriceSlippageX64
+      sqrtPriceLimitX64
     );
 
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
@@ -204,11 +241,10 @@ class SwapSimulator<A extends Token, B extends Token> {
   private static calculateSqrtPriceAtPrevInitializedTick(
     currentTickArrayAccount: TickArrayAccount,
     currentTickIndex: number,
-    currentSqrtPriceX64: BN,
-    sqrtPriceSlippageX64: BN
+    sqrtPriceLimitX64: BN
   ): BN {
     return BN.max(
-      currentSqrtPriceX64.sub(sqrtPriceSlippageX64),
+      sqrtPriceLimitX64,
       TickMath.sqrtPriceAtTick(
         TickArrayEntity.getPrevInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
       )
@@ -218,11 +254,10 @@ class SwapSimulator<A extends Token, B extends Token> {
   private static calculateSqrtPriceAtNextInitializedTick(
     currentTickArrayAccount: TickArrayAccount,
     currentTickIndex: number,
-    currentSqrtPriceX64: BN,
-    sqrtPriceSlippageX64: BN
+    sqrtPriceLimitX64: BN
   ): BN {
     return BN.min(
-      currentSqrtPriceX64.add(sqrtPriceSlippageX64),
+      sqrtPriceLimitX64,
       TickMath.sqrtPriceAtTick(
         TickArrayEntity.getNextInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
       )
@@ -302,16 +337,36 @@ class SwapSimulator<A extends Token, B extends Token> {
     );
   }
 
+  private static calculateLowerSqrtPriceAfterSlippage(
+    currentSqrtPriceX64: BN,
+    slippageTolerance: Percentage
+  ): BN {
+    return currentSqrtPriceX64.sub(
+      SwapSimulator.calculateSqrtPriceSlippage(currentSqrtPriceX64, slippageTolerance)
+    );
+  }
+
+  private static calculateUpperSqrtPriceAfterSlippage(
+    currentSqrtPriceX64: BN,
+    slippageTolerance: Percentage
+  ): BN {
+    return currentSqrtPriceX64.add(
+      SwapSimulator.calculateSqrtPriceSlippage(currentSqrtPriceX64, slippageTolerance)
+    );
+  }
+
   private static readonly functionsBySwapDirection = {
     [SwapDirection.AtoB]: {
       // TODO: Account for edge case where we're at MIN_TICK
       // TODO: Account for moving between tick arrays (support one adjacent tick array to the left)
       calculateTargetSqrtPrice: SwapSimulator.calculateSqrtPriceAtPrevInitializedTick,
+      calculateSqrtPriceLimit: SwapSimulator.calculateLowerSqrtPriceAfterSlippage,
     },
     [SwapDirection.BtoA]: {
       // TODO: Account for edge case where we're at MAX_TICK
       // TODO: Account for moving between tick arrays (support one adjacent tick array to the right)
       calculateTargetSqrtPrice: SwapSimulator.calculateSqrtPriceAtNextInitializedTick,
+      calculateSqrtPriceLimit: SwapSimulator.calculateUpperSqrtPriceAfterSlippage,
     },
   };
 
