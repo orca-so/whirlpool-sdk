@@ -1,5 +1,5 @@
 import { OrcaWhirlpool, OrcaWhirlpoolArgs, Owner, Percentage } from "../../public";
-import { TickArrayAccount, TickArray, WhirlpoolAccount, Whirlpool } from "../entities";
+import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } from "../entities";
 import invariant from "tiny-invariant";
 import { Token, TokenPrice, TickMath, BNUtils } from "../utils";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
@@ -23,7 +23,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
     this.cache = cache;
 
-    this.address = Whirlpool.deriveAddress(
+    this.address = WhirlpoolEntity.deriveAddress(
       this.cache.whirlpoolsConfig,
       this.tokenA.mint,
       this.tokenB.mint,
@@ -131,7 +131,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
   public async loadTickArray(tickIndex: number): Promise<TickArrayAccount> {
     const whirlpool = await this.getWhirlpool();
 
-    const tickArrayAddress = TickArray.getAddressContainingTickIndex(
+    const tickArrayAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickIndex,
       whirlpool,
       this.cache.programId
@@ -150,7 +150,7 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
 
   private async getCurrentTickArray(): Promise<TickArrayAccount> {
     const { tickArrayStart } = await this.getWhirlpool();
-    const tickArrayAddress = TickArray.deriveAddress(
+    const tickArrayAddress = TickArrayEntity.deriveAddress(
       this.address,
       tickArrayStart,
       this.cache.programId

@@ -1,81 +1,62 @@
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaNetwork, Orca, OrcaPosition } from "../../public";
+import { OrcaNetwork, Orca, OrcaPosition, PositionAccount, WhirlpoolAccount } from "../..";
 import { OrcaCacheImpl, OrcaCache, CacheStrategy } from "../cache";
-import { Position, PositionAccount, Whirlpool } from "../entities";
-import { OrcaFactory } from "./orca-factory";
 
 export class OrcaImpl implements Orca {
   private readonly cache: OrcaCache;
-  private readonly factory: OrcaFactory;
-  private readonly connection: Connection;
 
   constructor(connection: Connection, network: OrcaNetwork, cache: boolean) {
     const cacheStrategy = cache ? CacheStrategy.Manual : CacheStrategy.AlwaysFetch;
     this.cache = new OrcaCacheImpl(connection, network, cacheStrategy);
-    this.factory = new OrcaFactory();
-    this.connection = connection;
   }
 
-  public async initializeWithWhitelist(): Promise<void> {
-    const whitelistedWhirlpools: PublicKey[] = []; // TODO
-    const infos = whitelistedWhirlpools.map((address) => ({ address, entity: Whirlpool }));
-    this.cache.fetchAll(infos);
-  }
+  // Address -> dispatch
+  // Idea 1: callbacks
+  // Idea 1.5: CacheEventManager
+  // Idea 2: event listen
+
+  /**
+   * Whirlpools
+   * 1. Get a list of whirlpools (this list can change when user adds a specific whirlpool)
+   * 2. Whenever a whirlpool in this list gets updated, rerender
+   */
+
+  /**
+   * Positions
+   * 1. Get a list of positions that the wallet owns
+   * 2. Whenever a position in this list gets updated, rerender
+   */
 
   public async refreshCache(): Promise<void> {
     this.cache.refreshAll();
   }
 
-  public getWhirlpool(args: any) {
-    return this.factory.getWhirlpool(this.cache, args);
-  }
-
-  public getPosition(args: any) {
-    return this.factory.getPosition(this.cache, args);
-  }
-
-  public async listTokens(): Promise<any> {
+  public async getWhirlpool(address: PublicKey): Promise<WhirlpoolAccount> {
     throw new Error("Method not implemented.");
   }
 
-  public async listWhirlpools(): Promise<any> {
+  public async getWhirlpoolByTokens(
+    tokenA: PublicKey,
+    tokenB: PublicKey
+  ): Promise<WhirlpoolAccount> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getPosition(address: PublicKey): Promise<PositionAccount> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async getPositionByMint(positionMint: PublicKey): Promise<PositionAccount> {
+    throw new Error("Method not implemented.");
+  }
+
+  public async listWhirlpools(addresses: PublicKey[]): Promise<WhirlpoolAccount[]> {
     throw new Error("Method not implemented.");
   }
 
   // maybe crate OrcaUser that keys off of wallet address and cache the result
   // will there be other values cached by wallet address?
-  public async listPositions(wallet: PublicKey): Promise<OrcaPosition[]> {
-    const { value: tokenAccountsInfo } = await this.connection.getParsedTokenAccountsByOwner(
-      wallet,
-      {
-        programId: TOKEN_PROGRAM_ID,
-      },
-      "singleGossip"
-    );
-
-    const nftsAndNulls = tokenAccountsInfo.map((accountInfo) => {
-      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
-      if (amount !== "1") {
-        return null;
-      }
-
-      return new PublicKey(accountInfo.account.data.parsed.info.mint);
-    });
-    const nfts = nftsAndNulls.filter((address): address is PublicKey => address !== null);
-
-    const infos = nfts.map((mint) => ({
-      address: Position.deriveAddress(mint, this.cache.programId),
-      entity: Position,
-    }));
-    const allAccounts = await this.cache.fetchAll(infos);
-
-    const validAccounts = allAccounts.filter(
-      (account): account is [string, PositionAccount] => account[1] !== null
-    );
-    const orcaPositions = validAccounts.map((account) =>
-      this.getPosition({ positionMint: account[0] })
-    );
-    return orcaPositions;
+  public async listUserPositions(wallet: PublicKey): Promise<PositionAccount[]> {
+    return this.cache.listUserPositions(wallet, true);
   }
 }

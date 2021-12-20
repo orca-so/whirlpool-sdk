@@ -14,14 +14,7 @@ import {
 import { Token, TokenAmount, TickMath, BNUtils } from "../utils";
 import invariant from "tiny-invariant";
 import { defaultSlippagePercentage, NUM_REWARDS } from "../../constants";
-import {
-  PositionAccount,
-  Position,
-  Tick,
-  TickArray,
-  WhirlpoolAccount,
-  Whirlpool,
-} from "../entities";
+import { PositionEntity, TickArrayEntity, WhirlpoolEntity } from "../entities";
 import { OrcaCache } from "../cache";
 import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
@@ -40,7 +33,7 @@ export class OrcaPositionImpl implements OrcaPosition {
 
   constructor(cache: OrcaCache, { positionMint }: OrcaPositionArgs) {
     this.cache = cache;
-    this.address = Position.deriveAddress(positionMint, this.cache.programId);
+    this.address = PositionEntity.deriveAddress(positionMint, this.cache.programId);
   }
 
   public async getAddLiquidityQuote<A extends Token, B extends Token>(
@@ -49,7 +42,7 @@ export class OrcaPositionImpl implements OrcaPosition {
   ): Promise<AddLiquidityQuote<A, B>> {
     const position = await this.getPosition();
     const whirlpool = await this.getWhirlpool();
-    const positionStatus = Position.getPositionStatus(whirlpool, position);
+    const positionStatus = PositionEntity.getPositionStatus(whirlpool, position);
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
@@ -76,7 +69,7 @@ export class OrcaPositionImpl implements OrcaPosition {
   ): Promise<RemoveLiquidityQuote<A, B>> {
     const position = await this.getPosition();
     const whirlpool = await this.getWhirlpool();
-    const positionStatus = Position.getPositionStatus(whirlpool, position);
+    const positionStatus = PositionEntity.getPositionStatus(whirlpool, position);
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
@@ -215,7 +208,7 @@ export class OrcaPositionImpl implements OrcaPosition {
       [new BN(0), false],
     ];
     for (const i of range) {
-      if (Whirlpool.isRewardInitialized(whirlpoolRewardsInfos[i])) {
+      if (WhirlpoolEntity.isRewardInitialized(whirlpoolRewardsInfos[i])) {
         rewardGrowthsInsideX64[i] = [
           whirlpoolRewardsInfos[i].growthGlobalX64
             .sub(rewardGrowthsBelowX64[i])
@@ -502,7 +495,7 @@ export class OrcaPositionImpl implements OrcaPosition {
     const whirlpool = await this.getWhirlpool();
 
     if (tickLowerIndex === tickUpperIndex) {
-      const tickAddress = TickArray.getAddressContainingTickIndex(
+      const tickAddress = TickArrayEntity.getAddressContainingTickIndex(
         tickLowerIndex,
         whirlpool,
         this.cache.programId
@@ -510,17 +503,17 @@ export class OrcaPositionImpl implements OrcaPosition {
       const tickArray = await this.cache.getTickArray(tickAddress);
       invariant(!!tickArray, "OrcaPostion - tickArray does not exist");
       return {
-        tickLower: TickArray.getTick(tickArray, tickLowerIndex),
-        tickUpper: TickArray.getTick(tickArray, tickUpperIndex),
+        tickLower: TickArrayEntity.getTick(tickArray, tickLowerIndex),
+        tickUpper: TickArrayEntity.getTick(tickArray, tickUpperIndex),
       };
     }
 
-    const tickLowerAddress = TickArray.getAddressContainingTickIndex(
+    const tickLowerAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickLowerIndex,
       whirlpool,
       this.cache.programId
     );
-    const tickUpperAddress = TickArray.getAddressContainingTickIndex(
+    const tickUpperAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickUpperIndex,
       whirlpool,
       this.cache.programId
@@ -535,8 +528,8 @@ export class OrcaPositionImpl implements OrcaPosition {
     invariant(!!tickArrayUpper, "OrcaPosition - tickArrayUpper does not exist");
 
     return {
-      tickLower: TickArray.getTick(tickArrayLower, tickLowerIndex),
-      tickUpper: TickArray.getTick(tickArrayUpper, tickUpperIndex),
+      tickLower: TickArrayEntity.getTick(tickArrayLower, tickLowerIndex),
+      tickUpper: TickArrayEntity.getTick(tickArrayUpper, tickUpperIndex),
     };
   }
 

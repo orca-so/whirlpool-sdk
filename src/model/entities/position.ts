@@ -1,33 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { PositionStatus } from "../../public";
+import { PositionAccount, PositionStatus, WhirlpoolAccount } from "../..";
 import { PDA } from "../utils/pda";
-import { ParsableEntity, staticImplements, WhirlpoolAccount } from ".";
-import BN from "bn.js";
-
-export interface PositionRewardInfo {
-  readonly growthInsideCheckpointX64: BN;
-  readonly amountOwedU64: BN;
-}
-
-export interface PositionAccount {
-  readonly whirlpool: PublicKey;
-
-  readonly positionMint: PublicKey;
-  readonly liquidityU64: BN;
-  readonly tickLower: number;
-  readonly tickUpper: number;
-
-  readonly feeGrowthCheckpointAX64: BN;
-  readonly feeOwedAU64: BN;
-
-  readonly feeGrowthCheckpointBX64: BN;
-  readonly feeOwedBU64: BN;
-
-  readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
-}
+import { ParsableEntity, staticImplements } from ".";
 
 @staticImplements<ParsableEntity<PositionAccount>>()
-export class Position {
+export class PositionEntity {
   private constructor() {}
 
   public static deriveAddress(positionMint: PublicKey, programId: PublicKey): PublicKey {

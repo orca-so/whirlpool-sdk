@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { Percentage } from "../..";
-import { TickArray, TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
+import { Percentage, TickArrayAccount } from "../..";
+import { TickArrayEntity, WhirlpoolEntity } from "../entities";
 import { BNUtils, TickMath, Token, TokenAmount } from "../utils";
 import { xor } from "../utils/misc/boolean";
 
@@ -184,7 +184,7 @@ class SwapSimulator<A extends Token, B extends Token> {
     return BN.max(
       currentSqrtPriceX64.sub(sqrtPriceSlippageX64),
       TickMath.sqrtPriceAtTick(
-        TickArray.getPrevInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
+        TickArrayEntity.getPrevInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
       )
     );
   }
@@ -198,7 +198,7 @@ class SwapSimulator<A extends Token, B extends Token> {
     return BN.min(
       currentSqrtPriceX64.add(sqrtPriceSlippageX64),
       TickMath.sqrtPriceAtTick(
-        TickArray.getNextInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
+        TickArrayEntity.getNextInitializedTickIndex(currentTickArrayAccount, currentTickIndex)
       )
     );
   }

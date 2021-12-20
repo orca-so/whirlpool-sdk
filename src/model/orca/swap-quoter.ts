@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import invariant from "tiny-invariant";
-import { Percentage } from "../..";
-import { TickArray, TickArrayAccount, Whirlpool, WhirlpoolAccount } from "../entities";
+import { Percentage, TickArrayAccount, WhirlpoolAccount } from "../..";
+import { TickArrayEntity, WhirlpoolEntity } from "../entities";
 import { Token, TokenAmount, TickMath } from "../utils";
 
 /**
@@ -109,8 +109,8 @@ async function getSwapQuoteForExactInputAToB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputAToB()"
   );
 
-  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
-  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
+  const feeRate = WhirlpoolEntity.getFeeRate(input.whirlpool);
+  const protocolFeeRate = WhirlpoolEntity.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
@@ -247,8 +247,8 @@ async function getSwapQuoteForExactInputBToA<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForExactInputBToA()"
   );
 
-  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
-  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
+  const feeRate = WhirlpoolEntity.getFeeRate(input.whirlpool);
+  const protocolFeeRate = WhirlpoolEntity.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.input.toU64(), // u64
@@ -376,8 +376,8 @@ async function getSwapQuoteForAToExactOutputB<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForAToExactOutputB()"
   );
 
-  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
-  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
+  const feeRate = WhirlpoolEntity.getFeeRate(input.whirlpool);
+  const protocolFeeRate = WhirlpoolEntity.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.output.toU64(), // u64
@@ -500,8 +500,8 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
     "Invalid SwapQuoteInput for getSwapQuoteForBToExactOutputA()"
   );
 
-  const feeRate = Whirlpool.getFeeRate(input.whirlpool);
-  const protocolFeeRate = Whirlpool.getProtocolFeeRate(input.whirlpool);
+  const feeRate = WhirlpoolEntity.getFeeRate(input.whirlpool);
+  const protocolFeeRate = WhirlpoolEntity.getProtocolFeeRate(input.whirlpool);
 
   const state = {
     amountRemaining: input.amount.output.toU64(), // u64
@@ -522,12 +522,12 @@ async function getSwapQuoteForBToExactOutputA<A extends Token, B extends Token>(
 
   while (state.amountRemaining.gt(new u64(0)) && state.currSqrtPriceX64.lt(sqrtPriceLimitX64)) {
     // Find the next initialized tick since we're gonna be moving the price up when swapping B to A due to price being sqrt(B/A)
-    const nextTickIndex = await TickArray.getNextInitializedTick(
+    const nextTickIndex = await TickArrayEntity.getNextInitializedTick(
       state.currTickArray,
       state.currTickIndex
     );
     const nextTickSqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
-    const nextTick = TickArray.getTick(state.currTickArray, nextTickIndex);
+    const nextTick = TickArrayEntity.getTick(state.currTickArray, nextTickIndex);
 
     // Clamp the target price to min(price limit, next tick's price)
     const targetSqrtPriceX64 = new q64(q64.min(nextTickSqrtPriceX64, sqrtPriceLimitX64));
