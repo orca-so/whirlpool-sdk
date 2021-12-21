@@ -12,5 +12,5 @@ export function priceToSqrtPriceX64(price: TokenPrice<Token, Token>): BN {
 
   // We're left shifting the decimal by 64 bits. Since Decimal doesn't have a left shift operator, we multiply it with (1 << 64) instead which has the same effect
   const sqrtPriceX64Decimal = sqrtPriceDecimal.mul(new BN(1).shln(64).toString());
-  return new BN(sqrtPriceX64Decimal.floor().toHex(), "hex");
+  return new BN(sqrtPriceX64Decimal.floor().toHex().slice(2), "hex");
 }
