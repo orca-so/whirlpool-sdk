@@ -13,7 +13,7 @@ describe("TokenPrice", () => {
 
     const ethPriceInUsdc = TokenPrice.fromBaseTokenAndQuoteAmount(eth, quoteTokenAmount);
 
-    expect(ethPriceInUsdc.toDecimal()).toEqual(new Decimal(4000));
+    expect(ethPriceInUsdc.toDecimal().toString()).toEqual(new Decimal(4000).toString());
     expect(ethPriceInUsdc.toU64().toString()).toEqual("4000000000");
   });
 
@@ -23,7 +23,7 @@ describe("TokenPrice", () => {
 
     const ethPriceInUsdc = TokenPrice.fromBaseAndQuoteAmounts(baseTokenAmount, quoteTokenAmount);
 
-    expect(ethPriceInUsdc.toDecimal()).toEqual(new Decimal(4000));
+    expect(ethPriceInUsdc.toDecimal().toString()).toEqual(new Decimal(4000).toString());
     expect(ethPriceInUsdc.toU64().toString()).toEqual("4000000000");
   });
 
@@ -32,7 +32,7 @@ describe("TokenPrice", () => {
 
     const usdcPriceInEth = TokenPrice.fromBaseTokenAndQuoteAmount(eth, quoteTokenAmount).invert();
 
-    expect(usdcPriceInEth.toDecimal()).toEqual(new Decimal(0.00025));
+    expect(usdcPriceInEth.toDecimal().toString()).toEqual(new Decimal(0.00025).toString());
     expect(usdcPriceInEth.toU64().toString()).toEqual("250000000000000");
   });
 });

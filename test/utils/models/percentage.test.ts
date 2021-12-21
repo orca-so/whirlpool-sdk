@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { Percentage } from "../../../src";
+import { Percentage } from "../../../src/public/utils/models/percentage";
 
 const oneOverThousand: Percentage = Percentage.fromFraction(1, 1000);
 const tenOverTenThousand: Percentage = Percentage.fromFraction(1, 10000);
