@@ -1,5 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
-import { Percentage, WhirlpoolAccount, WhirlpoolRewardInfo } from "../..";
+import { Percentage } from "../..";
+import { WhirlpoolAccount, WhirlpoolRewardInfo } from "../../public/accounts";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements } from "./types";
 

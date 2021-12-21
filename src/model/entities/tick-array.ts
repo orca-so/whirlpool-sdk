@@ -4,7 +4,7 @@ import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements, WhirlpoolEntity } from ".";
 import { TickMath } from "../utils";
 import invariant from "tiny-invariant";
-import { Tick, TickArrayAccount, WhirlpoolAccount } from "../..";
+import { Tick, TickArrayAccount, WhirlpoolAccount } from "../../public/accounts";
 
 enum TickSearchDirection {
   Left,
