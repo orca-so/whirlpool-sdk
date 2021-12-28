@@ -26,8 +26,6 @@ export class TokenEntity {
 
     const accountInfo = AccountLayout.decode(accountData);
 
-    // TODO check isInitialized = accountInfo.state !== 0 ?
-
     return {
       mint: new PublicKey(accountInfo.mint),
       owner: new PublicKey(accountInfo.owner),

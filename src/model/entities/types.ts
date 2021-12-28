@@ -4,6 +4,7 @@ export interface ParsableEntity<T> {
   /**
    * Parse account data
    *
+   * @param coder
    * @param accountData
    * @returns
    */

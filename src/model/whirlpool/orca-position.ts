@@ -25,15 +25,15 @@ import BN from "bn.js";
 //      client shouldn't have direct access to account. rather call methods (i.e. orcaPosition.getLowerTick())
 //      basically need to make it easy to implement react component
 export class OrcaPositionImpl implements OrcaPosition {
-  private readonly cache: OrcaDAL;
+  private readonly dal: OrcaDAL;
   // private readonly tokenA: A;
   // private readonly tokenB: B;
   // private readonly whirlpoolAddress: PublicKey;
   private readonly address: PublicKey;
 
-  constructor(cache: OrcaDAL, { positionMint }: OrcaPositionArgs) {
-    this.cache = cache;
-    this.address = PositionEntity.deriveAddress(positionMint, this.cache.programId);
+  constructor(dal: OrcaDAL, { positionMint }: OrcaPositionArgs) {
+    this.dal = dal;
+    this.address = PositionEntity.deriveAddress(positionMint, this.dal.programId);
   }
 
   public async getAddLiquidityQuote<A extends Token, B extends Token>(
@@ -473,14 +473,14 @@ export class OrcaPositionImpl implements OrcaPosition {
   }
 
   private async getPosition(): Promise<PositionAccount> {
-    const position = await this.cache.getPosition(this.address);
+    const position = await this.dal.getPosition(this.address);
     invariant(!!position, "OrcaPosition - position does not exist");
     return position;
   }
 
   private async getWhirlpool(): Promise<WhirlpoolAccount> {
     const position = await this.getPosition();
-    const whirlpool = await this.cache.getWhirlpool(position.whirlpool);
+    const whirlpool = await this.dal.getWhirlpool(position.whirlpool);
     invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
     return whirlpool;
   }
@@ -498,9 +498,9 @@ export class OrcaPositionImpl implements OrcaPosition {
       const tickAddress = TickArrayEntity.getAddressContainingTickIndex(
         tickLowerIndex,
         whirlpool,
-        this.cache.programId
+        this.dal.programId
       );
-      const tickArray = await this.cache.getTickArray(tickAddress);
+      const tickArray = await this.dal.getTickArray(tickAddress);
       invariant(!!tickArray, "OrcaPostion - tickArray does not exist");
       return {
         tickLower: TickArrayEntity.getTick(tickArray, tickLowerIndex),
@@ -511,17 +511,17 @@ export class OrcaPositionImpl implements OrcaPosition {
     const tickLowerAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickLowerIndex,
       whirlpool,
-      this.cache.programId
+      this.dal.programId
     );
     const tickUpperAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickUpperIndex,
       whirlpool,
-      this.cache.programId
+      this.dal.programId
     );
 
     const [tickArrayLower, tickArrayUpper] = await Promise.all([
-      await this.cache.getTickArray(tickLowerAddress),
-      await this.cache.getTickArray(tickUpperAddress),
+      await this.dal.getTickArray(tickLowerAddress),
+      await this.dal.getTickArray(tickUpperAddress),
     ]);
 
     invariant(!!tickArrayLower, "OrcaPosition - tickArrayLower does not exist");

@@ -1,10 +1,7 @@
 import { u64 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
-import { Owner, TransactionPayload } from "..";
+import { Owner } from "..";
 import { Token } from "../../model/utils/token";
 import { Percentage } from "../utils/models/percentage";
-import { TickArrayAccount } from "../../model/entities";
-import { SwapAmount, SwapQuote } from "../../model/whirlpool/swap-quoter";
 
 export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenA: A;
