@@ -1,6 +1,6 @@
 import { Connection } from "@solana/web3.js";
-import { Orca, OrcaConfig } from ".";
-import { OrcaImpl } from "../model";
+import { Orca, OrcaConfig } from "..";
+import { OrcaImpl } from "../../model";
 
 /**
  * @param connection
