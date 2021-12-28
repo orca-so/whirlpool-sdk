@@ -1,3 +1,4 @@
+import { AccountsCoder, Coder } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../..";
 import { WhirlpoolData, WhirlpoolRewardInfoData } from "../../public/mock";
@@ -40,11 +41,15 @@ export class WhirlpoolEntity {
     return PDA.derive(programId, ["whirlpool", whirlpoolsConfig, tokenMintA, tokenMintB]).publicKey;
   }
 
-  public static parse(accountData: Buffer | undefined | null): WhirlpoolData | null {
+  public static parse(coder: Coder, accountData: Buffer | undefined | null): WhirlpoolData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
-    throw new Error("TODO - import from contract code");
+    const discriminator = AccountsCoder.accountDiscriminator("whirlpool");
+    if (discriminator.compare(accountData.slice(0, 8))) {
+      return null;
+    }
+    return coder.accounts.decode("whirlpool", accountData);
   }
 }

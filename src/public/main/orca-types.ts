@@ -1,8 +1,10 @@
+import { Wallet } from "@project-serum/anchor";
 import { Commitment, Connection, PublicKey } from "@solana/web3.js";
 import { OrcaNetwork } from "..";
 import { OrcaImpl } from "../../model";
 
 export type OrcaConfig = {
+  network?: OrcaNetwork;
   commitment?: Commitment;
 };
 
@@ -36,10 +38,6 @@ export type Orca = {
  * @param cache
  * @returns
  */
-export function getOrca(
-  connection: Connection,
-  network = OrcaNetwork.MAINNET,
-  config?: OrcaConfig
-): Orca {
-  return new OrcaImpl(connection, network, config);
+export function getOrca(connection: Connection, config?: OrcaConfig): Orca {
+  return new OrcaImpl(connection, config);
 }

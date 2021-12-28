@@ -5,6 +5,7 @@ import { ParsableEntity, staticImplements, WhirlpoolEntity } from ".";
 import { TickMath } from "../utils";
 import invariant from "tiny-invariant";
 import { TickData, TickArrayData, WhirlpoolData } from "../../public/mock";
+import { AccountsCoder, Coder } from "@project-serum/anchor";
 
 enum TickSearchDirection {
   Left,
@@ -126,12 +127,16 @@ export class TickArrayEntity {
     return PDA.derive(programId, ["tick_array", whirlpoolAddress, startTick.toString()]).publicKey;
   }
 
-  public static parse(accountData: Buffer | undefined | null): TickArrayData | null {
+  public static parse(coder: Coder, accountData: Buffer | undefined | null): TickArrayData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
-    throw new Error("TODO - import from contract code");
+    const discriminator = AccountsCoder.accountDiscriminator("tickArray");
+    if (discriminator.compare(accountData.slice(0, 8))) {
+      return null;
+    }
+    return coder.accounts.decode("tickArray", accountData);
   }
 
   private static isValidTickIndex(tickIndex: number) {

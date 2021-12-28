@@ -1,14 +1,18 @@
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaNetwork, Orca, PositionData, WhirlpoolData, OrcaConfig } from "../..";
+import { Orca, PositionData, WhirlpoolData, OrcaConfig } from "../..";
+import { defaultCommitment, defaultNetwork } from "../../constants";
 import { OrcaDALImpl, OrcaDAL } from "../dal";
 import { PositionEntity, WhirlpoolEntity } from "../entities";
 
 export class OrcaImpl implements Orca {
   private readonly dal: OrcaDAL;
-  private readonly client: any; // WhirlpoolClient from low-level-sdk
 
-  constructor(connection: Connection, network: OrcaNetwork, config?: OrcaConfig) {
-    this.dal = new OrcaDALImpl(connection, network, config?.commitment || "singleGossip");
+  constructor(connection: Connection, config?: OrcaConfig) {
+    this.dal = new OrcaDALImpl(
+      connection,
+      config?.network || defaultNetwork,
+      config?.commitment || defaultCommitment
+    );
   }
 
   public async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolData | null> {
@@ -49,8 +53,8 @@ export class OrcaImpl implements Orca {
     return this.listPositions(addresses, refresh);
   }
 
-  public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
-    return this.dal.listUserPositions(wallet);
+  public async listUserPositions(walletAddress: PublicKey): Promise<PositionData[]> {
+    return this.dal.listUserPositions(walletAddress);
   }
 
   public async refreshCache(): Promise<void> {

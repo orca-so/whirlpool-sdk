@@ -3,4 +3,8 @@
   "compilerOptions": {
     "composite": true,
   },
+  "include": [
+    "./**/*",
+    "./public/mock/artifacts/**/*.json" /* TODO delete later */
+  ]
 }

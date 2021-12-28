@@ -9,8 +9,16 @@ import {
   TokenEntity,
   WhirlpoolEntity,
 } from "../entities";
-import { OrcaNetwork, PositionData, TickArrayData, TokenData, WhirlpoolData } from "../..";
+import {
+  OrcaNetwork,
+  PositionData,
+  TickArrayData,
+  TokenData,
+  WhirlpoolData,
+  WhirlpoolIDL,
+} from "../..";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Coder } from "@project-serum/anchor";
 
 export class OrcaDALImpl implements OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
@@ -19,6 +27,7 @@ export class OrcaDALImpl implements OrcaDAL {
   private readonly _cache: InternalCacheStore = {};
   private readonly _connection: Connection;
   private readonly _commitment: Commitment;
+  private readonly _coder: Coder = new Coder(WhirlpoolIDL);
 
   constructor(connection: Connection, network: OrcaNetwork, commitment: Commitment) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
@@ -67,7 +76,7 @@ export class OrcaDALImpl implements OrcaDAL {
 
     for (const [idx, [key, cachedContent]] of Object.entries(this._cache).entries()) {
       const entity = cachedContent.entity;
-      const value = entity.parse(data[idx]);
+      const value = entity.parse(this._coder, data[idx]);
 
       this._cache[key] = { entity, value };
     }
@@ -117,7 +126,7 @@ export class OrcaDALImpl implements OrcaDAL {
 
     const accountInfo = await this._connection.getAccountInfo(address, this._commitment);
     const accountData = accountInfo?.data;
-    const value = entity.parse(accountData);
+    const value = entity.parse(this._coder, accountData);
     this._cache[key] = { entity, value };
 
     return value;
@@ -149,7 +158,7 @@ export class OrcaDALImpl implements OrcaDAL {
     const data = await this.bulkRequest(undefinedAccounts.map((account) => account.key));
 
     for (const [dataIdx, { cachedIdx, key }] of undefinedAccounts.entries()) {
-      const value = entity.parse(data[dataIdx]);
+      const value = entity.parse(this._coder, data[dataIdx]);
       this._cache[key] = { entity, value };
       cachedValues[cachedIdx] = value;
     }

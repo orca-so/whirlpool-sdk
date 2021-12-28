@@ -1,3 +1,4 @@
+import { Coder } from "@project-serum/anchor";
 import {
   AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -18,7 +19,7 @@ export class TokenEntity {
       .publicKey;
   }
 
-  public static parse(accountData: Buffer | undefined | null): TokenData | null {
+  public static parse(_coder: Coder, accountData: Buffer | undefined | null): TokenData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
