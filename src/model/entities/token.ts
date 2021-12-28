@@ -6,10 +6,10 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { ParsableEntity, staticImplements } from ".";
-import { TokenAccount } from "../..";
+import { TokenData } from "../..";
 import { PDA } from "../utils";
 
-@staticImplements<ParsableEntity<TokenAccount>>()
+@staticImplements<ParsableEntity<TokenData>>()
 export class TokenEntity {
   private constructor() {}
 
@@ -18,7 +18,7 @@ export class TokenEntity {
       .publicKey;
   }
 
-  public static parse(accountData: Buffer | undefined | null): TokenAccount | null {
+  public static parse(accountData: Buffer | undefined | null): TokenData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }

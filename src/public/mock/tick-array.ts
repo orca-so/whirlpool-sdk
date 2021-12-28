@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
-export interface Tick {
+export interface TickData {
   readonly index: number;
   readonly initialized: boolean;
   readonly liquidityNetI64: BN;
@@ -13,8 +13,8 @@ export interface Tick {
   readonly rewardGrowthsOutsideX64: [BN, BN, BN];
 }
 
-export interface TickArrayAccount {
+export interface TickArrayData {
   readonly whirlpool: PublicKey;
   readonly startTick: number;
-  readonly ticks: Tick[];
+  readonly ticks: TickData[];
 }

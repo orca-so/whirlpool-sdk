@@ -15,7 +15,7 @@ import { Token, TokenAmount, TickMath, BNUtils } from "../utils";
 import invariant from "tiny-invariant";
 import { defaultSlippagePercentage, NUM_REWARDS } from "../../constants";
 import { PositionEntity, TickArrayEntity, WhirlpoolEntity } from "../entities";
-import { OrcaCache } from "../cache";
+import { OrcaDAL } from "../dal";
 import { u64 } from "@solana/spl-token";
 import BN from "bn.js";
 
@@ -25,13 +25,13 @@ import BN from "bn.js";
 //      client shouldn't have direct access to account. rather call methods (i.e. orcaPosition.getLowerTick())
 //      basically need to make it easy to implement react component
 export class OrcaPositionImpl implements OrcaPosition {
-  private readonly cache: OrcaCache;
+  private readonly cache: OrcaDAL;
   // private readonly tokenA: A;
   // private readonly tokenB: B;
   // private readonly whirlpoolAddress: PublicKey;
   private readonly address: PublicKey;
 
-  constructor(cache: OrcaCache, { positionMint }: OrcaPositionArgs) {
+  constructor(cache: OrcaDAL, { positionMint }: OrcaPositionArgs) {
     this.cache = cache;
     this.address = PositionEntity.deriveAddress(positionMint, this.cache.programId);
   }

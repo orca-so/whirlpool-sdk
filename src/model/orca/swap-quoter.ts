@@ -1,6 +1,6 @@
 import BN from "bn.js";
 import { Percentage } from "../..";
-import { Tick, TickArrayAccount } from "../../public/accounts";
+import { TickData, TickArrayData } from "../../public/mock";
 import { TickArrayEntity } from "../entities";
 import { BNUtils, TickMath, Token } from "../utils";
 
@@ -27,12 +27,12 @@ type SwapSimulatorConfig<A extends Token, B extends Token> = {
   feeRate: Percentage;
   protocolFeeRate: Percentage;
   slippageTolerance: Percentage;
-  fetchTickArrayAccount: (tickIndex: number) => Promise<TickArrayAccount>;
+  fetchTickArrayAccount: (tickIndex: number) => Promise<TickArrayData>;
 };
 
 type SwapState = {
   sqrtPriceX64: BN;
-  tickArray: TickArrayAccount;
+  tickArray: TickArrayData;
   tickIndex: number;
   liquidity: BN;
   specifiedAmountLeft: BN; // either the input remaining to be swapped or output remaining to be swapped for
@@ -41,7 +41,7 @@ type SwapState = {
 
 type SwapSimulationInput = {
   amount: BN;
-  currentTickArray: TickArrayAccount;
+  currentTickArray: TickArrayData;
   currentTickIndex: number;
   currentLiquidity: BN;
 };
@@ -55,7 +55,7 @@ type SwapSimulationOutput = {
 
 type SwapStepSimulationInput = {
   sqrtPriceLimitX64: BN;
-  tickArray: TickArrayAccount;
+  tickArray: TickArrayData;
   tickIndex: number;
   liquidity: BN;
   amount: BN;
@@ -127,7 +127,7 @@ export class SwapSimulator<A extends Token, B extends Token> {
         state.tickIndex = nextTickIndex;
         state.sqrtPriceX64 = TickMath.sqrtPriceAtTick(nextTickIndex);
 
-        let nextTick: Tick;
+        let nextTick: TickData;
         try {
           nextTick = TickArrayEntity.getTick(state.tickArray, nextTickIndex);
         } catch {
@@ -280,7 +280,7 @@ export class SwapSimulator<A extends Token, B extends Token> {
     };
 
   private static calculateSqrtPriceAtPrevInitializedTick(
-    currentTickArrayAccount: TickArrayAccount,
+    currentTickArrayAccount: TickArrayData,
     currentTickIndex: number,
     sqrtPriceLimitX64: BN
   ): BN {
@@ -293,7 +293,7 @@ export class SwapSimulator<A extends Token, B extends Token> {
   }
 
   private static calculateSqrtPriceAtNextInitializedTick(
-    currentTickArrayAccount: TickArrayAccount,
+    currentTickArrayAccount: TickArrayData,
     currentTickIndex: number,
     sqrtPriceLimitX64: BN
   ): BN {

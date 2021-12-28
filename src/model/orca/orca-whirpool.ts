@@ -3,7 +3,7 @@ import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } 
 import invariant from "tiny-invariant";
 import { Token, TokenPrice, TickMath, BNUtils } from "../utils";
 import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
-import { OrcaCache } from "../cache";
+import { OrcaCache } from "../dal";
 import { PublicKey } from "@solana/web3.js";
 import { defaultSlippagePercentage } from "../../constants";
 import { u64 } from "@solana/spl-token";

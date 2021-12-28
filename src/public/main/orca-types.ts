@@ -1,14 +1,31 @@
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Commitment, Connection, PublicKey } from "@solana/web3.js";
 import { OrcaNetwork } from "..";
 import { OrcaImpl } from "../../model";
 
+export type OrcaConfig = {
+  commitment?: Commitment;
+};
+
 export type Orca = {
-  // refreshCache(): Promise<void>;
-  // getWhirlpool: (args: any) => any;
-  // getPosition: (args: any) => any;
-  // listTokens(): Promise<any>;
-  // listWhirlpools(): Promise<any>;
-  // listPositions(wallet: PublicKey): Promise<any>;
+  getWhirlpool: (address: PublicKey, refresh?: boolean) => Promise<any>;
+
+  getWhirlpoolByTokens: (
+    tokenMintA: PublicKey,
+    tokenMintB: PublicKey,
+    refresh?: boolean
+  ) => Promise<any>;
+
+  listWhirlpools: (addresses: PublicKey[], refresh?: boolean) => Promise<any>;
+
+  getPosition: (address: PublicKey, refresh?: boolean) => Promise<any>;
+
+  getPositionByMint: (positionMint: PublicKey, refresh?: boolean) => Promise<any>;
+
+  listPositions(addresses: PublicKey[], refresh?: boolean): Promise<any>;
+
+  listUserPositions(wallet: PublicKey): Promise<any>;
+
+  refreshCache(): Promise<void>;
 };
 
 /**
@@ -22,7 +39,7 @@ export type Orca = {
 export function getOrca(
   connection: Connection,
   network = OrcaNetwork.MAINNET,
-  cache = false
+  config?: OrcaConfig
 ): Orca {
-  return new OrcaImpl(connection, network, cache);
+  return new OrcaImpl(connection, network, config);
 }
