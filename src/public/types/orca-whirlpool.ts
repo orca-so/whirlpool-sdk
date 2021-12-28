@@ -4,7 +4,7 @@ import { Owner, TransactionPayload } from "..";
 import { Token } from "../../model/utils/token";
 import { Percentage } from "../utils/models/percentage";
 import { TickArrayAccount } from "../../model/entities";
-import { SwapAmount, SwapQuote } from "../../model/orca/swap-quoter";
+import { SwapAmount, SwapQuote } from "../../model/whirlpool/swap-quoter";
 
 export type OrcaWhirlpoolArgs<A extends Token, B extends Token> = {
   tokenA: A;

@@ -1,7 +1,5 @@
-import { Wallet } from "@project-serum/anchor";
-import { Commitment, Connection, PublicKey } from "@solana/web3.js";
+import { Commitment, PublicKey } from "@solana/web3.js";
 import { OrcaNetwork } from "..";
-import { OrcaImpl } from "../../model";
 
 export type OrcaConfig = {
   network?: OrcaNetwork;
@@ -29,15 +27,3 @@ export type Orca = {
 
   refreshCache(): Promise<void>;
 };
-
-/**
- * Note: cache is turned off by default.
- *
- * @param connection
- * @param network
- * @param cache
- * @returns
- */
-export function getOrca(connection: Connection, config?: OrcaConfig): Orca {
-  return new OrcaImpl(connection, config);
-}
