@@ -9,16 +9,10 @@ import {
   TokenEntity,
   WhirlpoolEntity,
 } from "../entities";
-import {
-  OrcaNetwork,
-  PositionData,
-  TickArrayData,
-  TokenData,
-  WhirlpoolData,
-  WhirlpoolIDL,
-} from "../..";
+import { OrcaNetwork, PositionData, TickArrayData, TokenData, WhirlpoolData } from "../..";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Coder } from "@project-serum/anchor";
+import { WhirlpoolIDL } from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaDALImpl implements OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
