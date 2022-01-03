@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
-export interface WhirlpoolRewardInfo {
+export interface WhirlpoolRewardInfoData {
   readonly mint: PublicKey;
   readonly vault: PublicKey;
   readonly authority: PublicKey;
@@ -9,7 +9,7 @@ export interface WhirlpoolRewardInfo {
   readonly growthGlobalX64: BN;
 }
 
-export interface WhirlpoolAccount {
+export interface WhirlpoolData {
   readonly whirlpoolsConfig: PublicKey;
   readonly whirlpoolBump: number;
 
@@ -34,5 +34,5 @@ export interface WhirlpoolAccount {
 
   readonly rewardLastUpdatedTimestampU64: BN;
 
-  readonly rewardInfos: [WhirlpoolRewardInfo, WhirlpoolRewardInfo, WhirlpoolRewardInfo];
+  readonly rewardInfos: [WhirlpoolRewardInfoData, WhirlpoolRewardInfoData, WhirlpoolRewardInfoData];
 }

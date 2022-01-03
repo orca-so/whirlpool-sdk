@@ -1,12 +1,12 @@
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 
-export interface PositionRewardInfo {
+export interface PositionRewardInfoData {
   readonly growthInsideCheckpointX64: BN;
   readonly amountOwedU64: BN;
 }
 
-export interface PositionAccount {
+export interface PositionData {
   readonly whirlpool: PublicKey;
 
   readonly positionMint: PublicKey;
@@ -20,5 +20,5 @@ export interface PositionAccount {
   readonly feeGrowthCheckpointBX64: BN;
   readonly feeOwedBU64: BN;
 
-  readonly rewardInfos: [PositionRewardInfo, PositionRewardInfo, PositionRewardInfo];
+  readonly rewardInfos: [PositionRewardInfoData, PositionRewardInfoData, PositionRewardInfoData];
 }

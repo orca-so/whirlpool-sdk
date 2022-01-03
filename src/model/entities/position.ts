@@ -1,9 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { PositionAccount, PositionStatus, WhirlpoolAccount } from "../..";
+import { PositionData, PositionStatus, WhirlpoolData } from "../..";
 import { PDA } from "../utils/pda";
 import { ParsableEntity, staticImplements } from ".";
+import { AccountsCoder, Coder } from "@project-serum/anchor";
 
-@staticImplements<ParsableEntity<PositionAccount>>()
+@staticImplements<ParsableEntity<PositionData>>()
 export class PositionEntity {
   private constructor() {}
 
@@ -12,8 +13,8 @@ export class PositionEntity {
   }
 
   public static getPositionStatus(
-    whirlpool: WhirlpoolAccount,
-    position: PositionAccount
+    whirlpool: WhirlpoolData,
+    position: PositionData
   ): PositionStatus {
     const { tickCurrentIndex } = whirlpool;
     const { tickLower, tickUpper } = position;
@@ -27,11 +28,15 @@ export class PositionEntity {
     }
   }
 
-  public static parse(accountData: Buffer | undefined | null): PositionAccount | null {
+  public static parse(coder: Coder, accountData: Buffer | undefined | null): PositionData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
-    throw new Error("TODO - import from contract code");
+    const discriminator = AccountsCoder.accountDiscriminator("position");
+    if (discriminator.compare(accountData.slice(0, 8))) {
+      return null;
+    }
+    return coder.accounts.decode("position", accountData);
   }
 }

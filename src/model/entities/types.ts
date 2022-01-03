@@ -1,11 +1,14 @@
+import { Coder } from "@project-serum/anchor";
+
 export interface ParsableEntity<T> {
   /**
    * Parse account data
    *
+   * @param coder
    * @param accountData
    * @returns
    */
-  parse: (accountData: Buffer | undefined | null) => T | null;
+  parse: (coder: Coder, accountData: Buffer | undefined | null) => T | null;
 }
 
 /**

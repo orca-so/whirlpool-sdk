@@ -1,12 +1,11 @@
 import { OrcaWhirlpool, OrcaWhirlpoolArgs, Owner, Percentage } from "../../public";
-import { TickArrayAccount, TickArrayEntity, WhirlpoolAccount, WhirlpoolEntity } from "../entities";
+import { TickArrayEntity, WhirlpoolEntity } from "../entities";
 import invariant from "tiny-invariant";
 import { Token, TokenPrice, TickMath, BNUtils } from "../utils";
-import { getSwapQuote, SwapAmount, SwapQuote } from "./swap-quoter";
-import { OrcaCache } from "../cache";
 import { PublicKey } from "@solana/web3.js";
 import { defaultSlippagePercentage } from "../../constants";
 import { u64 } from "@solana/spl-token";
+import { OrcaDAL } from "../dal";
 
 /**
  * Random notes: nft represents the authority to a specific position
@@ -14,20 +13,20 @@ import { u64 } from "@solana/spl-token";
 export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaWhirlpool<A, B> {
   private readonly tokenA: A;
   private readonly tokenB: B;
-  private readonly cache: OrcaCache;
+  private readonly dal: OrcaDAL;
   private readonly address: PublicKey;
 
-  constructor(cache: OrcaCache, { tokenA, tokenB }: OrcaWhirlpoolArgs<A, B>) {
+  constructor(dal: OrcaDAL, { tokenA, tokenB }: OrcaWhirlpoolArgs<A, B>) {
     invariant(!tokenA.equals(tokenB), "tokens must be different");
 
     [this.tokenA, this.tokenB] = Token.sort(tokenA, tokenB);
-    this.cache = cache;
+    this.dal = dal;
 
     this.address = WhirlpoolEntity.deriveAddress(
-      this.cache.whirlpoolsConfig,
+      this.dal.whirlpoolsConfig,
       this.tokenA.mint,
       this.tokenB.mint,
-      this.cache.programId
+      this.dal.programId
     );
   }
 
@@ -134,16 +133,16 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     const tickArrayAddress = TickArrayEntity.getAddressContainingTickIndex(
       tickIndex,
       whirlpool,
-      this.cache.programId
+      this.dal.programId
     );
-    const tickArray = await this.cache.getTickArray(tickArrayAddress);
+    const tickArray = await this.dal.getTickArray(tickArrayAddress);
     invariant(!!tickArray, "loadTickArray - tick_array does not exist");
 
     return tickArray;
   }
 
   private async getWhirlpool(): Promise<WhirlpoolAccount> {
-    const whirlpool = await this.cache.getWhirlpool(this.address);
+    const whirlpool = await this.dal.getWhirlpool(this.address);
     invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
     return whirlpool;
   }
@@ -153,10 +152,10 @@ export class OrcaWhirpoolImpl<A extends Token, B extends Token> implements OrcaW
     const tickArrayAddress = TickArrayEntity.deriveAddress(
       this.address,
       tickArrayStart,
-      this.cache.programId
+      this.dal.programId
     );
 
-    const tickArray = await this.cache.getTickArray(tickArrayAddress);
+    const tickArray = await this.dal.getTickArray(tickArrayAddress);
     invariant(!!tickArray, "OrcaWhirlpool - tickArray does not exist");
     return tickArray;
   }

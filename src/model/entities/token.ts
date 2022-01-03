@@ -1,3 +1,4 @@
+import { Coder } from "@project-serum/anchor";
 import {
   AccountLayout,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -6,10 +7,10 @@ import {
 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { ParsableEntity, staticImplements } from ".";
-import { TokenAccount } from "../..";
+import { TokenData } from "../..";
 import { PDA } from "../utils";
 
-@staticImplements<ParsableEntity<TokenAccount>>()
+@staticImplements<ParsableEntity<TokenData>>()
 export class TokenEntity {
   private constructor() {}
 
@@ -18,14 +19,12 @@ export class TokenEntity {
       .publicKey;
   }
 
-  public static parse(accountData: Buffer | undefined | null): TokenAccount | null {
+  public static parse(_coder: Coder, accountData: Buffer | undefined | null): TokenData | null {
     if (accountData === undefined || accountData === null || accountData.length === 0) {
       return null;
     }
 
     const accountInfo = AccountLayout.decode(accountData);
-
-    // TODO check isInitialized = accountInfo.state !== 0 ?
 
     return {
       mint: new PublicKey(accountInfo.mint),

@@ -1,5 +1,5 @@
 import { Commitment, Connection, PublicKey } from "@solana/web3.js";
-import { CachedAccount, CacheStrategy, OrcaCache, CacheStore } from ".";
+import { CachedValue, InternalCacheStore, OrcaDAL } from ".";
 import invariant from "tiny-invariant";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../../constants";
 import {
@@ -9,79 +9,58 @@ import {
   TokenEntity,
   WhirlpoolEntity,
 } from "../entities";
-import {
-  OrcaNetwork,
-  PositionAccount,
-  TickArrayAccount,
-  TokenAccount,
-  WhirlpoolAccount,
-} from "../..";
+import { OrcaNetwork, PositionData, TickArrayData, TokenData, WhirlpoolData } from "../..";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Coder } from "@project-serum/anchor";
+import { WhirlpoolIDL } from "@orca-so/whirlpool-client-sdk";
 
-// TODO part of config
-const COMMITMENT: Commitment = "singleGossip";
-
-export class OrcaCacheImpl implements OrcaCache {
+export class OrcaDALImpl implements OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 
-  private readonly _cache: CacheStore = {};
+  private readonly _cache: InternalCacheStore = {};
   private readonly _connection: Connection;
-  private readonly _strategy: CacheStrategy;
+  private readonly _commitment: Commitment;
+  private readonly _coder: Coder = new Coder(WhirlpoolIDL);
 
-  /*** listUserPositions ***/
-  private _userWallet: PublicKey | null = null;
-  private _userPositions: PositionAccount[] | null = null;
-
-  constructor(
-    connection: Connection,
-    network: OrcaNetwork,
-    strategy = CacheStrategy.Manual,
-    callback?: (key: string) => void
-  ) {
+  constructor(connection: Connection, network: OrcaNetwork, commitment: Commitment) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
     this._connection = connection;
-    this._strategy = strategy;
+    this._commitment = commitment;
   }
 
   /*** Public Methods ***/
 
-  public async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolAccount | null> {
+  public async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolData | null> {
     return this.get(address, WhirlpoolEntity, refresh);
   }
 
-  public async getPosition(address: PublicKey, refresh = false): Promise<PositionAccount | null> {
+  public async getPosition(address: PublicKey, refresh = false): Promise<PositionData | null> {
     return this.get(address, PositionEntity, refresh);
   }
 
-  public async getTickArray(address: PublicKey, refresh = false): Promise<TickArrayAccount | null> {
+  public async getTickArray(address: PublicKey, refresh = false): Promise<TickArrayData | null> {
     return this.get(address, TickArrayEntity, refresh);
   }
 
-  public async getToken(address: PublicKey, refresh = false): Promise<TokenAccount | null> {
+  public async getToken(address: PublicKey, refresh = false): Promise<TokenData | null> {
     return this.get(address, TokenEntity, refresh);
   }
 
-  public async listWhirlpools(
-    addresses: PublicKey[],
-    refresh = false
-  ): Promise<WhirlpoolAccount[]> {
+  public async listWhirlpools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
     return this.list(addresses, WhirlpoolEntity, refresh);
   }
 
-  public async listPositions(addresses: PublicKey[], refresh = false): Promise<PositionAccount[]> {
+  public async listPositions(addresses: PublicKey[], refresh = false): Promise<PositionData[]> {
     return this.list(addresses, PositionEntity, refresh);
   }
 
-  public async listTickArrays(
-    addresses: PublicKey[],
-    refresh = false
-  ): Promise<TickArrayAccount[]> {
+  public async listTickArrays(addresses: PublicKey[], refresh = false): Promise<TickArrayData[]> {
     return this.list(addresses, TickArrayEntity, refresh);
   }
 
-  public async listTokens(addresses: PublicKey[], refresh = false): Promise<TokenAccount[]> {
+  public async listTokens(addresses: PublicKey[], refresh = false): Promise<TokenData[]> {
     return this.list(addresses, TokenEntity, refresh);
   }
 
@@ -91,31 +70,26 @@ export class OrcaCacheImpl implements OrcaCache {
 
     for (const [idx, [key, cachedContent]] of Object.entries(this._cache).entries()) {
       const entity = cachedContent.entity;
-      const value = entity.parse(data[idx]);
+      const value = entity.parse(this._coder, data[idx]);
 
       this._cache[key] = { entity, value };
     }
   }
 
-  public async listUserPositions(wallet: PublicKey, refresh = false): Promise<PositionAccount[]> {
-    // default to using cached value
-    if (this._userPositions !== null && this._userWallet?.equals(wallet) && !refresh) {
-      return this._userPositions;
-    }
-
-    // get user tokens
-    const { value: tokenAccountsInfo } = await this._connection.getParsedTokenAccountsByOwner(
+  public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
+    // get user token accounts
+    const { value: tokenAccounts } = await this._connection.getParsedTokenAccountsByOwner(
       wallet,
       {
         programId: TOKEN_PROGRAM_ID,
       },
-      COMMITMENT
+      this._commitment
     );
 
     // get mint addresses of all token accounts with amount equal to 1
     // then derive Position addresses and filter out if accounts don't exist
     const addresses: PublicKey[] = [];
-    tokenAccountsInfo.forEach((accountInfo) => {
+    tokenAccounts.forEach((accountInfo) => {
       const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
       if (amount !== "1") {
         return;
@@ -125,54 +99,46 @@ export class OrcaCacheImpl implements OrcaCache {
       addresses.push(positionAddress);
     });
 
-    const positions = await this.listPositions(addresses, refresh);
-    this._userPositions = positions;
-    this._userWallet = wallet;
-    return positions;
+    return await this.listPositions(addresses, true);
   }
 
   /*** Private Methods ***/
 
-  private async get<T extends CachedAccount>(
+  private async get<T extends CachedValue>(
     address: PublicKey,
     entity: ParsableEntity<T>,
     refresh: boolean
   ): Promise<T | null> {
     const key = address.toBase58();
-    const cachedValue: CachedAccount | null | undefined = this._cache[key]?.value;
-    const alwaysFetch = this._strategy === CacheStrategy.AlwaysFetch;
+    const cachedValue: CachedValue | null | undefined = this._cache[key]?.value;
 
     // TODO - currently we store null in cache. is this the correct behavior?
     //    Q - should we fetch if cached value is null? (i don't think we should)
-    if (cachedValue !== undefined && !refresh && !alwaysFetch) {
+    if (cachedValue !== undefined && !refresh) {
       return cachedValue as T | null;
     }
 
-    const accountInfo = await this._connection.getAccountInfo(address, COMMITMENT);
+    const accountInfo = await this._connection.getAccountInfo(address, this._commitment);
     const accountData = accountInfo?.data;
-    const value = entity.parse(accountData);
+    const value = entity.parse(this._coder, accountData);
     this._cache[key] = { entity, value };
 
     return value;
   }
 
-  private async list<T extends CachedAccount>(
+  private async list<T extends CachedValue>(
     addresses: PublicKey[],
     entity: ParsableEntity<T>,
-    refresh = false
+    refresh: boolean
   ): Promise<T[]> {
-    addresses = this.dedupeAddresses(addresses);
-
-    const alwaysFetch = this._strategy === CacheStrategy.AlwaysFetch;
-
     const keys = addresses.map((address) => address.toBase58());
-    const cachedValues: (CachedAccount | null | undefined)[] = keys.map(
+    const cachedValues: (CachedValue | null | undefined)[] = keys.map(
       (key) => this._cache[key]?.value
     );
 
     const undefinedAccounts: { cachedIdx: number; key: string }[] = [];
     cachedValues.forEach((val, cachedIdx) => {
-      if (val === undefined || refresh || alwaysFetch) {
+      if (val === undefined || refresh) {
         undefinedAccounts.push({ cachedIdx, key: keys[cachedIdx] });
       }
     });
@@ -186,7 +152,7 @@ export class OrcaCacheImpl implements OrcaCache {
     const data = await this.bulkRequest(undefinedAccounts.map((account) => account.key));
 
     for (const [dataIdx, { cachedIdx, key }] of undefinedAccounts.entries()) {
-      const value = entity.parse(data[dataIdx]);
+      const value = entity.parse(this._coder, data[dataIdx]);
       this._cache[key] = { entity, value };
       cachedValues[cachedIdx] = value;
     }
@@ -197,7 +163,7 @@ export class OrcaCacheImpl implements OrcaCache {
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
-      args: this._connection._buildArgs([address], COMMITMENT),
+      args: this._connection._buildArgs([address], this._commitment),
     }));
 
     const infos: any[] | null = await (this._connection as any)._rpcBatchRequest(requests);
@@ -205,10 +171,5 @@ export class OrcaCacheImpl implements OrcaCache {
     invariant(addresses.length === infos.length, "bulkRequest not enough results");
 
     return infos.map((info) => info.result.value.data);
-  }
-
-  private dedupeAddresses(publicKeys: PublicKey[]): PublicKey[] {
-    const addresses = publicKeys.map((publicKey) => publicKey.toBase58());
-    return Array.from(new Set(addresses)).map((address) => new PublicKey(address));
   }
 }
