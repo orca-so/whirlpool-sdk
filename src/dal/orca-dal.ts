@@ -14,14 +14,21 @@ import {
   ParsableTickArray,
   ParsableTokenInfo,
   ParsableWhirlpool,
+  ParsableWhirlpoolConfig,
 } from "./parse";
-import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../constants/programs";
 
 /**
  * Supported accounts
  */
-type CachedValue = WhirlpoolData | PositionData | TickArrayData | AccountInfo | MintInfo;
+type CachedValue =
+  | WhirlpoolConfigAccount
+  | WhirlpoolData
+  | PositionData
+  | TickArrayData
+  | AccountInfo
+  | MintInfo;
 
 /**
  * Include both the entity (i.e. type) of the stored value, and the value itself
@@ -73,6 +80,13 @@ export class OrcaDAL {
     return this.get(address, ParsableMintInfo, refresh);
   }
 
+  public async getConfig(
+    address: PublicKey,
+    refresh = false
+  ): Promise<WhirlpoolConfigAccount | null> {
+    return this.get(address, ParsableWhirlpoolConfig, refresh);
+  }
+
   public async listPools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
     return this.list(addresses, ParsableWhirlpool, refresh);
   }
@@ -91,22 +105,6 @@ export class OrcaDAL {
 
   public async listMintInfos(addresses: PublicKey[], refresh = false): Promise<MintInfo[]> {
     return this.list(addresses, ParsableMintInfo, refresh);
-  }
-
-  /**
-   * Update the cached value of all entities currently in the cache.
-   * Uses batched rpc request for network efficient fetch.
-   */
-  public async refreshAll(): Promise<void> {
-    const addresses: string[] = Object.keys(this._cache);
-    const data = await this.bulkRequest(addresses);
-
-    for (const [idx, [key, cachedContent]] of Object.entries(this._cache).entries()) {
-      const entity = cachedContent.entity;
-      const value = entity.parse(data[idx]);
-
-      this._cache[key] = { entity, value };
-    }
   }
 
   public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
@@ -133,6 +131,22 @@ export class OrcaDAL {
     });
 
     return await this.listPositions(addresses, true);
+  }
+
+  /**
+   * Update the cached value of all entities currently in the cache.
+   * Uses batched rpc request for network efficient fetch.
+   */
+  public async refreshAll(): Promise<void> {
+    const addresses: string[] = Object.keys(this._cache);
+    const data = await this.bulkRequest(addresses);
+
+    for (const [idx, [key, cachedContent]] of Object.entries(this._cache).entries()) {
+      const entity = cachedContent.entity;
+      const value = entity.parse(data[idx]);
+
+      this._cache[key] = { entity, value };
+    }
   }
 
   /*** Private Methods ***/
