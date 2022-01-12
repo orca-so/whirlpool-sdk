@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import { Percentage } from "../..";
 import { TickData, TickArrayData } from "../../public/mock";
-import { TickArrayEntity } from "../entities";
+import { TickArrayEntity } from "../../utils/entities";
 import { BNUtils, TickMath, Token } from "../utils";
 
 enum SwapDirection {
