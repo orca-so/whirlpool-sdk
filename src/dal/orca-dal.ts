@@ -53,7 +53,7 @@ export class OrcaDAL {
 
   /*** Public Methods ***/
 
-  public async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolData | null> {
+  public async getPool(address: PublicKey, refresh = false): Promise<WhirlpoolData | null> {
     return this.get(address, ParsableWhirlpool, refresh);
   }
 
@@ -73,7 +73,7 @@ export class OrcaDAL {
     return this.get(address, ParsableMintInfo, refresh);
   }
 
-  public async listWhirlpools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
+  public async listPools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
     return this.list(addresses, ParsableWhirlpool, refresh);
   }
 

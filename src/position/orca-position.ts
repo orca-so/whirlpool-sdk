@@ -162,7 +162,7 @@ export class OrcaPosition {
   }
 
   private async getWhirlpool(position: PositionData, refresh = false): Promise<WhirlpoolData> {
-    const whirlpool = await this.dal.getWhirlpool(position.whirlpool, refresh);
+    const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
     return whirlpool;
   }
