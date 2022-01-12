@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { OrcaNetwork } from "../public";
+import { OrcaNetwork } from "./public/network";
 
 // TODO - update once we have actual contract addresses
 export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
@@ -24,8 +24,3 @@ export function getWhirlpoolProgramId(network: OrcaNetwork): PublicKey {
       throw new Error(`type ${network} is an Unknown network`);
   }
 }
-
-export const TICK_ARRAY_SIZE: number = 1000;
-export const TICK_SPACING: number = 5;
-
-export const NUM_REWARDS: number = 3;
