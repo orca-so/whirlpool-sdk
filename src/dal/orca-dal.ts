@@ -60,26 +60,68 @@ export class OrcaDAL {
 
   /*** Public Methods ***/
 
+  /**
+   * Retrieve a cached whirlpool account. Fetch from rpc on cache miss.
+   *
+   * @param address whirlpool address
+   * @param refresh force cache refresh
+   * @returns whirlpool account
+   */
   public async getPool(address: PublicKey, refresh = false): Promise<WhirlpoolData | null> {
     return this.get(address, ParsableWhirlpool, refresh);
   }
 
+  /**
+   * Retrieve a cached position account. Fetch from rpc on cache miss.
+   *
+   * @param address position address
+   * @param refresh force cache refresh
+   * @returns position account
+   */
   public async getPosition(address: PublicKey, refresh = false): Promise<PositionData | null> {
     return this.get(address, ParsablePosition, refresh);
   }
 
+  /**
+   * Retrieve a cached tick array account. Fetch from rpc on cache miss.
+   *
+   * @param address tick array address
+   * @param refresh force cache refresh
+   * @returns tick array account
+   */
   public async getTickArray(address: PublicKey, refresh = false): Promise<TickArrayData | null> {
     return this.get(address, ParsableTickArray, refresh);
   }
 
+  /**
+   * Retrieve a cached token info account. Fetch from rpc on cache miss.
+   *
+   * @param address token info address
+   * @param refresh force cache refresh
+   * @returns token info account
+   */
   public async getTokenInfo(address: PublicKey, refresh = false): Promise<AccountInfo | null> {
     return this.get(address, ParsableTokenInfo, refresh);
   }
 
+  /**
+   * Retrieve a cached mint info account. Fetch from rpc on cache miss.
+   *
+   * @param address mint info address
+   * @param refresh force cache refresh
+   * @returns mint info account
+   */
   public async getMintInfo(address: PublicKey, refresh = false): Promise<MintInfo | null> {
     return this.get(address, ParsableMintInfo, refresh);
   }
 
+  /**
+   * Retrieve a cached whirlpool config account. Fetch from rpc on cache miss.
+   *
+   * @param address whirlpool config address
+   * @param refresh force cache refresh
+   * @returns whirlpool config account
+   */
   public async getConfig(
     address: PublicKey,
     refresh = false
@@ -87,26 +129,68 @@ export class OrcaDAL {
     return this.get(address, ParsableWhirlpoolConfig, refresh);
   }
 
+  /**
+   * Retrieve a list of cached whirlpool accounts. Fetch from rpc for cache misses.
+   *
+   * @param addresses whirlpool addresses
+   * @param refresh force cache refresh
+   * @returns whirlpool accounts
+   */
   public async listPools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
     return this.list(addresses, ParsableWhirlpool, refresh);
   }
 
+  /**
+   * Retrieve a list of cached position accounts. Fetch from rpc for cache misses.
+   *
+   * @param addresses position addresses
+   * @param refresh force cache refresh
+   * @returns position accounts
+   */
   public async listPositions(addresses: PublicKey[], refresh = false): Promise<PositionData[]> {
     return this.list(addresses, ParsablePosition, refresh);
   }
 
+  /**
+   * Retrieve a list of cached tick array accounts. Fetch from rpc for cache misses.
+   *
+   * @param addresses tick array addresses
+   * @param refresh force cache refresh
+   * @returns tick array accounts
+   */
   public async listTickArrays(addresses: PublicKey[], refresh = false): Promise<TickArrayData[]> {
     return this.list(addresses, ParsableTickArray, refresh);
   }
 
+  /**
+   * Retrieve a list of cached token info accounts. Fetch from rpc for cache misses.
+   *
+   * @param addresses token info addresses
+   * @param refresh force cache refresh
+   * @returns token info accounts
+   */
   public async listTokenInfos(addresses: PublicKey[], refresh = false): Promise<AccountInfo[]> {
     return this.list(addresses, ParsableTokenInfo, refresh);
   }
 
+  /**
+   * Retrieve a list of cached mint info accounts. Fetch from rpc for cache misses.
+   *
+   * @param addresses mint info addresses
+   * @param refresh force cache refresh
+   * @returns mint info accounts
+   */
   public async listMintInfos(addresses: PublicKey[], refresh = false): Promise<MintInfo[]> {
     return this.list(addresses, ParsableMintInfo, refresh);
   }
 
+  /**
+   * Fetch a list of positions owned by the wallet address.
+   * Note: not cached
+   *
+   * @param wallet wallet address
+   * @returns a list of positions owned by the wallet address
+   */
   public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
     // get user token accounts
     const { value: tokenAccounts } = await this._connection.getParsedTokenAccountsByOwner(
@@ -151,6 +235,9 @@ export class OrcaDAL {
 
   /*** Private Methods ***/
 
+  /**
+   * Retrieve from cache or fetch from rpc, an account
+   */
   private async get<T extends CachedValue>(
     address: PublicKey,
     entity: ParsableEntity<T>,
@@ -173,6 +260,9 @@ export class OrcaDAL {
     return value;
   }
 
+  /**
+   * Retrieve from cache or fetch from rpc, a list of accounts
+   */
   private async list<T extends CachedValue>(
     addresses: PublicKey[],
     entity: ParsableEntity<T>,
@@ -207,6 +297,9 @@ export class OrcaDAL {
     return cachedValues.filter((value): value is T => value !== null);
   }
 
+  /**
+   * Make batch rpc request
+   */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
