@@ -20,7 +20,7 @@ import {
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { TransactionPayload } from "../utils/instruction";
-import { TickArrayUtil } from "../utils/tick-array-util";
+import { TickUtil } from "../utils/tick-util";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
@@ -179,12 +179,12 @@ export class OrcaPosition {
   ): Promise<[TickData, TickData]> {
     const { tickLowerIndex, tickUpperIndex, whirlpool } = position;
 
-    const tickLowerAddress = TickArrayUtil.getAddressContainingTickIndex(
+    const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
       tickLowerIndex,
       whirlpool,
       this.dal.programId
     );
-    const tickUpperAddress = TickArrayUtil.getAddressContainingTickIndex(
+    const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
       tickUpperIndex,
       whirlpool,
       this.dal.programId
@@ -198,8 +198,8 @@ export class OrcaPosition {
     invariant(!!tickArrayUpper, "OrcaPosition - tickArrayUpper does not exist");
 
     return [
-      TickArrayUtil.getTick(tickArrayLower, tickLowerIndex),
-      TickArrayUtil.getTick(tickArrayUpper, tickUpperIndex),
+      TickUtil.getTick(tickArrayLower, tickLowerIndex),
+      TickUtil.getTick(tickArrayUpper, tickUpperIndex),
     ];
   }
 

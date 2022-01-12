@@ -6,7 +6,7 @@ import {
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import Decimal from "decimal.js";
 import { DecimalUtil } from "../../utils/math/decimal-utils";
-import { WhirlpoolUtil } from "../../utils/whirlpool-util";
+import { PoolUtil } from "../../utils/pool-util";
 import { CollectRewardsQuote } from "../public";
 
 export type InternalGetCollectRewardsQuoteParam = {
@@ -51,7 +51,7 @@ export function getCollectRewardsQuoteInternal(
   const rewardGrowthsInsideX64: [Decimal, boolean][] = range.map(() => [new Decimal(0), false]);
 
   for (const i of range) {
-    if (WhirlpoolUtil.isRewardInitialized(whirlpoolRewardsInfos[i])) {
+    if (PoolUtil.isRewardInitialized(whirlpoolRewardsInfos[i])) {
       const growthGlobalX64 = toX64(DecimalUtil.fromU64(whirlpoolRewardsInfos[i].growthGlobalX64));
       rewardGrowthsInsideX64[i] = [
         growthGlobalX64.sub(rewardGrowthsBelowX64[i]).sub(rewardGrowthsAboveX64[i]),

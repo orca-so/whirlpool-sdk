@@ -1,7 +1,7 @@
 import { WhirlpoolRewardInfoData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { PublicKey } from "@solana/web3.js";
 
-export class WhirlpoolUtil {
+export class PoolUtil {
   private constructor() {}
 
   public static isRewardInitialized(rewardInfo: WhirlpoolRewardInfoData): boolean {
