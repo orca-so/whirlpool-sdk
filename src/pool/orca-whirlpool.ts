@@ -1,6 +1,70 @@
 // import invariant from "tiny-invariant";
 // import { OrcaDAL } from "../dal/orca-dal";
 
+import {
+  ClosePositionQuote,
+  ClosePositionQuoteParam,
+  ClosePositionTransactionParam,
+  ClosePositoinTransaction,
+  OpenPositionQuote,
+  OpenPositionQuoteParam,
+  OpenPositionTransaction,
+  OpenPositionTransactionParam,
+  SwapQuote,
+  SwapQuoteParam,
+  SwapTransaction,
+  SwapTransactionParam,
+} from "..";
+import { OrcaDAL } from "../dal/orca-dal";
+
+function TODO(): never {
+  throw new Error("TODO: Implement");
+}
+
+export class OrcaWhirlpool {
+  constructor(private readonly dal: OrcaDAL) {}
+
+  /*** Transactions (public) ***/
+
+  /** 1. Open position tx **/
+  public async getOpenPositionTransaction(
+    param: OpenPositionTransactionParam
+  ): Promise<OpenPositionTransaction> {
+    TODO();
+  }
+
+  /** 2. Close position tx **/
+  public async getClosePositionTransaction(
+    param: ClosePositionTransactionParam
+  ): Promise<ClosePositoinTransaction> {
+    TODO();
+  }
+
+  /** 3. Swap tx **/
+  public async getSwapTransaction(param: SwapTransactionParam): Promise<SwapTransaction> {
+    TODO();
+  }
+
+  /*** Quotes (public) ***/
+
+  /** 1. Open position quote **/
+  public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
+    TODO();
+  }
+
+  /** 2. Close position quote **/
+  public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
+    TODO();
+  }
+
+  /** 3. Swap quote **/
+  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
+    TODO();
+  }
+
+  /*** Helpers (private) ***/
+}
+
 // /**
 //  * Random notes: nft represents the authority to a specific position
 //  */
