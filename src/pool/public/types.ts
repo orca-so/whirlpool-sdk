@@ -4,6 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../..";
 
 export type OpenPositionQuoteParam = {
+  whirlpoolAddress: PublicKey;
   tokenMint: PublicKey;
   tokenAmount: u64;
   tickLowerIndex: number;

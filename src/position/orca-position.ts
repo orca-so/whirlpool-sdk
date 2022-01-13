@@ -203,10 +203,7 @@ export class OrcaPosition {
     ];
   }
 
-  private static getPositionStatus(
-    whirlpool: WhirlpoolData,
-    position: PositionData
-  ): PositionStatus {
+  static getPositionStatus(whirlpool: WhirlpoolData, position: PositionData): PositionStatus {
     const { tickCurrentIndex } = whirlpool;
     const { tickLowerIndex, tickUpperIndex } = position;
 
