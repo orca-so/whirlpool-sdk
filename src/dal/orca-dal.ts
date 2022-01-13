@@ -185,16 +185,52 @@ export class OrcaDAL {
   }
 
   /**
+   * Fetch the user token account of the given token mint.
+   *
+   * @param walletAddress wallet address
+   * @param mint
+   * @returns account address or null if the account does not exist
+   */
+  public async getUserTokenAccount(
+    walletAddress: PublicKey,
+    mint: PublicKey
+  ): Promise<PublicKey | null> {
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(
+      walletAddress,
+      {
+        programId: TOKEN_PROGRAM_ID,
+        mint,
+      },
+      this.commitment
+    );
+
+    if (!value || value.length === 0) {
+      return null;
+    }
+
+    let tokenAccount: PublicKey | null = null;
+    for (const accountInfo of value) {
+      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
+      if (amount === "1") {
+        tokenAccount = accountInfo.pubkey;
+        break;
+      }
+    }
+
+    return tokenAccount;
+  }
+
+  /**
    * Fetch a list of positions owned by the wallet address.
    * Note: not cached
    *
-   * @param wallet wallet address
+   * @param walletAddress wallet address
    * @returns a list of positions owned by the wallet address
    */
-  public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
+  public async listUserPositions(walletAddress: PublicKey): Promise<PositionData[]> {
     // get user token accounts
-    const { value: tokenAccounts } = await this.connection.getParsedTokenAccountsByOwner(
-      wallet,
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(
+      walletAddress,
       {
         programId: TOKEN_PROGRAM_ID,
       },
@@ -204,14 +240,14 @@ export class OrcaDAL {
     // get mint addresses of all token accounts with amount equal to 1
     // then derive Position addresses and filter out if accounts don't exist
     const addresses: PublicKey[] = [];
-    tokenAccounts.forEach((accountInfo) => {
+    value.forEach((accountInfo) => {
       const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
       if (amount !== "1") {
         return;
       }
       const positionMint = new PublicKey(accountInfo.account.data.parsed.info.mint);
-      const positionAddress = getPositionPda(this.programId, positionMint);
-      addresses.push(positionAddress.publicKey);
+      const positionAddress = getPositionPda(this.programId, positionMint).publicKey;
+      addresses.push(positionAddress);
     });
 
     return await this.listPositions(addresses, true);

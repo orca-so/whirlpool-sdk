@@ -92,7 +92,7 @@ export class OrcaPosition {
       this.dal.programId
     );
 
-    // step 0. create transaction builders
+    // step 0. create transaction builders, and check if the wallet has the position mint
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
 
@@ -108,14 +108,6 @@ export class OrcaPosition {
     mainTxBuilder.addInstruction(updateIx);
 
     // step 2. collect fees
-    const { address: positionTokenAccount, ...positionTokenAccountIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        wallet.publicKey,
-        position.positionMint
-      );
-    ataTxBuilder.addInstruction(positionTokenAccountIx);
-
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
@@ -132,10 +124,16 @@ export class OrcaPosition {
       );
     ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
 
+    const positionTokenAccount = await this.dal.getUserTokenAccount(
+      wallet.publicKey,
+      position.positionMint
+    );
+    invariant(!!positionTokenAccount, "no position token account");
+
     const feeIx = client
       .collectFeesTx({
         whirlpool: position.whirlpool,
-        positionAuthority: position.positionMint,
+        positionAuthority: wallet.publicKey,
         position: address,
         positionTokenAccount,
         tokenOwnerAccountA,
@@ -161,7 +159,7 @@ export class OrcaPosition {
 
         const rewardTx = client.collectRewardTx({
           whirlpool: position.whirlpool,
-          positionAuthority: position.positionMint,
+          positionAuthority: wallet.publicKey,
           position: address,
           positionTokenAccount,
           rewardOwnerAccount,
