@@ -1,4 +1,4 @@
-import { Commitment, Connection, PublicKey } from "@solana/web3.js";
+import { Commitment, Connection, ParsedAccountData, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { OrcaNetwork } from "..";
 import { AccountInfo, MintInfo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
@@ -210,8 +210,12 @@ export class OrcaDAL {
 
     let tokenAccount: PublicKey | null = null;
     for (const accountInfo of value) {
-      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
-      if (amount === "1") {
+      const amount: string | undefined =
+        accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount;
+      const decimals: number | undefined =
+        accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals;
+
+      if (amount === "1" && decimals === 0) {
         tokenAccount = accountInfo.pubkey;
         break;
       }
@@ -241,12 +245,16 @@ export class OrcaDAL {
     // then derive Position addresses and filter out if accounts don't exist
     const addresses: PublicKey[] = [];
     value.forEach((accountInfo) => {
-      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
-      if (amount !== "1") {
+      const amount: string | undefined =
+        accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount;
+      const decimals: number | undefined =
+        accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals;
+      const mint: string | undefined = accountInfo.account?.data?.parsed?.info?.mint;
+
+      if (amount !== "1" || decimals !== 0 || !mint) {
         return;
       }
-      const positionMint = new PublicKey(accountInfo.account.data.parsed.info.mint);
-      const positionAddress = getPositionPda(this.programId, positionMint).publicKey;
+      const positionAddress = getPositionPda(this.programId, new PublicKey(mint)).publicKey;
       addresses.push(positionAddress);
     });
 
