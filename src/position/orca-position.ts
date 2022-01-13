@@ -13,6 +13,7 @@ import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
+  AddLiquidityTransactionParam,
   CollectFeesAndRewardsTransactionParam,
   CollectFeesQuote,
   CollectFeesQuoteParam,
@@ -21,9 +22,11 @@ import {
   PositionStatus,
   RemoveLiquidityQuote,
   RemoveLiquidityQuoteParam,
+  RemoveLiquidityTransactionParam,
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
+import { DecimalUtil } from "../utils/decimal-utils";
 import { PoolUtil } from "../utils/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/tick-util";
@@ -53,23 +56,9 @@ export class OrcaPosition {
   /*** Transactions ***/
 
   public async getAddLiquidityTransaction(
-    payer: PublicKey,
-    quote: AddLiquidityQuote
+    param: AddLiquidityTransactionParam
   ): Promise<TransactionExecutable> {
-    throw new Error("Method not implemented.");
-  }
-
-  public async getRemoveLiquidityTransaction(
-    payer: PublicKey,
-    quote: RemoveLiquidityQuote
-  ): Promise<TransactionExecutable> {
-    throw new Error("Method not implemented.");
-  }
-
-  public async getCollectFeesAndRewardsTransaction(
-    param: CollectFeesAndRewardsTransactionParam
-  ): Promise<TransactionExecutable> {
-    const { address, wallet } = param;
+    const { address, wallet, quote } = param;
     const { connection, commitment, programId } = this.dal;
 
     const ctx = WhirlpoolContext.from(connection, wallet, programId, {
@@ -79,22 +68,139 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, true);
     const whirlpool = await this.getWhirlpool(position, true);
-    const { tickLowerIndex, tickUpperIndex } = position;
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
 
-    const tickArrayLower = TickUtil.getAddressContainingTickIndex(
-      tickLowerIndex,
-      position.whirlpool,
-      this.dal.programId
+    // step 0. create transaction builders, and check if the wallet has the position mint
+    const txBuilder = new TransactionBuilder(ctx.provider);
+
+    const positionTokenAccount = await this.dal.getUserTokenAccount(
+      wallet.publicKey,
+      position.positionMint
     );
-    const tickArrayUpper = TickUtil.getAddressContainingTickIndex(
-      tickUpperIndex,
-      position.whirlpool,
-      this.dal.programId
+    invariant(!!positionTokenAccount, "no position token account");
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    const addLiquidityIx = client
+      .increaseLiquidityTx({
+        liquidityAmount: DecimalUtil.fromU64(quote.liquidity),
+        tokenMaxA: DecimalUtil.fromU64(quote.maxTokenA),
+        tokenMaxB: DecimalUtil.fromU64(quote.maxTokenB),
+        whirlpool: position.whirlpool,
+        positionAuthority: wallet.publicKey,
+        position: address,
+        positionTokenAccount,
+        tokenOwnerAccountA,
+        tokenOwnerAccountB,
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tickArrayLower,
+        tickArrayUpper,
+      })
+      .compressIx(false);
+    txBuilder.addInstruction(addLiquidityIx);
+
+    return new TransactionExecutable(ctx.provider, [txBuilder]);
+  }
+
+  public async getRemoveLiquidityTransaction(
+    param: RemoveLiquidityTransactionParam
+  ): Promise<TransactionExecutable> {
+    const { address, wallet, quote } = param;
+    const { connection, commitment, programId } = this.dal;
+    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
+      commitment,
+    });
+    const client = new WhirlpoolClient(ctx);
+
+    const position = await this.getPosition(address, true);
+    const whirlpool = await this.getWhirlpool(position, true);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
+
+    // step 0. create transaction builders, and check if the wallet has the position mint
+    const txBuilder = new TransactionBuilder(ctx.provider);
+
+    const positionTokenAccount = await this.dal.getUserTokenAccount(
+      wallet.publicKey,
+      position.positionMint
     );
+    invariant(!!positionTokenAccount, "no position token account");
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    const removeLiquidityIx = client
+      .decreaseLiquidityTx({
+        liquidityAmount: DecimalUtil.fromU64(quote.liquidity),
+        tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
+        tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
+        whirlpool: position.whirlpool,
+        positionAuthority: wallet.publicKey,
+        position: address,
+        positionTokenAccount,
+        tokenOwnerAccountA,
+        tokenOwnerAccountB,
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tickArrayLower,
+        tickArrayUpper,
+      })
+      .compressIx(false);
+    txBuilder.addInstruction(removeLiquidityIx);
+
+    return new TransactionExecutable(ctx.provider, [txBuilder]);
+  }
+
+  public async getCollectFeesAndRewardsTransaction(
+    param: CollectFeesAndRewardsTransactionParam
+  ): Promise<TransactionExecutable> {
+    const { address, wallet } = param;
+    const { connection, commitment, programId } = this.dal;
+    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
+      commitment,
+    });
+    const client = new WhirlpoolClient(ctx);
+
+    const position = await this.getPosition(address, true);
+    const whirlpool = await this.getWhirlpool(position, true);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
+
+    const positionTokenAccount = await this.dal.getUserTokenAccount(
+      wallet.publicKey,
+      position.positionMint
+    );
+    invariant(!!positionTokenAccount, "no position token account");
 
     // step 1. update state of owed fees and rewards
     const updateIx = client
@@ -123,12 +229,6 @@ export class OrcaPosition {
         whirlpool.tokenMintB
       );
     ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
-
-    const positionTokenAccount = await this.dal.getUserTokenAccount(
-      wallet.publicKey,
-      position.positionMint
-    );
-    invariant(!!positionTokenAccount, "no position token account");
 
     const feeIx = client
       .collectFeesTx({
@@ -285,17 +385,7 @@ export class OrcaPosition {
     refresh = false
   ): Promise<[TickData, TickData]> {
     const { tickLowerIndex, tickUpperIndex, whirlpool } = position;
-
-    const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
-      tickLowerIndex,
-      whirlpool,
-      this.dal.programId
-    );
-    const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
-      tickUpperIndex,
-      whirlpool,
-      this.dal.programId
-    );
+    const [tickLowerAddress, tickUpperAddress] = this.getTickArrayAddress(position);
 
     const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
       [tickLowerAddress, tickUpperAddress],
@@ -308,6 +398,23 @@ export class OrcaPosition {
       TickUtil.getTick(tickArrayLower, tickLowerIndex),
       TickUtil.getTick(tickArrayUpper, tickUpperIndex),
     ];
+  }
+
+  private getTickArrayAddress(position: PositionData): [PublicKey, PublicKey] {
+    const { tickLowerIndex, tickUpperIndex, whirlpool } = position;
+
+    const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
+      tickLowerIndex,
+      whirlpool,
+      this.dal.programId
+    );
+    const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
+      tickUpperIndex,
+      whirlpool,
+      this.dal.programId
+    );
+
+    return [tickLowerAddress, tickUpperAddress];
   }
 
   private static getPositionStatus(

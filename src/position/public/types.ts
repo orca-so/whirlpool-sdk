@@ -3,10 +3,26 @@ import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
 
+/*** Transactions ***/
+
+export type AddLiquidityTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+  quote: AddLiquidityQuote;
+};
+
+export type RemoveLiquidityTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+  quote: RemoveLiquidityQuote;
+};
+
 export type CollectFeesAndRewardsTransactionParam = {
   address: PublicKey;
   wallet: Wallet;
 };
+
+/*** Quotes ***/
 
 export type AddLiquidityQuoteParam = {
   address: PublicKey;
