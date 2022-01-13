@@ -5,8 +5,8 @@ import {
   TickData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import Decimal from "decimal.js";
-import { DecimalUtil } from "../../utils/math/decimal-utils";
-import { PoolUtil } from "../../utils/pool-util";
+import { DecimalUtil } from "../../utils/decimal-utils";
+import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { CollectRewardsQuote } from "../public";
 
 export type InternalGetCollectRewardsQuoteParam = {

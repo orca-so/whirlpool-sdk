@@ -1,6 +1,28 @@
+import { Wallet } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
+
+/*** Transactions ***/
+
+export type AddLiquidityTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+  quote: AddLiquidityQuote;
+};
+
+export type RemoveLiquidityTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+  quote: RemoveLiquidityQuote;
+};
+
+export type CollectFeesAndRewardsTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+};
+
+/*** Quotes ***/
 
 export type AddLiquidityQuoteParam = {
   address: PublicKey;
@@ -49,9 +71,3 @@ export type CollectRewardsQuote = {
   rewardOwedB?: u64;
   rewardOwedC?: u64;
 };
-
-export enum PositionStatus {
-  BelowRange,
-  InRange,
-  AboveRange,
-}

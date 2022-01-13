@@ -46,16 +46,16 @@ interface CachedContent<T extends CachedValue> {
 export class OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
+  public readonly connection: Connection;
+  public readonly commitment: Commitment;
 
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
-  private readonly _connection: Connection;
-  private readonly _commitment: Commitment;
 
   constructor(connection: Connection, network: OrcaNetwork, commitment: Commitment) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
-    this._connection = connection;
-    this._commitment = commitment;
+    this.connection = connection;
+    this.commitment = commitment;
   }
 
   /*** Public Methods ***/
@@ -185,33 +185,69 @@ export class OrcaDAL {
   }
 
   /**
+   * Fetch the user token account of the given token mint.
+   *
+   * @param walletAddress wallet address
+   * @param mint
+   * @returns account address or null if the account does not exist
+   */
+  public async getUserTokenAccount(
+    walletAddress: PublicKey,
+    mint: PublicKey
+  ): Promise<PublicKey | null> {
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(
+      walletAddress,
+      {
+        programId: TOKEN_PROGRAM_ID,
+        mint,
+      },
+      this.commitment
+    );
+
+    if (!value || value.length === 0) {
+      return null;
+    }
+
+    let tokenAccount: PublicKey | null = null;
+    for (const accountInfo of value) {
+      const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
+      if (amount === "1") {
+        tokenAccount = accountInfo.pubkey;
+        break;
+      }
+    }
+
+    return tokenAccount;
+  }
+
+  /**
    * Fetch a list of positions owned by the wallet address.
    * Note: not cached
    *
-   * @param wallet wallet address
+   * @param walletAddress wallet address
    * @returns a list of positions owned by the wallet address
    */
-  public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
+  public async listUserPositions(walletAddress: PublicKey): Promise<PositionData[]> {
     // get user token accounts
-    const { value: tokenAccounts } = await this._connection.getParsedTokenAccountsByOwner(
-      wallet,
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(
+      walletAddress,
       {
         programId: TOKEN_PROGRAM_ID,
       },
-      this._commitment
+      this.commitment
     );
 
     // get mint addresses of all token accounts with amount equal to 1
     // then derive Position addresses and filter out if accounts don't exist
     const addresses: PublicKey[] = [];
-    tokenAccounts.forEach((accountInfo) => {
+    value.forEach((accountInfo) => {
       const amount: string = accountInfo.account.data.parsed.info.tokenAmount.amount;
       if (amount !== "1") {
         return;
       }
       const positionMint = new PublicKey(accountInfo.account.data.parsed.info.mint);
-      const positionAddress = getPositionPda(this.programId, positionMint);
-      addresses.push(positionAddress.publicKey);
+      const positionAddress = getPositionPda(this.programId, positionMint).publicKey;
+      addresses.push(positionAddress);
     });
 
     return await this.listPositions(addresses, true);
@@ -252,7 +288,7 @@ export class OrcaDAL {
       return cachedValue as T | null;
     }
 
-    const accountInfo = await this._connection.getAccountInfo(address, this._commitment);
+    const accountInfo = await this.connection.getAccountInfo(address, this.commitment);
     const accountData = accountInfo?.data;
     const value = entity.parse(accountData);
     this._cache[key] = { entity, value };
@@ -303,10 +339,10 @@ export class OrcaDAL {
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
-      args: this._connection._buildArgs([address], this._commitment),
+      args: this.connection._buildArgs([address], this.commitment),
     }));
 
-    const infos: any[] | null = await (this._connection as any)._rpcBatchRequest(requests);
+    const infos: any[] | null = await (this.connection as any)._rpcBatchRequest(requests);
     invariant(infos !== null, "bulkRequest no results");
     invariant(addresses.length === infos.length, "bulkRequest not enough results");
 

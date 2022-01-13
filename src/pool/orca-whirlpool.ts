@@ -12,7 +12,6 @@ import {
   OpenPositionQuoteParam,
   OpenPositionTransaction,
   OpenPositionTransactionParam,
-  PositionStatus,
   SwapQuote,
   SwapQuoteParam,
   SwapTransaction,
@@ -20,13 +19,13 @@ import {
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
-import { OrcaPosition } from "../position/orca-position";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
+import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
 
 function TODO(): never {
   throw new Error("TODO: Implement");
@@ -97,7 +96,7 @@ export class OrcaWhirlpool {
       slippageTolerence,
     };
 
-    switch (OrcaPosition.getPositionStatus(whirlpool, dummyPosition)) {
+    switch (PositionUtil.getPositionStatus(whirlpool, dummyPosition)) {
       case PositionStatus.BelowRange:
         return getAddLiquidityQuoteWhenPositionIsBelowRange(addLiquidityParams);
       case PositionStatus.InRange:

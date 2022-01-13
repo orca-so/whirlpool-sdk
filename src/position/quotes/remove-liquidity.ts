@@ -2,7 +2,7 @@ import { fromX64, tickIndexToSqrtPriceX64, toX64 } from "@orca-so/whirlpool-clie
 import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo, u64 } from "@solana/spl-token";
 import Decimal from "decimal.js";
-import { DecimalUtil } from "../../utils/math/decimal-utils";
+import { DecimalUtil } from "../../utils/decimal-utils";
 import { Percentage } from "../../utils/public/percentage";
 import { RemoveLiquidityQuote } from "../public";
 
