@@ -27,6 +27,7 @@ import { OrcaDAL } from "../dal/orca-dal";
 import { PoolUtil } from "../utils/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/tick-util";
+import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
@@ -107,14 +108,38 @@ export class OrcaPosition {
     mainTxBuilder.addInstruction(updateIx);
 
     // step 2. collect fees
+    const { address: positionTokenAccount, ...positionTokenAccountIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        position.positionMint
+      );
+    ataTxBuilder.addInstruction(positionTokenAccountIx);
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    ataTxBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
+
     const feeIx = client
       .collectFeesTx({
         whirlpool: position.whirlpool,
         positionAuthority: position.positionMint,
         position: address,
-        positionTokenAccount: new PublicKey(),
-        tokenOwnerAccountA: new PublicKey(),
-        tokenOwnerAccountB: new PublicKey(),
+        positionTokenAccount,
+        tokenOwnerAccountA,
+        tokenOwnerAccountB,
         tokenVaultA: whirlpool.tokenVaultA,
         tokenVaultB: whirlpool.tokenVaultB,
         tickArrayLower,
@@ -126,12 +151,20 @@ export class OrcaPosition {
     // step 3. collect rewards A, B, C
     for (const i of [...Array(NUM_REWARDS).keys()]) {
       if (PoolUtil.isRewardInitialized(whirlpool.rewardInfos[i])) {
+        const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } =
+          await resolveOrCreateAssociatedTokenAddress(
+            connection,
+            wallet.publicKey,
+            whirlpool.rewardInfos[i].mint
+          );
+        ataTxBuilder.addInstruction(rewardOwnerAccountIx);
+
         const rewardTx = client.collectRewardTx({
           whirlpool: position.whirlpool,
           positionAuthority: position.positionMint,
           position: address,
-          positionTokenAccount: new PublicKey(),
-          rewardOwnerAccount: new PublicKey(),
+          positionTokenAccount,
+          rewardOwnerAccount,
           rewardVault: whirlpool.rewardInfos[i].vault,
           tickArrayLower,
           tickArrayUpper,

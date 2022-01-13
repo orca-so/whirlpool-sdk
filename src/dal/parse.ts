@@ -12,6 +12,7 @@ import {
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { AccountInfo, AccountLayout, MintInfo, MintLayout, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import { deserializeTokenAccount } from "../utils/web3/deserialize-token-account";
 
 @staticImplements<ParsableEntity<WhirlpoolConfigAccount>>()
 export class ParsableWhirlpoolConfig {
@@ -74,25 +75,7 @@ export class ParsableTokenInfo {
       return null;
     }
 
-    const buffer = AccountLayout.decode(data);
-    const accountInfo: AccountInfo = {
-      address: new PublicKey(buffer.address),
-      mint: new PublicKey(buffer.mint),
-      owner: new PublicKey(buffer.owner),
-      amount: u64.fromBuffer(buffer.amount),
-      delegate: buffer.delegateOption === 0 ? null : new PublicKey(buffer.delegate),
-      delegatedAmount:
-        buffer.delegateOption === 0 ? new u64(0) : u64.fromBuffer(buffer.delegatedAmount),
-      isInitialized: buffer.state !== 0,
-      isFrozen: buffer.state === 2,
-      isNative: buffer.isNativeOption === 1,
-      rentExemptReserve:
-        buffer.isNativeOption === 1 ? u64.fromBuffer(buffer.rentExemptReserve) : null,
-      closeAuthority:
-        buffer.closeAuthorityOption === 0 ? null : new PublicKey(buffer.closeAuthority),
-    };
-
-    return accountInfo;
+    return deserializeTokenAccount(data);
   }
 }
 
