@@ -1,14 +1,19 @@
+import { NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
+import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
+import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
   PositionData,
   TickData,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { MintInfo } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
+  CollectFeesAndRewardsTransactionParam,
   CollectFeesQuote,
   CollectFeesQuoteParam,
   CollectRewardsQuote,
@@ -19,7 +24,8 @@ import {
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
-import { TransactionPayload } from "../utils/instruction";
+import { PoolUtil } from "../utils/pool-util";
+import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/tick-util";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
@@ -48,24 +54,94 @@ export class OrcaPosition {
   public async getAddLiquidityTransaction(
     payer: PublicKey,
     quote: AddLiquidityQuote
-  ): Promise<TransactionPayload> {
+  ): Promise<TransactionExecutable> {
     throw new Error("Method not implemented.");
   }
 
   public async getRemoveLiquidityTransaction(
     payer: PublicKey,
     quote: RemoveLiquidityQuote
-  ): Promise<TransactionPayload> {
+  ): Promise<TransactionExecutable> {
     throw new Error("Method not implemented.");
   }
 
-  public async getCollectFeesAndRewardsTransaction(payer: PublicKey): Promise<TransactionPayload> {
-    // 1. update state
-    // 2. get fees
-    // 3. get reward 1
-    // 4. get reward 2
-    // 5. get reward 3
-    throw new Error("Method not implemented.");
+  public async getCollectFeesAndRewardsTransaction(
+    param: CollectFeesAndRewardsTransactionParam
+  ): Promise<TransactionExecutable> {
+    const { address, wallet } = param;
+    const { connection, commitment, programId } = this.dal;
+
+    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
+      commitment,
+    });
+    const client = new WhirlpoolClient(ctx);
+
+    const position = await this.getPosition(address, true);
+    const whirlpool = await this.getWhirlpool(position, true);
+    const { tickLowerIndex, tickUpperIndex } = position;
+
+    const tickArrayLower = TickUtil.getAddressContainingTickIndex(
+      tickLowerIndex,
+      position.whirlpool,
+      this.dal.programId
+    );
+    const tickArrayUpper = TickUtil.getAddressContainingTickIndex(
+      tickUpperIndex,
+      position.whirlpool,
+      this.dal.programId
+    );
+
+    // step 0. create transaction builders
+    const ataTxBuilder = new TransactionBuilder(ctx.provider);
+    const mainTxBuilder = new TransactionBuilder(ctx.provider);
+
+    // step 1. update state of owed fees and rewards
+    const updateIx = client
+      .updateFeesAndRewards({
+        whirlpool: position.whirlpool,
+        position: address,
+        tickArrayLower,
+        tickArrayUpper,
+      })
+      .compressIx(false);
+    mainTxBuilder.addInstruction(updateIx);
+
+    // step 2. collect fees
+    const feeIx = client
+      .collectFeesTx({
+        whirlpool: position.whirlpool,
+        positionAuthority: position.positionMint,
+        position: address,
+        positionTokenAccount: new PublicKey(),
+        tokenOwnerAccountA: new PublicKey(),
+        tokenOwnerAccountB: new PublicKey(),
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tickArrayLower,
+        tickArrayUpper,
+      })
+      .compressIx(false);
+    mainTxBuilder.addInstruction(feeIx);
+
+    // step 3. collect rewards A, B, C
+    for (const i of [...Array(NUM_REWARDS).keys()]) {
+      if (PoolUtil.isRewardInitialized(whirlpool.rewardInfos[i])) {
+        const rewardTx = client.collectRewardTx({
+          whirlpool: position.whirlpool,
+          positionAuthority: position.positionMint,
+          position: address,
+          positionTokenAccount: new PublicKey(),
+          rewardOwnerAccount: new PublicKey(),
+          rewardVault: whirlpool.rewardInfos[i].vault,
+          tickArrayLower,
+          tickArrayUpper,
+          rewardIndex: i,
+        });
+        mainTxBuilder.addInstruction(rewardTx.compressIx(false));
+      }
+    }
+
+    return new TransactionExecutable(ctx.provider, [ataTxBuilder, mainTxBuilder]);
   }
 
   /*** Quotes ***/

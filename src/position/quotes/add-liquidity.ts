@@ -5,7 +5,7 @@ import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import { AddLiquidityQuote } from "../..";
-import { DecimalUtil } from "../../utils/math/decimal-utils";
+import { DecimalUtil } from "../../utils/decimal-utils";
 import { Percentage } from "../../utils/public/percentage";
 
 export type InternalAddLiquidityQuoteParam = {

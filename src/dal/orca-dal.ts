@@ -46,16 +46,16 @@ interface CachedContent<T extends CachedValue> {
 export class OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
+  public readonly connection: Connection;
+  public readonly commitment: Commitment;
 
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
-  private readonly _connection: Connection;
-  private readonly _commitment: Commitment;
 
   constructor(connection: Connection, network: OrcaNetwork, commitment: Commitment) {
     this.whirlpoolsConfig = getWhirlpoolsConfig(network);
     this.programId = getWhirlpoolProgramId(network);
-    this._connection = connection;
-    this._commitment = commitment;
+    this.connection = connection;
+    this.commitment = commitment;
   }
 
   /*** Public Methods ***/
@@ -193,12 +193,12 @@ export class OrcaDAL {
    */
   public async listUserPositions(wallet: PublicKey): Promise<PositionData[]> {
     // get user token accounts
-    const { value: tokenAccounts } = await this._connection.getParsedTokenAccountsByOwner(
+    const { value: tokenAccounts } = await this.connection.getParsedTokenAccountsByOwner(
       wallet,
       {
         programId: TOKEN_PROGRAM_ID,
       },
-      this._commitment
+      this.commitment
     );
 
     // get mint addresses of all token accounts with amount equal to 1
@@ -252,7 +252,7 @@ export class OrcaDAL {
       return cachedValue as T | null;
     }
 
-    const accountInfo = await this._connection.getAccountInfo(address, this._commitment);
+    const accountInfo = await this.connection.getAccountInfo(address, this.commitment);
     const accountData = accountInfo?.data;
     const value = entity.parse(accountData);
     this._cache[key] = { entity, value };
@@ -303,10 +303,10 @@ export class OrcaDAL {
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     const requests = addresses.map((address: string) => ({
       methodName: "getAccountInfo",
-      args: this._connection._buildArgs([address], this._commitment),
+      args: this.connection._buildArgs([address], this.commitment),
     }));
 
-    const infos: any[] | null = await (this._connection as any)._rpcBatchRequest(requests);
+    const infos: any[] | null = await (this.connection as any)._rpcBatchRequest(requests);
     invariant(infos !== null, "bulkRequest no results");
     invariant(addresses.length === infos.length, "bulkRequest not enough results");
 

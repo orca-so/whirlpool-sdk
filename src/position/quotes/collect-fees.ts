@@ -5,7 +5,7 @@ import {
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import Decimal from "decimal.js";
-import { DecimalUtil } from "../../utils/math/decimal-utils";
+import { DecimalUtil } from "../../utils/decimal-utils";
 import { CollectFeesQuote } from "../public";
 
 export type InternalGetCollectFeesQuoteParam = {

@@ -1,6 +1,12 @@
+import { Wallet } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
+
+export type CollectFeesAndRewardsTransactionParam = {
+  address: PublicKey;
+  wallet: Wallet;
+};
 
 export type AddLiquidityQuoteParam = {
   address: PublicKey;
