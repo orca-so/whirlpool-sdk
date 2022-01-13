@@ -71,9 +71,3 @@ export type CollectRewardsQuote = {
   rewardOwedB?: u64;
   rewardOwedC?: u64;
 };
-
-export enum PositionStatus {
-  BelowRange,
-  InRange,
-  AboveRange,
-}

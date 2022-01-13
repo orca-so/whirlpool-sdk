@@ -19,7 +19,6 @@ import {
   CollectFeesQuoteParam,
   CollectRewardsQuote,
   CollectRewardsQuoteParam,
-  PositionStatus,
   RemoveLiquidityQuote,
   RemoveLiquidityQuoteParam,
   RemoveLiquidityTransactionParam,
@@ -27,9 +26,9 @@ import {
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { DecimalUtil } from "../utils/decimal-utils";
-import { PoolUtil } from "../utils/pool-util";
+import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
-import { TickUtil } from "../utils/tick-util";
+import { TickUtil } from "../utils/whirlpool/tick-util";
 import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
@@ -45,6 +44,7 @@ import {
   getRemoveLiquidityQuoteWhenPositionIsInRange,
   InternalRemoveLiquidityQuoteParam,
 } from "./quotes/remove-liquidity";
+import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
 
 export class OrcaPosition {
   private readonly dal: OrcaDAL;
@@ -282,7 +282,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const positionStatus = OrcaPosition.getPositionStatus(whirlpool, position);
+    const positionStatus = PositionUtil.getPositionStatus(whirlpool, position);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const quoteParam: InternalAddLiquidityQuoteParam = {
@@ -314,7 +314,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const positionStatus = OrcaPosition.getPositionStatus(whirlpool, position);
+    const positionStatus = PositionUtil.getPositionStatus(whirlpool, position);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const quoteParam: InternalRemoveLiquidityQuoteParam = {
@@ -415,21 +415,5 @@ export class OrcaPosition {
     );
 
     return [tickLowerAddress, tickUpperAddress];
-  }
-
-  private static getPositionStatus(
-    whirlpool: WhirlpoolData,
-    position: PositionData
-  ): PositionStatus {
-    const { tickCurrentIndex } = whirlpool;
-    const { tickLowerIndex, tickUpperIndex } = position;
-
-    if (tickCurrentIndex < tickLowerIndex) {
-      return PositionStatus.BelowRange;
-    } else if (tickCurrentIndex <= tickUpperIndex) {
-      return PositionStatus.InRange;
-    } else {
-      return PositionStatus.AboveRange;
-    }
   }
 }

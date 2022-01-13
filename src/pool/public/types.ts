@@ -1,12 +1,10 @@
+import { TransactionPayload } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../..";
 
-export type InitPoolTransactionParam = {
-  initialSqrtPrice: any;
-};
-
 export type OpenPositionQuoteParam = {
+  whirlpoolAddress: PublicKey;
   tokenMint: PublicKey;
   tokenAmount: u64;
   tickLowerIndex: number;
@@ -20,6 +18,32 @@ export type OpenPositionQuote = {
   maxTokenB: u64;
   liquidity: u64;
 };
+
+export type SwapQuoteParam = {
+  // TODO(atamari)
+};
+
+export type SwapQuote = {
+  // TODO(atamari)
+};
+
+export type OpenPositionTransactionParam = {
+  // TODO(atamari)
+};
+
+export type OpenPositionTransaction = TransactionPayload;
+
+export type ClosePositionTransactionParam = {
+  // TODO(atamari)
+};
+
+export type ClosePositoinTransaction = TransactionPayload;
+
+export type SwapTransactionParam = {
+  // TODO(atamari)
+};
+
+export type SwapTransaction = TransactionPayload;
 
 // export interface OrcaWhirlpool {
 //   getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;
