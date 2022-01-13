@@ -6,8 +6,6 @@ import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
-  ClosePositionQuote,
-  ClosePositionQuoteParam,
   ClosePositionTransactionParam,
   ClosePositoinTransaction,
   OpenPositionQuote,

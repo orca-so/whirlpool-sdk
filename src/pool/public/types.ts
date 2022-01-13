@@ -19,14 +19,6 @@ export type OpenPositionQuote = {
   liquidity: u64;
 };
 
-export type ClosePositionQuoteParam = {
-  // TODO(atamari)
-};
-
-export type ClosePositionQuote = {
-  // TODO(atamari)
-};
-
 export type SwapQuoteParam = {
   // TODO(atamari)
 };
