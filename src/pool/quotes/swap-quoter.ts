@@ -207,8 +207,6 @@ export class SwapSimulator {
     ]);
 
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
-      currentTickArrayAccount,
-      currentTickIndex,
       sqrtPriceLimitX64,
       prevInitializedTickIndex,
       nextInitializedTickIndex
@@ -319,8 +317,6 @@ export class SwapSimulator {
     };
 
   private static calculateSqrtPriceAtPrevInitializedTick(
-    currentTickArrayAccount: TickArrayData,
-    currentTickIndex: Decimal,
     sqrtPriceLimitX64: Decimal,
     prevInitializedTickIndex: Decimal,
     nextInitializedTickIndex: Decimal
@@ -329,8 +325,6 @@ export class SwapSimulator {
   }
 
   private static calculateSqrtPriceAtNextInitializedTick(
-    currentTickArrayAccount: TickArrayData,
-    currentTickIndex: Decimal,
     sqrtPriceLimitX64: Decimal,
     prevInitializedTickIndex: Decimal,
     nextInitializedTickIndex: Decimal
