@@ -1,7 +1,10 @@
 // import invariant from "tiny-invariant";
 // import { OrcaDAL } from "../dal/orca-dal";
 
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import {
+  TICK_ARRAY_SIZE,
+  WhirlpoolData,
+} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
@@ -29,7 +32,7 @@ import {
 import { DecimalUtil } from "../utils/decimal-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
-import { TickUtil } from "../utils/whirlpool/tick-util";
+import { TickArrayOutOfBoundsError, TickUtil } from "../utils/whirlpool/tick-util";
 import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 
 function TODO(message?: string): never {
@@ -150,11 +153,51 @@ export class OrcaWhirlpool {
       slippageTolerance,
       fetchTickArray,
       fetchTick,
-      getPrevInitializedTickIndex() {
-        TODO("Implement get prev. initialized tick logic");
+      getPrevInitializedTickIndex: async () => {
+        let currentTickIndex = whirlpool.tickCurrentIndex;
+        let prevInitializedTickIndex: number | undefined = undefined;
+
+        while (!prevInitializedTickIndex) {
+          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+
+          try {
+            prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex
+            );
+          } catch (err) {
+            if (err instanceof TickArrayOutOfBoundsError) {
+              currentTickIndex = currentTickArray.startTickIndex - 1;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        return new Decimal(prevInitializedTickIndex);
       },
-      getNextInitializedTickIndex() {
-        TODO("Implement get next initialized tick logic");
+      getNextInitializedTickIndex: async () => {
+        let currentTickIndex = whirlpool.tickCurrentIndex;
+        let prevInitializedTickIndex: number | undefined = undefined;
+
+        while (!prevInitializedTickIndex) {
+          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+
+          try {
+            prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex
+            );
+          } catch (err) {
+            if (err instanceof TickArrayOutOfBoundsError) {
+              currentTickIndex = currentTickArray.startTickIndex + TICK_ARRAY_SIZE;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        return new Decimal(prevInitializedTickIndex);
       },
     });
 
