@@ -1,10 +1,10 @@
 import { TickSpacing } from "@orca-so/whirlpool-client-sdk";
-import { BN, Wallet } from "@project-serum/anchor";
+import { BN, Provider } from "@project-serum/anchor";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 
 export type InitPoolTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   initSqrtPrice: Decimal;
   whirlpoolConfigKey: PublicKey;
   tokenMintA: PublicKey;
@@ -15,7 +15,7 @@ export type InitPoolTransactionParam = {
 };
 
 export type CollectProtocolFeesTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   address: PublicKey;
   tokenDestinationA: PublicKey;
   tokenDestinationB: PublicKey;
@@ -23,17 +23,17 @@ export type CollectProtocolFeesTransactionParam = {
 };
 
 export type SetFeeAuthorityParam = {
-  wallet: Wallet;
+  provider: Provider;
   newFeeAuthority: PublicKey;
 };
 
 export type SetCollectProtocolFeesAuthorityParam = {
-  wallet: Wallet;
+  provider: Provider;
   newCollectProtocolFeesAuthority: PublicKey;
 };
 
 export type InitRewardTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   rewardAuthority: PublicKey;
   whirlpool: PublicKey;
   rewardMint: PublicKey;
@@ -42,28 +42,28 @@ export type InitRewardTransactionParam = {
 };
 
 export type SetRewardAuthorityTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   whirlpool: PublicKey;
   newRewardAuthority: PublicKey;
   rewardIndex: number;
 };
 
 export type SetRewardEmissionsTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   whirlpool: PublicKey;
   rewardIndex: number;
   emissionsPerSecondX64: BN;
 };
 
 export type SetRewardAuthorityBySuperAuthorityTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   whirlpool: PublicKey;
   newRewardAuthority: PublicKey;
   rewardIndex: number;
 };
 
 export type SetRewardEmissionsBySuperAuthorityTransactionParam = {
-  wallet: Wallet;
+  provider: Provider;
   rewardEmissionsSuperAuthorityKeypair: Keypair;
   newRewardEmissionsSuperAuthority: PublicKey;
 };

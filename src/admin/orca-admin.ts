@@ -15,7 +15,6 @@ import {
   SetRewardEmissionsBySuperAuthorityTransactionParam,
 } from "..";
 import { OrcaDAL } from "../dal/orca-dal";
-import { TransactionExecutable } from "../utils/public/transaction-executable";
 
 // TODO few keypairs sus
 //      emissionsPerSecondX64 BN
@@ -29,7 +28,7 @@ export class OrcaAdmin {
 
   public getInitPoolTransaction(param: InitPoolTransactionParam): TransactionBuilder {
     const {
-      wallet,
+      provider,
       initSqrtPrice,
       tokenMintA,
       tokenMintB,
@@ -37,10 +36,8 @@ export class OrcaAdmin {
       tokenVaultBKeypair,
       tickSpacing,
     } = param;
-    const { connection, commitment, programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     const whirlpoolPda = getWhirlpoolPda(
@@ -68,11 +65,9 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTransaction(
     param: CollectProtocolFeesTransactionParam
   ): Promise<TransactionBuilder> {
-    const { wallet, address, tokenDestinationA, tokenDestinationB, refresh } = param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const { provider, address, tokenDestinationA, tokenDestinationB, refresh } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     const whirlpool = await this.dal.getPool(address, refresh);
@@ -81,7 +76,7 @@ export class OrcaAdmin {
     return client.collectProtocolFeesTx({
       whirlpoolsConfig,
       whirlpool: address,
-      collectProtocolFeesAuthority: wallet.publicKey,
+      collectProtocolFeesAuthority: provider.wallet.publicKey,
       tokenVaultA: whirlpool.tokenVaultA,
       tokenVaultB: whirlpool.tokenVaultB,
       tokenDestinationA,
@@ -90,16 +85,14 @@ export class OrcaAdmin {
   }
 
   public getSetFeeAuthority(param: SetFeeAuthorityParam): TransactionBuilder {
-    const { wallet, newFeeAuthority } = param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const { provider, newFeeAuthority } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     return client.setFeeAuthorityIx({
       whirlpoolsConfig,
-      feeAuthority: wallet.publicKey,
+      feeAuthority: provider.wallet.publicKey,
       newFeeAuthority,
     });
   }
@@ -107,38 +100,31 @@ export class OrcaAdmin {
   public getSetCollectProtocolFeesAuthority(
     param: SetCollectProtocolFeesAuthorityParam
   ): TransactionBuilder {
-    const { wallet, newCollectProtocolFeesAuthority } = param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const { provider, newCollectProtocolFeesAuthority } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     return client.setCollectProtocolFeesAuthorityIx({
       whirlpoolsConfig,
-      collectProtocolFeesAuthority: wallet.publicKey,
+      collectProtocolFeesAuthority: provider.wallet.publicKey,
       newCollectProtocolFeesAuthority,
     });
   }
 
   /*** Reward ***/
 
-  public async getInitRewardTransaction(
-    param: InitRewardTransactionParam
-  ): Promise<TransactionBuilder> {
-    const { wallet, rewardAuthority, whirlpool, rewardMint, rewardVaultKeypair, rewardIndex } =
+  public getInitRewardTransaction(param: InitRewardTransactionParam): TransactionBuilder {
+    const { provider, rewardAuthority, whirlpool, rewardMint, rewardVaultKeypair, rewardIndex } =
       param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
     return client.initializeRewardTx({
       rewardAuthority,
-      funder: wallet.publicKey,
+      funder: provider.wallet.publicKey,
       whirlpool,
       rewardMint,
       rewardVaultKeypair,
@@ -146,88 +132,72 @@ export class OrcaAdmin {
     });
   }
 
-  public async getSetRewardAuthorityTransaction(
+  public getSetRewardAuthorityTransaction(
     param: SetRewardAuthorityTransactionParam
-  ): Promise<TransactionBuilder> {
-    const { wallet, whirlpool, newRewardAuthority, rewardIndex } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+  ): TransactionBuilder {
+    const { provider, whirlpool, newRewardAuthority, rewardIndex } = param;
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
     return client.setRewardAuthorityIx({
       whirlpool,
-      rewardAuthority: wallet.publicKey,
+      rewardAuthority: provider.wallet.publicKey,
       newRewardAuthority,
       rewardIndex,
     });
   }
 
-  public async getSetRewardEmissionsTransaction(
+  public getSetRewardEmissionsTransaction(
     param: SetRewardEmissionsTransactionParam
-  ): Promise<TransactionExecutable> {
-    const { wallet, whirlpool, rewardIndex, emissionsPerSecondX64 } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+  ): TransactionBuilder {
+    const { provider, whirlpool, rewardIndex, emissionsPerSecondX64 } = param;
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
-    client.setRewardEmissionsTx({
-      rewardAuthority: wallet.publicKey,
+    return client.setRewardEmissionsTx({
+      rewardAuthority: provider.wallet.publicKey,
       whirlpool,
       rewardIndex,
       emissionsPerSecondX64,
     });
-
-    throw new Error();
   }
 
-  public async getSetRewardAuthorityBySuperAuthorityTransaction(
+  public getSetRewardAuthorityBySuperAuthorityTransaction(
     param: SetRewardAuthorityBySuperAuthorityTransactionParam
-  ): Promise<TransactionExecutable> {
-    const { wallet, whirlpool, newRewardAuthority, rewardIndex } = param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+  ): TransactionBuilder {
+    const { provider, whirlpool, newRewardAuthority, rewardIndex } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
-    client.setRewardAuthorityBySuperAuthorityIx({
+    return client.setRewardAuthorityBySuperAuthorityIx({
       whirlpoolsConfig,
       whirlpool,
-      rewardEmissionsSuperAuthority: wallet.publicKey,
+      rewardEmissionsSuperAuthority: provider.wallet.publicKey,
       newRewardAuthority,
       rewardIndex,
     });
-
-    throw new Error();
   }
 
-  public async getSetRewardEmissionsBySuperAuthorityTransaction(
+  public getSetRewardEmissionsBySuperAuthorityTransaction(
     param: SetRewardEmissionsBySuperAuthorityTransactionParam
-  ): Promise<TransactionExecutable> {
-    const { wallet, rewardEmissionsSuperAuthorityKeypair, newRewardEmissionsSuperAuthority } =
+  ): TransactionBuilder {
+    const { provider, rewardEmissionsSuperAuthorityKeypair, newRewardEmissionsSuperAuthority } =
       param;
-    const { connection, commitment, programId, whirlpoolsConfig } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    client.setRewardEmissionsSuperAuthorityIx({
+    return client.setRewardEmissionsSuperAuthorityIx({
       whirlpoolsConfig,
       rewardEmissionsSuperAuthorityKeypair,
       newRewardEmissionsSuperAuthority,
     });
-
-    throw new Error();
   }
 }
