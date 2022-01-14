@@ -179,12 +179,10 @@ export class SwapSimulator {
       swapDirection,
       amountSpecified,
       feeRate,
-      fetchTickArray,
       getNextInitializedTickIndex,
       getPrevInitializedTickIndex,
     } = this.config;
-    const { calculateTargetSqrtPrice, sqrtPriceWithinLimit } =
-      SwapSimulator.functionsBySwapDirection[swapDirection];
+    const { calculateTargetSqrtPrice } = SwapSimulator.functionsBySwapDirection[swapDirection];
     const { resolveInputAndOutputAmounts } =
       SwapSimulator.functionsByAmountSpecified[amountSpecified];
     const {
