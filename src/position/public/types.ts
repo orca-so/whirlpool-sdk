@@ -1,4 +1,4 @@
-import { Wallet } from "@project-serum/anchor";
+import { Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
@@ -6,20 +6,20 @@ import { Percentage } from "../../utils/public/percentage";
 /*** Transactions ***/
 
 export type AddLiquidityTransactionParam = {
+  provider: Provider;
   address: PublicKey;
-  wallet: Wallet;
   quote: AddLiquidityQuote;
 };
 
 export type RemoveLiquidityTransactionParam = {
+  provider: Provider;
   address: PublicKey;
-  wallet: Wallet;
   quote: RemoveLiquidityQuote;
 };
 
 export type CollectFeesAndRewardsTransactionParam = {
+  provider: Provider;
   address: PublicKey;
-  wallet: Wallet;
 };
 
 /*** Quotes ***/
