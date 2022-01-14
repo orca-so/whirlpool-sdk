@@ -51,9 +51,14 @@ export class OrcaDAL {
 
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
 
-  constructor(connection: Connection, network: OrcaNetwork, commitment: Commitment) {
-    this.whirlpoolsConfig = getWhirlpoolsConfig(network);
-    this.programId = getWhirlpoolProgramId(network);
+  constructor(
+    whirlpoolsConfig: PublicKey,
+    programId: PublicKey,
+    connection: Connection,
+    commitment: Commitment
+  ) {
+    this.whirlpoolsConfig = whirlpoolsConfig;
+    this.programId = programId;
     this.connection = connection;
     this.commitment = commitment;
   }

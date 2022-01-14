@@ -60,13 +60,14 @@ export class OrcaPosition {
   ): Promise<TransactionExecutable> {
     const { address, wallet, quote } = param;
     const { connection, commitment, programId } = this.dal;
+
     const ctx = WhirlpoolContext.from(connection, wallet, programId, {
       commitment,
     });
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, false); // TODO is this ok
-    const whirlpool = await this.getWhirlpool(position, false); // TODO is this ok
+    const position = await this.getPosition(address, true);
+    const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
@@ -126,8 +127,8 @@ export class OrcaPosition {
     });
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, false); // TODO is this ok
-    const whirlpool = await this.getWhirlpool(position, false); // TODO is this ok
+    const position = await this.getPosition(address, true);
+    const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
@@ -158,8 +159,8 @@ export class OrcaPosition {
     const removeLiquidityIx = client
       .decreaseLiquidityTx({
         liquidityAmount: DecimalUtil.fromU64(quote.liquidity),
-        tokenMaxA: DecimalUtil.fromU64(quote.minTokenA),
-        tokenMaxB: DecimalUtil.fromU64(quote.minTokenB),
+        tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
+        tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
         whirlpool: position.whirlpool,
         positionAuthority: wallet.publicKey,
         position: address,
