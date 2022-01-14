@@ -1,6 +1,7 @@
 import { TransactionPayload } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
+import Decimal from "decimal.js";
 import { Percentage } from "../..";
 
 export type OpenPositionQuoteParam = {
@@ -21,10 +22,20 @@ export type OpenPositionQuote = {
 
 export type SwapQuoteParam = {
   // TODO(atamari)
+  whirlpool: PublicKey;
+  tokenMint: PublicKey;
+  tokenAmount: u64;
+  isOutput?: boolean;
+  slippageTolerance?: Percentage;
+  refresh?: boolean;
 };
 
 export type SwapQuote = {
   // TODO(atamari)
+  sqrtPriceLimitX64: Decimal;
+  amountIn: Decimal;
+  amountOut: Decimal;
+  fixedOutput: boolean;
 };
 
 export type OpenPositionTransactionParam = {

@@ -1,9 +1,13 @@
 // import invariant from "tiny-invariant";
 // import { OrcaDAL } from "../dal/orca-dal";
 
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import {
+  TICK_ARRAY_SIZE,
+  WhirlpoolData,
+} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
+import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionTransactionParam,
@@ -25,10 +29,14 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
+import { DecimalUtil } from "../utils/decimal-utils";
+import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
+import { TickArrayOutOfBoundsError, TickUtil } from "../utils/whirlpool/tick-util";
+import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 
-function TODO(): never {
-  throw new Error("TODO: Implement");
+function TODO(message?: string): never {
+  throw new Error(`TODO: ${message || "Implement"}`);
 }
 
 export class OrcaWhirlpool {
@@ -108,7 +116,104 @@ export class OrcaWhirlpool {
 
   /** 2. Swap quote **/
   public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
-    TODO();
+    const {
+      whirlpool: whirlpoolAddress,
+      tokenMint,
+      tokenAmount,
+      isOutput = false,
+      slippageTolerance = defaultSlippagePercentage,
+      refresh,
+    } = param;
+
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
+
+    const fetchTickArray = async (tickIndex: Decimal) => {
+      const tickArray = await this.dal.getTickArray(
+        TickUtil.getAddressContainingTickIndex(
+          tickIndex.toNumber(),
+          whirlpoolAddress,
+          this.dal.programId
+        )
+      );
+      invariant(!!tickArray, "tickArray is null");
+      return tickArray;
+    };
+
+    const fetchTick = async (tickIndex: Decimal) => {
+      const tickArray = await fetchTickArray(tickIndex);
+      return TickUtil.getTick(tickArray, tickIndex.toNumber());
+    };
+
+    const swapSimulator = new SwapSimulator({
+      swapDirection:
+        tokenMint === whirlpool.tokenMintA && isOutput ? SwapDirection.BtoA : SwapDirection.AtoB,
+      amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
+      feeRate: PoolUtil.getFeeRate(whirlpool),
+      protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
+      slippageTolerance,
+      fetchTickArray,
+      fetchTick,
+      getPrevInitializedTickIndex: async () => {
+        let currentTickIndex = whirlpool.tickCurrentIndex;
+        let prevInitializedTickIndex: number | undefined = undefined;
+
+        while (!prevInitializedTickIndex) {
+          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+
+          try {
+            prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex
+            );
+          } catch (err) {
+            if (err instanceof TickArrayOutOfBoundsError) {
+              currentTickIndex = currentTickArray.startTickIndex - 1;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        return new Decimal(prevInitializedTickIndex);
+      },
+      getNextInitializedTickIndex: async () => {
+        let currentTickIndex = whirlpool.tickCurrentIndex;
+        let prevInitializedTickIndex: number | undefined = undefined;
+
+        while (!prevInitializedTickIndex) {
+          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+
+          try {
+            prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex
+            );
+          } catch (err) {
+            if (err instanceof TickArrayOutOfBoundsError) {
+              currentTickIndex = currentTickArray.startTickIndex + TICK_ARRAY_SIZE;
+            } else {
+              throw err;
+            }
+          }
+        }
+
+        return new Decimal(prevInitializedTickIndex);
+      },
+    });
+
+    const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
+      amount: DecimalUtil.fromU64(tokenAmount),
+      currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
+      currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
+      currentLiquidity: DecimalUtil.fromU64(whirlpool.liquidity),
+    });
+
+    return {
+      sqrtPriceLimitX64,
+      amountIn,
+      amountOut,
+      fixedOutput: isOutput,
+    };
   }
 
   /*** Helpers (private) ***/
