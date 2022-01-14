@@ -12,12 +12,12 @@ import { DecimalUtil } from "../../utils/decimal-utils";
 
 const MAX_TICK_ARRAY_CROSSINGS = 2;
 
-enum SwapDirection {
+export enum SwapDirection {
   AtoB = "Swap A to B",
   BtoA = "Swap B to A",
 }
 
-enum AmountSpecified {
+export enum AmountSpecified {
   Input = "Specified input amount",
   Output = "Specified output amount",
 }
@@ -28,8 +28,6 @@ enum Rounding {
 }
 
 type SwapSimulatorConfig = {
-  tokenAMintInfo: MintInfo;
-  tokenBMintInfo: MintInfo;
   swapDirection: SwapDirection;
   amountSpecified: AmountSpecified;
   feeRate: Percentage;
