@@ -58,12 +58,9 @@ export class OrcaPosition {
   public async getAddLiquidityTransaction(
     param: AddLiquidityTransactionParam
   ): Promise<TransactionExecutable> {
-    const { address, wallet, quote } = param;
+    const { provider, address, quote } = param;
     const { connection, commitment, programId } = this.dal;
-
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -74,7 +71,7 @@ export class OrcaPosition {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const positionTokenAccount = await this.dal.getUserTokenAccount(
-      wallet.publicKey,
+      provider.wallet.publicKey,
       position.positionMint
     );
     invariant(!!positionTokenAccount, "no position token account");
@@ -82,7 +79,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
@@ -90,7 +88,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
@@ -101,7 +100,7 @@ export class OrcaPosition {
         tokenMaxA: DecimalUtil.fromU64(quote.maxTokenA),
         tokenMaxB: DecimalUtil.fromU64(quote.maxTokenB),
         whirlpool: position.whirlpool,
-        positionAuthority: wallet.publicKey,
+        positionAuthority: provider.wallet.publicKey,
         position: address,
         positionTokenAccount,
         tokenOwnerAccountA,
@@ -114,17 +113,15 @@ export class OrcaPosition {
       .compressIx(false);
     txBuilder.addInstruction(addLiquidityIx);
 
-    return new TransactionExecutable(ctx.provider, [txBuilder]);
+    return new TransactionExecutable(provider, [txBuilder]);
   }
 
   public async getRemoveLiquidityTransaction(
     param: RemoveLiquidityTransactionParam
   ): Promise<TransactionExecutable> {
-    const { address, wallet, quote } = param;
+    const { provider, address, quote } = param;
     const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -135,7 +132,7 @@ export class OrcaPosition {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const positionTokenAccount = await this.dal.getUserTokenAccount(
-      wallet.publicKey,
+      provider.wallet.publicKey,
       position.positionMint
     );
     invariant(!!positionTokenAccount, "no position token account");
@@ -143,7 +140,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
@@ -151,7 +149,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
@@ -162,7 +161,7 @@ export class OrcaPosition {
         tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
         tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
         whirlpool: position.whirlpool,
-        positionAuthority: wallet.publicKey,
+        positionAuthority: provider.wallet.publicKey,
         position: address,
         positionTokenAccount,
         tokenOwnerAccountA,
@@ -175,17 +174,15 @@ export class OrcaPosition {
       .compressIx(false);
     txBuilder.addInstruction(removeLiquidityIx);
 
-    return new TransactionExecutable(ctx.provider, [txBuilder]);
+    return new TransactionExecutable(provider, [txBuilder]);
   }
 
   public async getCollectFeesAndRewardsTransaction(
     param: CollectFeesAndRewardsTransactionParam
   ): Promise<TransactionExecutable> {
-    const { address, wallet } = param;
+    const { provider, address } = param;
     const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.from(connection, wallet, programId, {
-      commitment,
-    });
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -197,7 +194,7 @@ export class OrcaPosition {
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
 
     const positionTokenAccount = await this.dal.getUserTokenAccount(
-      wallet.publicKey,
+      provider.wallet.publicKey,
       position.positionMint
     );
     invariant(!!positionTokenAccount, "no position token account");
@@ -217,7 +214,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
     ataTxBuilder.addInstruction(tokenOwnerAccountAIx);
@@ -225,7 +223,8 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
         connection,
-        wallet.publicKey,
+        commitment,
+        provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
     ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
@@ -233,7 +232,7 @@ export class OrcaPosition {
     const feeIx = client
       .collectFeesTx({
         whirlpool: position.whirlpool,
-        positionAuthority: wallet.publicKey,
+        positionAuthority: provider.wallet.publicKey,
         position: address,
         positionTokenAccount,
         tokenOwnerAccountA,
@@ -252,14 +251,15 @@ export class OrcaPosition {
         const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } =
           await resolveOrCreateAssociatedTokenAddress(
             connection,
-            wallet.publicKey,
+            commitment,
+            provider.wallet.publicKey,
             whirlpool.rewardInfos[i].mint
           );
         ataTxBuilder.addInstruction(rewardOwnerAccountIx);
 
         const rewardTx = client.collectRewardTx({
           whirlpool: position.whirlpool,
-          positionAuthority: wallet.publicKey,
+          positionAuthority: provider.wallet.publicKey,
           position: address,
           positionTokenAccount,
           rewardOwnerAccount,
@@ -272,7 +272,7 @@ export class OrcaPosition {
       }
     }
 
-    return new TransactionExecutable(ctx.provider, [ataTxBuilder, mainTxBuilder]);
+    return new TransactionExecutable(provider, [ataTxBuilder, mainTxBuilder]);
   }
 
   /*** Quotes ***/
