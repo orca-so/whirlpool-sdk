@@ -54,7 +54,7 @@ export type ClosePositionTransactionParam = {
   // TODO(atamari)
 };
 
-export type ClosePositoinTransaction = TransactionPayload;
+export type ClosePositionTransaction = TransactionPayload;
 
 export type SwapTransactionParam = {
   // TODO(atamari)

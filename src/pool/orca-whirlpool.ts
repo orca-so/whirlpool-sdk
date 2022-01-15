@@ -15,8 +15,8 @@ import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
+  ClosePositionTransaction,
   ClosePositionTransactionParam,
-  ClosePositoinTransaction,
   OpenPositionQuote,
   OpenPositionQuoteParam,
   OpenPositionTransaction,
@@ -157,7 +157,7 @@ export class OrcaWhirlpool {
   /** 2. Close position tx **/
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
-  ): Promise<ClosePositoinTransaction> {
+  ): Promise<ClosePositionTransaction> {
     TODO();
   }
 
