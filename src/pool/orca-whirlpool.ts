@@ -5,6 +5,7 @@ import { getPositionPda, sqrtPriceX64ToTickIndex, toX64 } from "@orca-so/whirlpo
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
+  PositionData,
   TICK_ARRAY_SIZE,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
@@ -15,6 +16,8 @@ import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
+  ClosePositionQuote,
+  ClosePositionQuoteParam,
   ClosePositionTransaction,
   ClosePositionTransactionParam,
   OpenPositionQuote,
@@ -35,6 +38,7 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
+import { InternalRemoveLiquidityQuoteParam } from "../position/quotes/remove-liquidity";
 import { DecimalUtil } from "../utils/decimal-utils";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
@@ -158,6 +162,8 @@ export class OrcaWhirlpool {
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
   ): Promise<ClosePositionTransaction> {
+    // 1. remove all liquidity
+    // 2. close position
     TODO();
   }
 
@@ -231,7 +237,27 @@ export class OrcaWhirlpool {
     };
   }
 
-  /** 2. Swap quote **/
+  /** 2. Close position quote **/
+  public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
+    const {
+      position: positionAddress,
+      refresh,
+      slippageTolerence = defaultSlippagePercentage,
+    } = param;
+    const position = await this.getPosition(positionAddress, refresh);
+
+    // Get remove liquidity quote for all of this position's liquidity
+    const removeLiquidityQuote = new OrcaPosition(this.dal).getRemoveLiquidityQuote({
+      address: positionAddress,
+      liquidity: position.liquidity,
+      refresh,
+      slippageTolerence,
+    });
+
+    return removeLiquidityQuote;
+  }
+
+  /** 3. Swap quote **/
   public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
     const {
       whirlpool: whirlpoolAddress,
@@ -338,6 +364,12 @@ export class OrcaWhirlpool {
     const whirlpool = await this.dal.getPool(address, refresh);
     invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
     return whirlpool;
+  }
+
+  private async getPosition(address: PublicKey, refresh = false): Promise<PositionData> {
+    const position = await this.dal.getPosition(address, refresh);
+    invariant(!!position, "OrcaWhirlpool - position does not exist");
+    return position;
   }
 
   private async getTokenMintInfos(

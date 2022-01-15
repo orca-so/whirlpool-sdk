@@ -24,6 +24,18 @@ export type OpenPositionQuote = {
   tickUpperIndex: number;
 };
 
+export type ClosePositionQuoteParam = {
+  position: PublicKey;
+  refresh?: boolean;
+  slippageTolerence?: Percentage;
+};
+
+export type ClosePositionQuote = {
+  minTokenA: u64;
+  minTokenB: u64;
+  liquidity: u64;
+};
+
 export type SwapQuoteParam = {
   // TODO(atamari)
   whirlpool: PublicKey;
@@ -51,10 +63,12 @@ export type OpenPositionTransactionParam = {
 export type OpenPositionTransaction = TransactionExecutable;
 
 export type ClosePositionTransactionParam = {
+  whirlpool: PublicKey;
+  position: PublicKey;
   // TODO(atamari)
 };
 
-export type ClosePositionTransaction = TransactionPayload;
+export type ClosePositionTransaction = TransactionExecutable;
 
 export type SwapTransactionParam = {
   // TODO(atamari)
