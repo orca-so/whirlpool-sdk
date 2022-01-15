@@ -164,7 +164,80 @@ export class OrcaWhirlpool {
   ): Promise<ClosePositionTransaction> {
     // 1. remove all liquidity
     // 2. close position
-    TODO();
+    const { provider, position: positionAddress, quote } = param;
+    const { positionAuthority = provider.wallet.publicKey, receiver = provider.wallet.publicKey } =
+      param;
+    const { connection, commitment, programId } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const position = await this.getPosition(positionAddress, true);
+    const whirlpool = await this.getWhirlpool(position.whirlpool, true);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(
+      position.whirlpool,
+      position.tickLowerIndex,
+      position.tickUpperIndex
+    );
+
+    const txBuilder = new TransactionBuilder(ctx.provider);
+
+    const positionTokenAccount = await this.dal.getUserTokenAccount(
+      provider.wallet.publicKey,
+      position.positionMint
+    );
+    invariant(!!positionTokenAccount, "no position token account");
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    txBuilder.addInstruction(
+      client
+        .decreaseLiquidityTx({
+          liquidityAmount: DecimalUtil.fromU64(position.liquidity), // Decrease liquidity to 0
+          tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
+          tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
+          whirlpool: position.whirlpool,
+          positionAuthority: provider.wallet.publicKey,
+          position: positionAddress,
+          positionTokenAccount,
+          tokenOwnerAccountA,
+          tokenOwnerAccountB,
+          tokenVaultA: whirlpool.tokenVaultA,
+          tokenVaultB: whirlpool.tokenVaultB,
+          tickArrayLower,
+          tickArrayUpper,
+        })
+        .compressIx(false)
+    );
+
+    txBuilder.addInstruction(
+      client
+        .closePositionTx({
+          positionAuthority,
+          receiver,
+          positionTokenAccount,
+          position: positionAddress,
+          positionMint: position.positionMint,
+        })
+        .compressIx(false)
+    );
+
+    return new TransactionExecutable(provider, [txBuilder]);
   }
 
   /** 3. Swap tx **/
@@ -247,14 +320,17 @@ export class OrcaWhirlpool {
     const position = await this.getPosition(positionAddress, refresh);
 
     // Get remove liquidity quote for all of this position's liquidity
-    const removeLiquidityQuote = new OrcaPosition(this.dal).getRemoveLiquidityQuote({
+    const { minTokenA, minTokenB } = await new OrcaPosition(this.dal).getRemoveLiquidityQuote({
       address: positionAddress,
       liquidity: position.liquidity,
       refresh,
       slippageTolerence,
     });
 
-    return removeLiquidityQuote;
+    return {
+      minTokenA,
+      minTokenB,
+    };
   }
 
   /** 3. Swap quote **/
@@ -382,6 +458,12 @@ export class OrcaWhirlpool {
     );
     invariant(!!mintInfos && mintInfos.length === 2, "OrcaWhirlpool - mint infos do not exist");
     return [mintInfos[0], mintInfos[1]];
+  }
+
+  private getTickArrayAddresses(whirlpool: PublicKey, ...tickIndexes: number[]): PublicKey[] {
+    return tickIndexes.map((tickIndex) =>
+      TickUtil.getAddressContainingTickIndex(tickIndex, whirlpool, this.dal.programId)
+    );
   }
 }
 

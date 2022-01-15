@@ -33,7 +33,6 @@ export type ClosePositionQuoteParam = {
 export type ClosePositionQuote = {
   minTokenA: u64;
   minTokenB: u64;
-  liquidity: u64;
 };
 
 export type SwapQuoteParam = {
@@ -63,9 +62,11 @@ export type OpenPositionTransactionParam = {
 export type OpenPositionTransaction = TransactionExecutable;
 
 export type ClosePositionTransactionParam = {
-  whirlpool: PublicKey;
+  provider: Provider;
+  positionAuthority?: PublicKey;
+  receiver?: PublicKey;
   position: PublicKey;
-  // TODO(atamari)
+  quote: ClosePositionQuote;
 };
 
 export type ClosePositionTransaction = TransactionExecutable;
