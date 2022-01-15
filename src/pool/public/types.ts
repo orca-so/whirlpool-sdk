@@ -1,15 +1,17 @@
 import { TransactionPayload } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { u64 } from "@solana/spl-token";
+import { Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { Percentage } from "../..";
+import { TransactionExecutable } from "../../utils/public/transaction-executable";
 
 export type OpenPositionQuoteParam = {
   whirlpoolAddress: PublicKey;
   tokenMint: PublicKey;
   tokenAmount: u64;
-  tickLowerIndex: number;
-  tickUpperIndex: number;
+  priceLower: Decimal;
+  priceUpper: Decimal;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
@@ -18,6 +20,8 @@ export type OpenPositionQuote = {
   maxTokenA: u64;
   maxTokenB: u64;
   liquidity: u64;
+  tickLowerIndex: number;
+  tickUpperIndex: number;
 };
 
 export type SwapQuoteParam = {
@@ -39,10 +43,12 @@ export type SwapQuote = {
 };
 
 export type OpenPositionTransactionParam = {
-  // TODO(atamari)
+  provider: Provider;
+  whirlpool: PublicKey;
+  quote: OpenPositionQuote;
 };
 
-export type OpenPositionTransaction = TransactionPayload;
+export type OpenPositionTransaction = TransactionExecutable;
 
 export type ClosePositionTransactionParam = {
   // TODO(atamari)

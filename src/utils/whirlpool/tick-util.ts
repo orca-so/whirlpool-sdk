@@ -6,6 +6,7 @@ import {
   TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { getTickArrayPda } from "@orca-so/whirlpool-client-sdk";
+import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
 
 enum TickSearchDirection {
   Left,
@@ -57,13 +58,26 @@ export class TickUtil {
     return account.ticks[index];
   }
 
+  public static deriveTickArrayPDA(
+    tickIndex: number,
+    whirlpoolAddress: PublicKey,
+    programId: PublicKey
+  ): PDA {
+    const startTick = Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+    return getTickArrayPda(programId, whirlpoolAddress, startTick);
+  }
+
+  public static getStartTickIndex(tickIndex: number): number {
+    // TODO(atamari): Make sure this is correct (cc @scuba)
+    return Math.floor(tickIndex / TICK_ARRAY_SIZE);
+  }
+
   public static getAddressContainingTickIndex(
     tickIndex: number,
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PublicKey {
-    const startTick = Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
-    return getTickArrayPda(programId, whirlpoolAddress, startTick).publicKey;
+    return TickUtil.deriveTickArrayPDA(tickIndex, whirlpoolAddress, programId).publicKey;
   }
 
   private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {

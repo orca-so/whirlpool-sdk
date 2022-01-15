@@ -1,15 +1,20 @@
 // import invariant from "tiny-invariant";
 // import { OrcaDAL } from "../dal/orca-dal";
 
+import { getPositionPda, sqrtPriceX64ToTickIndex, toX64 } from "@orca-so/whirlpool-client-sdk";
+import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
+import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
   TICK_ARRAY_SIZE,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
+  AddLiquidityQuote,
   ClosePositionTransactionParam,
   ClosePositoinTransaction,
   OpenPositionQuote,
@@ -23,6 +28,7 @@ import {
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
+import { OrcaPosition } from "../position/orca-position";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
@@ -30,6 +36,8 @@ import {
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
 import { DecimalUtil } from "../utils/decimal-utils";
+import { TransactionExecutable } from "../utils/public/transaction-executable";
+import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
 import { TickArrayOutOfBoundsError, TickUtil } from "../utils/whirlpool/tick-util";
@@ -48,7 +56,102 @@ export class OrcaWhirlpool {
   public async getOpenPositionTransaction(
     param: OpenPositionTransactionParam
   ): Promise<OpenPositionTransaction> {
-    TODO();
+    // TODO(atamari): Might have to split the transaction into 2 (if needed after testing)
+    const {
+      provider,
+      whirlpool: address,
+      quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex },
+    } = param;
+    const { connection, commitment, programId } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const whirlpool = await this.getWhirlpool(address, true);
+
+    const txBuilder = new TransactionBuilder(ctx.provider);
+
+    const positionMintKeypair = Keypair.generate();
+    const positionPda = getPositionPda(programId, positionMintKeypair.publicKey);
+    const positionTokenAccountKeypair = Keypair.generate();
+
+    txBuilder.addInstruction(
+      client
+        .openPositionTx({
+          ownerKey: provider.wallet.publicKey,
+          positionPda,
+          positionMintKeypair,
+          positionTokenAccountKeypair,
+          whirlpoolKey: address,
+          tickLowerIndex,
+          tickUpperIndex,
+        })
+        .compressIx(false)
+    );
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(tickLowerIndex, address, programId);
+    const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(tickUpperIndex, address, programId);
+
+    txBuilder.addInstruction(
+      client
+        .initTickArrayTx({
+          whirlpoolKey: address,
+          tickArrayPda: tickArrayLowerPda,
+          startTick: TickUtil.getStartTickIndex(tickLowerIndex),
+        })
+        .compressIx(false)
+    );
+
+    if (!tickArrayLowerPda.publicKey.equals(tickArrayUpperPda.publicKey)) {
+      txBuilder.addInstruction(
+        client
+          .initTickArrayTx({
+            whirlpoolKey: address,
+            tickArrayPda: tickArrayUpperPda,
+            startTick: TickUtil.getStartTickIndex(tickUpperIndex),
+          })
+          .compressIx(false)
+      );
+    }
+
+    txBuilder.addInstruction(
+      client
+        .increaseLiquidityTx({
+          liquidityAmount: DecimalUtil.fromU64(liquidity),
+          tokenMaxA: DecimalUtil.fromU64(maxTokenA),
+          tokenMaxB: DecimalUtil.fromU64(maxTokenB),
+          whirlpool: address,
+          positionAuthority: provider.wallet.publicKey,
+          position: address,
+          positionTokenAccount: positionTokenAccountKeypair.publicKey,
+          tokenOwnerAccountA,
+          tokenOwnerAccountB,
+          tokenVaultA: whirlpool.tokenVaultA,
+          tokenVaultB: whirlpool.tokenVaultB,
+          tickArrayLower: tickArrayLowerPda.publicKey,
+          tickArrayUpper: tickArrayLowerPda.publicKey,
+        })
+        .compressIx(false)
+    );
+
+    return new TransactionExecutable(provider, [txBuilder]);
   }
 
   /** 2. Close position tx **/
@@ -71,11 +174,14 @@ export class OrcaWhirlpool {
       whirlpoolAddress,
       tokenMint,
       tokenAmount,
-      tickLowerIndex,
-      tickUpperIndex,
+      priceLower,
+      priceUpper,
       slippageTolerence = defaultSlippagePercentage,
       refresh,
     } = param;
+
+    const tickLowerIndex = sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())).toNumber();
+    const tickUpperIndex = sqrtPriceX64ToTickIndex(toX64(priceUpper.sqrt())).toNumber();
 
     const dummyPosition = {
       whirlpool: whirlpoolAddress,
@@ -104,14 +210,25 @@ export class OrcaWhirlpool {
       slippageTolerence,
     };
 
+    let addLiquidityQuote: AddLiquidityQuote;
+
     switch (PositionUtil.getPositionStatus(whirlpool, dummyPosition)) {
       case PositionStatus.BelowRange:
-        return getAddLiquidityQuoteWhenPositionIsBelowRange(addLiquidityParams);
+        addLiquidityQuote = getAddLiquidityQuoteWhenPositionIsBelowRange(addLiquidityParams);
+        break;
       case PositionStatus.InRange:
-        return getAddLiquidityQuoteWhenPositionIsInRange(addLiquidityParams);
+        addLiquidityQuote = getAddLiquidityQuoteWhenPositionIsInRange(addLiquidityParams);
+        break;
       case PositionStatus.AboveRange:
-        return getAddLiquidityQuoteWhenPositionIsAboveRange(addLiquidityParams);
+        addLiquidityQuote = getAddLiquidityQuoteWhenPositionIsAboveRange(addLiquidityParams);
+        break;
     }
+
+    return {
+      ...addLiquidityQuote,
+      tickLowerIndex,
+      tickUpperIndex,
+    };
   }
 
   /** 2. Swap quote **/
