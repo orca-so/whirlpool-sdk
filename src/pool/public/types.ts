@@ -50,6 +50,7 @@ export type SwapQuote = {
   sqrtPriceLimitX64: Decimal;
   amountIn: Decimal;
   amountOut: Decimal;
+  aToB: boolean;
   fixedOutput: boolean;
 };
 
@@ -72,10 +73,12 @@ export type ClosePositionTransactionParam = {
 export type ClosePositionTransaction = TransactionExecutable;
 
 export type SwapTransactionParam = {
-  // TODO(atamari)
+  provider: Provider;
+  whirlpool: PublicKey;
+  quote: SwapQuote;
 };
 
-export type SwapTransaction = TransactionPayload;
+export type SwapTransaction = TransactionExecutable;
 
 // export interface OrcaWhirlpool {
 //   getInitPoolTransaction: (initialSqrtPrice: any) => Promise<any>;

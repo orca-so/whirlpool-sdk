@@ -1,7 +1,12 @@
 // import invariant from "tiny-invariant";
 // import { OrcaDAL } from "../dal/orca-dal";
 
-import { getPositionPda, sqrtPriceX64ToTickIndex, toX64 } from "@orca-so/whirlpool-client-sdk";
+import {
+  fromX64,
+  getPositionPda,
+  sqrtPriceX64ToTickIndex,
+  toX64,
+} from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
@@ -242,7 +247,65 @@ export class OrcaWhirlpool {
 
   /** 3. Swap tx **/
   public async getSwapTransaction(param: SwapTransactionParam): Promise<SwapTransaction> {
-    TODO();
+    const {
+      provider,
+      whirlpool: whirlpoolAddress,
+      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput },
+    } = param;
+    const { connection, commitment, programId } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress);
+    const txBuilder = new TransactionBuilder(ctx.provider);
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintA
+      );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
+
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        connection,
+        commitment,
+        provider.wallet.publicKey,
+        whirlpool.tokenMintB
+      );
+    txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    const nextTickArrayJump = aToB ? -TICK_ARRAY_SIZE : TICK_ARRAY_SIZE;
+
+    const [tickArray0, tickArray1, tickArray2] = this.getTickArrayAddresses(
+      whirlpoolAddress,
+      whirlpool.tickCurrentIndex,
+      whirlpool.tickCurrentIndex + nextTickArrayJump,
+      whirlpool.tickCurrentIndex + 2 * nextTickArrayJump
+    );
+
+    txBuilder.addInstruction(
+      client
+        .swapTx({
+          amount: fixedOutput ? amountOut : amountIn,
+          sqrtPriceLimit: fromX64(sqrtPriceLimitX64), // TODO(atamari): Make sure this is not expected to be X64
+          amountSpecifiedIsInput: !fixedOutput,
+          aToB,
+          whirlpool: whirlpoolAddress,
+          tokenOwnerAccountA,
+          tokenOwnerAccountB,
+          tokenVaultA: whirlpool.tokenVaultA,
+          tokenVaultB: whirlpool.tokenVaultB,
+          tickArray0,
+          tickArray1,
+          tickArray2,
+        })
+        .compressIx(false)
+    );
+
+    return new TransactionExecutable(provider, [txBuilder]);
   }
 
   /*** Quotes (public) ***/
@@ -363,9 +426,10 @@ export class OrcaWhirlpool {
       return TickUtil.getTick(tickArray, tickIndex.toNumber());
     };
 
+    const swapDirection =
+      tokenMint === whirlpool.tokenMintA && isOutput ? SwapDirection.BtoA : SwapDirection.AtoB;
     const swapSimulator = new SwapSimulator({
-      swapDirection:
-        tokenMint === whirlpool.tokenMintA && isOutput ? SwapDirection.BtoA : SwapDirection.AtoB,
+      swapDirection,
       amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
       protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
@@ -431,6 +495,7 @@ export class OrcaWhirlpool {
       sqrtPriceLimitX64,
       amountIn,
       amountOut,
+      aToB: swapDirection === SwapDirection.AtoB,
       fixedOutput: isOutput,
     };
   }
