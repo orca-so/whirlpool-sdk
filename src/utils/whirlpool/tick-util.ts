@@ -63,13 +63,12 @@ export class TickUtil {
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PDA {
-    const startTick = Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+    const startTick = TickUtil.getStartTickIndex(tickIndex);
     return getTickArrayPda(programId, whirlpoolAddress, startTick);
   }
 
   public static getStartTickIndex(tickIndex: number): number {
-    // TODO(atamari): Make sure this is correct (cc @scuba)
-    return Math.floor(tickIndex / TICK_ARRAY_SIZE);
+    return Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
   }
 
   public static getAddressContainingTickIndex(
