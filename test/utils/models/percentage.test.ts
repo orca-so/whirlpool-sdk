@@ -1,5 +1,5 @@
 import Decimal from "decimal.js";
-import { Percentage } from "../../../src/utils/models/percentage";
+import { Percentage } from "../../../src/utils/public/percentage";
 
 describe.each([
   {
