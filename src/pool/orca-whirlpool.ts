@@ -118,17 +118,27 @@ export class OrcaWhirlpool {
     const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(tickLowerIndex, address, programId);
     const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(tickUpperIndex, address, programId);
 
-    txBuilder.addInstruction(
-      client
-        .initTickArrayTx({
-          whirlpoolKey: address,
-          tickArrayPda: tickArrayLowerPda,
-          startTick: TickUtil.getStartTickIndex(tickLowerIndex),
-        })
-        .compressIx(false)
-    );
+    const [tickArrayLower, tickArrayUpper] = await Promise.all([
+      this.dal.getTickArray(tickArrayLowerPda.publicKey, true),
+      this.dal.getTickArray(tickArrayUpperPda.publicKey, true),
+    ]);
 
-    if (!tickArrayLowerPda.publicKey.equals(tickArrayUpperPda.publicKey)) {
+    if (tickArrayLower === null) {
+      txBuilder.addInstruction(
+        client
+          .initTickArrayTx({
+            whirlpoolKey: address,
+            tickArrayPda: tickArrayLowerPda,
+            startTick: TickUtil.getStartTickIndex(tickLowerIndex),
+          })
+          .compressIx(false)
+      );
+    }
+
+    if (
+      tickArrayUpper === null &&
+      !tickArrayLowerPda.publicKey.equals(tickArrayUpperPda.publicKey)
+    ) {
       txBuilder.addInstruction(
         client
           .initTickArrayTx({
