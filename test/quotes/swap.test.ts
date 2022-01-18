@@ -96,17 +96,10 @@ describe("swap", () => {
         new PublicKey(whirlpoolAddress),
         new PublicKey(whirlpoolProgramId)
       );
-      console.log("Address", tickArrayAddress.toBase58());
       return tickArraysMap[tickArrayAddress.toBase58()]!;
     }
 
     async function fetchTick(tickIndex: Decimal): Promise<TickData> {
-      const tickArrayAddress = TickUtil.getAddressContainingTickIndex(
-        tickIndex.toNumber(),
-        whirlpool.tickSpacing,
-        new PublicKey(whirlpoolAddress),
-        new PublicKey(whirlpoolProgramId)
-      );
       return TickUtil.getTick(
         await fetchTickArray(tickIndex),
         tickIndex.toNumber(),
@@ -121,14 +114,17 @@ describe("swap", () => {
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
 
+        console.log("FINDING PREV TICK");
+
         try {
           prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
             currentTickArray,
-            currentTickIndex
+            currentTickIndex,
+            whirlpool.tickSpacing
           );
         } catch (err) {
           if (err instanceof TickArrayOutOfBoundsError) {
-            currentTickIndex = currentTickArray.startTickIndex - 1;
+            currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
           } else {
             throw err;
           }
@@ -145,14 +141,18 @@ describe("swap", () => {
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
 
+        console.log("FINDING NEXT TICK");
+
         try {
           prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
             currentTickArray,
-            currentTickIndex
+            currentTickIndex,
+            whirlpool.tickSpacing
           );
         } catch (err) {
           if (err instanceof TickArrayOutOfBoundsError) {
-            currentTickIndex = currentTickArray.startTickIndex + TICK_ARRAY_SIZE;
+            currentTickIndex =
+              currentTickArray.startTickIndex + whirlpool.tickSpacing * TICK_ARRAY_SIZE;
           } else {
             throw err;
           }

@@ -36,17 +36,29 @@ export class TickUtil {
   // NOTE: within this tick array
   public static getPrevInitializedTickIndex(
     account: TickArrayData,
-    currentTickIndex: number
+    currentTickIndex: number,
+    tickSpacing: TickSpacing
   ): number {
-    return TickUtil.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Left
+    );
   }
 
   // NOTE: within this tick array
   public static getNextInitializedTickIndex(
     account: TickArrayData,
-    currentTickIndex: number
+    currentTickIndex: number,
+    tickSpacing: TickSpacing
   ): number {
-    return TickUtil.findInitializedTick(account, currentTickIndex, TickSearchDirection.Right);
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Right
+    );
   }
 
   // TODO account for negative
@@ -56,7 +68,6 @@ export class TickUtil {
     tickSpacing: TickSpacing
   ): TickData {
     const index = Math.floor(tickIndex / tickSpacing) % TICK_ARRAY_SIZE;
-    invariant(account.startTickIndex === Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE));
     invariant(index >= 0, "tick index out of range");
     invariant(index < account.ticks.length, "tick index out of range");
     return account.ticks[index];
@@ -73,11 +84,7 @@ export class TickUtil {
   }
 
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
-    console.log("TICK INDEX", tickIndex);
-    const starTickIndex =
-      Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
-    console.log("START TICK INDEX", starTickIndex);
-    return starTickIndex;
+    return Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
   }
 
   public static getAddressContainingTickIndex(
@@ -90,28 +97,32 @@ export class TickUtil {
       .publicKey;
   }
 
-  private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {
-    return (
-      tickIndex >= account.startTickIndex && tickIndex < account.startTickIndex + TICK_ARRAY_SIZE
-    );
-  }
+  // private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {
+  //   return (
+  //     tickIndex >= account.startTickIndex && tickIndex < account.startTickIndex + tickSpacing * TICK_ARRAY_SIZE
+  //   );
+  // }
 
-  private static isValidTickArrayIndex(account: TickArrayData, tickArrayIndex: number) {
-    return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
-  }
+  // private static isValidTickArrayIndex(account: TickArrayData, tickArrayIndex: number) {
+  //   return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
+  // }
 
-  private static tickIndexToTickArrayIndex(account: TickArrayData, tickIndex: number): number {
-    invariant(TickUtil.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
-    const tickArrayIndex = tickIndex - account.startTickIndex;
-    invariant(TickUtil.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+  private static tickIndexToTickArrayIndex(
+    account: TickArrayData,
+    tickIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    const tickArrayIndex = Math.floor((tickIndex - account.startTickIndex) / tickSpacing);
 
     return tickArrayIndex;
   }
 
-  private static tickArrayIndexToTickIndex(account: TickArrayData, tickArrayIndex: number): number {
-    invariant(TickUtil.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
-    const tickIndex = account.startTickIndex + tickArrayIndex;
-    invariant(TickUtil.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+  private static tickArrayIndexToTickIndex(
+    account: TickArrayData,
+    tickArrayIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    const tickIndex = account.startTickIndex + tickArrayIndex * tickSpacing;
 
     return tickIndex;
   }
@@ -119,9 +130,14 @@ export class TickUtil {
   private static findInitializedTick(
     account: TickArrayData,
     currentTickIndex: number,
+    tickSpacing: TickSpacing,
     searchDirection: TickSearchDirection
   ): number {
-    const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(account, currentTickIndex);
+    const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(
+      account,
+      currentTickIndex,
+      tickSpacing
+    );
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
@@ -131,7 +147,11 @@ export class TickUtil {
       nextInitializedTickArrayIndex < account.ticks.length
     ) {
       if (account.ticks[nextInitializedTickArrayIndex].initialized) {
-        return TickUtil.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex);
+        return TickUtil.tickArrayIndexToTickIndex(
+          account,
+          nextInitializedTickArrayIndex,
+          tickSpacing
+        );
       }
 
       nextInitializedTickArrayIndex += increment;

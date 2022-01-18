@@ -461,7 +461,8 @@ export class OrcaWhirlpool {
           try {
             prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
               currentTickArray,
-              currentTickIndex
+              currentTickIndex,
+              whirlpool.tickSpacing
             );
           } catch (err) {
             if (err instanceof TickArrayOutOfBoundsError) {
@@ -484,7 +485,8 @@ export class OrcaWhirlpool {
           try {
             prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
               currentTickArray,
-              currentTickIndex
+              currentTickIndex,
+              whirlpool.tickSpacing
             );
           } catch (err) {
             if (err instanceof TickArrayOutOfBoundsError) {
