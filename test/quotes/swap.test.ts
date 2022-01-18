@@ -97,9 +97,7 @@ describe("swap", () => {
         new PublicKey(whirlpoolProgramId)
       );
       console.log("Address", tickArrayAddress.toBase58());
-      const tickArray = tickArraysMap[tickArrayAddress.toBase58()]!;
-      console.log("Tick Array", tickArray);
-      return tickArray;
+      return tickArraysMap[tickArrayAddress.toBase58()]!;
     }
 
     async function fetchTick(tickIndex: Decimal): Promise<TickData> {

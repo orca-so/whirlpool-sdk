@@ -74,7 +74,8 @@ export class TickUtil {
 
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
     console.log("TICK INDEX", tickIndex);
-    const starTickIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+    const starTickIndex =
+      Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
     console.log("START TICK INDEX", starTickIndex);
     return starTickIndex;
   }
