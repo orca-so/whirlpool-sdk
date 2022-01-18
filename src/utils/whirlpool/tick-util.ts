@@ -5,7 +5,7 @@ import {
   TickData,
   TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { getTickArrayPda } from "@orca-so/whirlpool-client-sdk";
+import { getTickArrayPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
 
 enum TickSearchDirection {
@@ -36,23 +36,38 @@ export class TickUtil {
   // NOTE: within this tick array
   public static getPrevInitializedTickIndex(
     account: TickArrayData,
-    currentTickIndex: number
+    currentTickIndex: number,
+    tickSpacing: TickSpacing
   ): number {
-    return TickUtil.findInitializedTick(account, currentTickIndex, TickSearchDirection.Left);
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Left
+    );
   }
 
   // NOTE: within this tick array
   public static getNextInitializedTickIndex(
     account: TickArrayData,
-    currentTickIndex: number
+    currentTickIndex: number,
+    tickSpacing: TickSpacing
   ): number {
-    return TickUtil.findInitializedTick(account, currentTickIndex, TickSearchDirection.Right);
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Right
+    );
   }
 
   // TODO account for negative
-  public static getTick(account: TickArrayData, tickIndex: number): TickData {
-    const index = tickIndex % TICK_ARRAY_SIZE;
-    invariant(account.startTickIndex === Math.floor(tickIndex / TICK_ARRAY_SIZE));
+  public static getTick(
+    account: TickArrayData,
+    tickIndex: number,
+    tickSpacing: TickSpacing
+  ): TickData {
+    const index = Math.floor(tickIndex / tickSpacing) % TICK_ARRAY_SIZE;
     invariant(index >= 0, "tick index out of range");
     invariant(index < account.ticks.length, "tick index out of range");
     return account.ticks[index];
@@ -60,47 +75,54 @@ export class TickUtil {
 
   public static deriveTickArrayPDA(
     tickIndex: number,
+    tickSpacing: TickSpacing,
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PDA {
-    const startTick = TickUtil.getStartTickIndex(tickIndex);
+    const startTick = TickUtil.getStartTickIndex(tickIndex, tickSpacing);
     return getTickArrayPda(programId, whirlpoolAddress, startTick);
   }
 
-  public static getStartTickIndex(tickIndex: number): number {
-    return Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+  public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+    return Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
   }
 
   public static getAddressContainingTickIndex(
     tickIndex: number,
+    tickSpacing: TickSpacing,
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PublicKey {
-    return TickUtil.deriveTickArrayPDA(tickIndex, whirlpoolAddress, programId).publicKey;
+    return TickUtil.deriveTickArrayPDA(tickIndex, tickSpacing, whirlpoolAddress, programId)
+      .publicKey;
   }
 
-  private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {
-    return (
-      tickIndex >= account.startTickIndex && tickIndex < account.startTickIndex + TICK_ARRAY_SIZE
-    );
-  }
+  // private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {
+  //   return (
+  //     tickIndex >= account.startTickIndex && tickIndex < account.startTickIndex + tickSpacing * TICK_ARRAY_SIZE
+  //   );
+  // }
 
-  private static isValidTickArrayIndex(account: TickArrayData, tickArrayIndex: number) {
-    return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
-  }
+  // private static isValidTickArrayIndex(account: TickArrayData, tickArrayIndex: number) {
+  //   return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
+  // }
 
-  private static tickIndexToTickArrayIndex(account: TickArrayData, tickIndex: number): number {
-    invariant(TickUtil.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
-    const tickArrayIndex = tickIndex - account.startTickIndex;
-    invariant(TickUtil.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
+  private static tickIndexToTickArrayIndex(
+    account: TickArrayData,
+    tickIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    const tickArrayIndex = Math.floor((tickIndex - account.startTickIndex) / tickSpacing);
 
     return tickArrayIndex;
   }
 
-  private static tickArrayIndexToTickIndex(account: TickArrayData, tickArrayIndex: number): number {
-    invariant(TickUtil.isValidTickArrayIndex(account, tickArrayIndex), "Invalid tickArrayIndex");
-    const tickIndex = account.startTickIndex + tickArrayIndex;
-    invariant(TickUtil.isValidTickIndexWithinAccount(account, tickIndex), "Invalid tickIndex");
+  private static tickArrayIndexToTickIndex(
+    account: TickArrayData,
+    tickArrayIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    const tickIndex = account.startTickIndex + tickArrayIndex * tickSpacing;
 
     return tickIndex;
   }
@@ -108,9 +130,14 @@ export class TickUtil {
   private static findInitializedTick(
     account: TickArrayData,
     currentTickIndex: number,
+    tickSpacing: TickSpacing,
     searchDirection: TickSearchDirection
   ): number {
-    const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(account, currentTickIndex);
+    const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(
+      account,
+      currentTickIndex,
+      tickSpacing
+    );
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
@@ -120,7 +147,11 @@ export class TickUtil {
       nextInitializedTickArrayIndex < account.ticks.length
     ) {
       if (account.ticks[nextInitializedTickArrayIndex].initialized) {
-        return TickUtil.tickArrayIndexToTickIndex(account, nextInitializedTickArrayIndex);
+        return TickUtil.tickArrayIndexToTickIndex(
+          account,
+          nextInitializedTickArrayIndex,
+          tickSpacing
+        );
       }
 
       nextInitializedTickArrayIndex += increment;

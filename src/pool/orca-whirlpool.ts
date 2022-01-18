@@ -107,8 +107,18 @@ export class OrcaWhirlpool {
       );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(tickLowerIndex, address, programId);
-    const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(tickUpperIndex, address, programId);
+    const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(
+      tickLowerIndex,
+      whirlpool.tickSpacing,
+      address,
+      programId
+    );
+    const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(
+      tickUpperIndex,
+      whirlpool.tickSpacing,
+      address,
+      programId
+    );
 
     const [tickArrayLower, tickArrayUpper] = await Promise.all([
       this.dal.getTickArray(tickArrayLowerPda.publicKey, true),
@@ -121,7 +131,7 @@ export class OrcaWhirlpool {
           .initTickArrayTx({
             whirlpoolKey: address,
             tickArrayPda: tickArrayLowerPda,
-            startTick: TickUtil.getStartTickIndex(tickLowerIndex),
+            startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
           })
           .compressIx(false)
       );
@@ -136,7 +146,7 @@ export class OrcaWhirlpool {
           .initTickArrayTx({
             whirlpoolKey: address,
             tickArrayPda: tickArrayUpperPda,
-            startTick: TickUtil.getStartTickIndex(tickUpperIndex),
+            startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
           })
           .compressIx(false)
       );
@@ -182,6 +192,7 @@ export class OrcaWhirlpool {
     const whirlpool = await this.getWhirlpool(position.whirlpool, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(
       position.whirlpool,
+      whirlpool,
       position.tickLowerIndex,
       position.tickUpperIndex
     );
@@ -283,6 +294,7 @@ export class OrcaWhirlpool {
 
     const [tickArray0, tickArray1, tickArray2] = this.getTickArrayAddresses(
       whirlpoolAddress,
+      whirlpool,
       whirlpool.tickCurrentIndex,
       whirlpool.tickCurrentIndex + nextTickArrayJump,
       whirlpool.tickCurrentIndex + 2 * nextTickArrayJump
@@ -415,6 +427,7 @@ export class OrcaWhirlpool {
       const tickArray = await this.dal.getTickArray(
         TickUtil.getAddressContainingTickIndex(
           tickIndex.toNumber(),
+          whirlpool.tickSpacing,
           whirlpoolAddress,
           this.dal.programId
         )
@@ -425,7 +438,7 @@ export class OrcaWhirlpool {
 
     const fetchTick = async (tickIndex: Decimal) => {
       const tickArray = await fetchTickArray(tickIndex);
-      return TickUtil.getTick(tickArray, tickIndex.toNumber());
+      return TickUtil.getTick(tickArray, tickIndex.toNumber(), whirlpool.tickSpacing);
     };
 
     const swapDirection =
@@ -448,7 +461,8 @@ export class OrcaWhirlpool {
           try {
             prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
               currentTickArray,
-              currentTickIndex
+              currentTickIndex,
+              whirlpool.tickSpacing
             );
           } catch (err) {
             if (err instanceof TickArrayOutOfBoundsError) {
@@ -471,7 +485,8 @@ export class OrcaWhirlpool {
           try {
             prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
               currentTickArray,
-              currentTickIndex
+              currentTickIndex,
+              whirlpool.tickSpacing
             );
           } catch (err) {
             if (err instanceof TickArrayOutOfBoundsError) {
@@ -527,9 +542,18 @@ export class OrcaWhirlpool {
     return [mintInfos[0], mintInfos[1]];
   }
 
-  private getTickArrayAddresses(whirlpool: PublicKey, ...tickIndexes: number[]): PublicKey[] {
+  private getTickArrayAddresses(
+    whirlpool: PublicKey,
+    whirlpoolData: WhirlpoolData,
+    ...tickIndexes: number[]
+  ): PublicKey[] {
     return tickIndexes.map((tickIndex) =>
-      TickUtil.getAddressContainingTickIndex(tickIndex, whirlpool, this.dal.programId)
+      TickUtil.getAddressContainingTickIndex(
+        tickIndex,
+        whirlpoolData.tickSpacing,
+        whirlpool,
+        this.dal.programId
+      )
     );
   }
 }
