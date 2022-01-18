@@ -5,7 +5,7 @@ import {
   TickData,
   TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { getTickArrayPda } from "@orca-so/whirlpool-client-sdk";
+import { getTickArrayPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
 
 enum TickSearchDirection {
@@ -50,9 +50,13 @@ export class TickUtil {
   }
 
   // TODO account for negative
-  public static getTick(account: TickArrayData, tickIndex: number): TickData {
-    const index = tickIndex % TICK_ARRAY_SIZE;
-    invariant(account.startTickIndex === Math.floor(tickIndex / TICK_ARRAY_SIZE));
+  public static getTick(
+    account: TickArrayData,
+    tickIndex: number,
+    tickSpacing: TickSpacing
+  ): TickData {
+    const index = Math.floor(tickIndex / tickSpacing) % TICK_ARRAY_SIZE;
+    invariant(account.startTickIndex === Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE));
     invariant(index >= 0, "tick index out of range");
     invariant(index < account.ticks.length, "tick index out of range");
     return account.ticks[index];
@@ -60,23 +64,29 @@ export class TickUtil {
 
   public static deriveTickArrayPDA(
     tickIndex: number,
+    tickSpacing: TickSpacing,
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PDA {
-    const startTick = TickUtil.getStartTickIndex(tickIndex);
+    const startTick = TickUtil.getStartTickIndex(tickIndex, tickSpacing);
     return getTickArrayPda(programId, whirlpoolAddress, startTick);
   }
 
-  public static getStartTickIndex(tickIndex: number): number {
-    return Math.floor(tickIndex / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+  public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+    console.log("TICK INDEX", tickIndex);
+    const starTickIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * TICK_ARRAY_SIZE;
+    console.log("START TICK INDEX", starTickIndex);
+    return starTickIndex;
   }
 
   public static getAddressContainingTickIndex(
     tickIndex: number,
+    tickSpacing: TickSpacing,
     whirlpoolAddress: PublicKey,
     programId: PublicKey
   ): PublicKey {
-    return TickUtil.deriveTickArrayPDA(tickIndex, whirlpoolAddress, programId).publicKey;
+    return TickUtil.deriveTickArrayPDA(tickIndex, tickSpacing, whirlpoolAddress, programId)
+      .publicKey;
   }
 
   private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {

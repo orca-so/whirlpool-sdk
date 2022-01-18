@@ -1,0 +1,4352 @@
+{
+  "BmaPq4zgcqLKaUt9BtX2Zc8HXi5KbrVchu334gu3PMA5": {
+    "whirlpool": "FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6",
+    "startTickIndex": 27648,
+    "ticks": [
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": true,
+        "liquidityNet": "200000000",
+        "liquidityGross": "200000000",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": true,
+        "liquidityNet": "-100000000",
+        "liquidityGross": "100000000",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  },
+  "AyBddReCnoseqUxh8srTzG654miqsQe5HrE8STUQrqdB": {
+    "whirlpool": "FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6",
+    "startTickIndex": 28224,
+    "ticks": [
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  },
+  "7zozYA2XRAQkMZRkzXkmWPSzEjPDWSAhgKzAiPFzfFG7": {
+    "whirlpool": "FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6",
+    "startTickIndex": 28800,
+    "ticks": [
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": true,
+        "liquidityNet": "100000000",
+        "liquidityGross": "100000000",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": true,
+        "liquidityNet": "-200000000",
+        "liquidityGross": "200000000",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  },
+  "9sEpybNVut6ijLhYTBavMhr65m6CngMrvNDGimjAttz6": {
+    "whirlpool": "FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6",
+    "startTickIndex": 29376,
+    "ticks": [
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  },
+  "9sCpzqWGmBCPP43N5sA9YynATaoB5NeGJo6TXQBwZ5gE": {
+    "whirlpool": "FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6",
+    "startTickIndex": 29952,
+    "ticks": [
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      {
+        "initialized": false,
+        "liquidityNet": "0",
+        "liquidityGross": "0",
+        "feeGrowthOutsideA": "0",
+        "feeGrowthOutsideB": "0",
+        "rewardGrowthsOutside": [
+          "0",
+          "0",
+          "0"
+        ]
+      }
+    ]
+  }
+}

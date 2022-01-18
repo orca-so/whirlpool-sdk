@@ -27,7 +27,7 @@ enum Rounding {
   Down,
 }
 
-type SwapSimulatorConfig = {
+export type SwapSimulatorConfig = {
   swapDirection: SwapDirection;
   amountSpecified: AmountSpecified;
   feeRate: Percentage;
@@ -105,6 +105,10 @@ export class SwapSimulator {
 
     let tickArraysCrossed = 0;
 
+    let i = 0;
+
+    console.log(`SWAP STATE ${i}`, state);
+
     while (
       state.specifiedAmountLeft.gt(0) &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
@@ -148,6 +152,9 @@ export class SwapSimulator {
           DecimalUtil.fromU64(currentTick.liquidityNet),
           DecimalUtil.fromU64(nextTick.liquidityNet)
         );
+
+        i += 1;
+        console.log(`SWAP STATE ${i}`, state);
 
         if (currentTickArray.startTickIndex !== nextTickArray.startTickIndex) {
           tickArraysCrossed += 1;
@@ -445,7 +452,7 @@ export class SwapSimulator {
       calculateSqrtPriceLimit: SwapSimulator.calculateLowerSqrtPriceAfterSlippage,
       calculateNewLiquidity: SwapSimulator.subCurrentTickLiquidityNet,
       sqrtPriceWithinLimit: (sqrtPriceX64: Decimal, sqrtPriceLimitX64: Decimal) =>
-        sqrtPriceX64 <= sqrtPriceLimitX64,
+        sqrtPriceX64 >= sqrtPriceLimitX64,
     },
     [SwapDirection.BtoA]: {
       // TODO: Account for edge case where we're at MAX_TICK
@@ -454,7 +461,7 @@ export class SwapSimulator {
       calculateSqrtPriceLimit: SwapSimulator.calculateUpperSqrtPriceAfterSlippage,
       calculateNewLiquidity: SwapSimulator.addNextTickLiquidityNet,
       sqrtPriceWithinLimit: (sqrtPriceX64: Decimal, sqrtPriceLimitX64: Decimal) =>
-        sqrtPriceX64 >= sqrtPriceLimitX64,
+        sqrtPriceX64 <= sqrtPriceLimitX64,
     },
   };
 

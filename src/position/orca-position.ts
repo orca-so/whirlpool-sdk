@@ -65,7 +65,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, true);
     const whirlpool = await this.getWhirlpool(position, true);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -126,7 +126,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, true);
     const whirlpool = await this.getWhirlpool(position, true);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -187,7 +187,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, true);
     const whirlpool = await this.getWhirlpool(position, true);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
@@ -343,7 +343,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const [tickLower, tickUpper] = await this.getTickData(position, refresh);
+    const [tickLower, tickUpper] = await this.getTickData(position, whirlpool, refresh);
 
     return getCollectFeesQuoteInternal({ whirlpool, position, tickLower, tickUpper });
   }
@@ -355,7 +355,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const [tickLower, tickUpper] = await this.getTickData(position, refresh);
+    const [tickLower, tickUpper] = await this.getTickData(position, whirlpool, refresh);
 
     return getCollectRewardsQuoteInternal({ whirlpool, position, tickLower, tickUpper });
   }
@@ -382,10 +382,11 @@ export class OrcaPosition {
 
   private async getTickData(
     position: PositionData,
+    whirlpool: WhirlpoolData,
     refresh = false
   ): Promise<[TickData, TickData]> {
-    const { tickLowerIndex, tickUpperIndex, whirlpool } = position;
-    const [tickLowerAddress, tickUpperAddress] = this.getTickArrayAddress(position);
+    const { tickLowerIndex, tickUpperIndex } = position;
+    const [tickLowerAddress, tickUpperAddress] = this.getTickArrayAddress(position, whirlpool);
 
     const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
       [tickLowerAddress, tickUpperAddress],
@@ -395,22 +396,27 @@ export class OrcaPosition {
     invariant(!!tickArrayUpper, "OrcaPosition - tickArrayUpper does not exist");
 
     return [
-      TickUtil.getTick(tickArrayLower, tickLowerIndex),
-      TickUtil.getTick(tickArrayUpper, tickUpperIndex),
+      TickUtil.getTick(tickArrayLower, tickLowerIndex, whirlpool.tickSpacing),
+      TickUtil.getTick(tickArrayUpper, tickUpperIndex, whirlpool.tickSpacing),
     ];
   }
 
-  private getTickArrayAddress(position: PositionData): [PublicKey, PublicKey] {
-    const { tickLowerIndex, tickUpperIndex, whirlpool } = position;
+  private getTickArrayAddress(
+    position: PositionData,
+    whirlpool: WhirlpoolData
+  ): [PublicKey, PublicKey] {
+    const { tickLowerIndex, tickUpperIndex, whirlpool: whirlpoolAddress } = position;
 
     const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
       tickLowerIndex,
-      whirlpool,
+      whirlpool.tickSpacing,
+      whirlpoolAddress,
       this.dal.programId
     );
     const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
       tickUpperIndex,
-      whirlpool,
+      whirlpool.tickSpacing,
+      whirlpoolAddress,
       this.dal.programId
     );
 
