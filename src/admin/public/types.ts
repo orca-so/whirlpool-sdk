@@ -6,7 +6,6 @@ import Decimal from "decimal.js";
 export type InitPoolTransactionParam = {
   provider: Provider;
   initSqrtPrice: Decimal;
-  whirlpoolConfigKey: PublicKey;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
   tokenVaultAKeypair: Keypair;
@@ -53,6 +52,7 @@ export type SetRewardEmissionsTransactionParam = {
   whirlpool: PublicKey;
   rewardIndex: number;
   emissionsPerSecondX64: BN;
+  rewardVault: PublicKey;
 };
 
 export type SetRewardAuthorityBySuperAuthorityTransactionParam = {

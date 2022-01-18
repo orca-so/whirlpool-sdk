@@ -152,7 +152,7 @@ export class OrcaAdmin {
   public getSetRewardEmissionsTransaction(
     param: SetRewardEmissionsTransactionParam
   ): TransactionBuilder {
-    const { provider, whirlpool, rewardIndex, emissionsPerSecondX64 } = param;
+    const { provider, whirlpool, rewardIndex, emissionsPerSecondX64, rewardVault } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
@@ -163,6 +163,7 @@ export class OrcaAdmin {
       whirlpool,
       rewardIndex,
       emissionsPerSecondX64,
+      rewardVault,
     });
   }
 
