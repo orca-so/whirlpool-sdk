@@ -503,6 +503,7 @@ export class OrcaWhirlpool {
 
     const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
       amount: DecimalUtil.fromU64(tokenAmount),
+      currentSqrtPriceX64: new Decimal(whirlpool.sqrtPrice.toString()),
       currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
       currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
       currentLiquidity: DecimalUtil.fromU64(whirlpool.liquidity),
