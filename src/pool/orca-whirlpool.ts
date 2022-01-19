@@ -63,8 +63,7 @@ export class OrcaWhirlpool {
       whirlpool: address,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex },
     } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const whirlpool = await this.getWhirlpool(address, true);
@@ -72,7 +71,7 @@ export class OrcaWhirlpool {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const positionMintKeypair = Keypair.generate();
-    const positionPda = getPositionPda(programId, positionMintKeypair.publicKey);
+    const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
     const positionTokenAccountKeypair = Keypair.generate();
 
     txBuilder.addInstruction(
@@ -91,8 +90,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -100,8 +98,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
@@ -111,13 +108,13 @@ export class OrcaWhirlpool {
       tickLowerIndex,
       whirlpool.tickSpacing,
       address,
-      programId
+      this.dal.programId
     );
     const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(
       tickUpperIndex,
       whirlpool.tickSpacing,
       address,
-      programId
+      this.dal.programId
     );
 
     const [tickArrayLower, tickArrayUpper] = await Promise.all([
@@ -184,8 +181,7 @@ export class OrcaWhirlpool {
     const { provider, position: positionAddress, quote } = param;
     const { positionAuthority = provider.wallet.publicKey, receiver = provider.wallet.publicKey } =
       param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(positionAddress, true);
@@ -207,8 +203,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -216,8 +211,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
@@ -265,8 +259,7 @@ export class OrcaWhirlpool {
       whirlpool: whirlpoolAddress,
       quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput },
     } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress);
@@ -274,8 +267,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -283,8 +275,7 @@ export class OrcaWhirlpool {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
