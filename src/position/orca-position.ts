@@ -47,11 +47,7 @@ import {
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
 
 export class OrcaPosition {
-  private readonly dal: OrcaDAL;
-
-  constructor(dal: OrcaDAL) {
-    this.dal = dal;
-  }
+  constructor(private readonly dal: OrcaDAL) {}
 
   /*** Transactions ***/
 

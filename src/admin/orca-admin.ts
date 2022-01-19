@@ -17,11 +17,7 @@ import {
 import { OrcaDAL } from "../dal/orca-dal";
 
 export class OrcaAdmin {
-  private readonly dal: OrcaDAL;
-
-  constructor(dal: OrcaDAL) {
-    this.dal = dal;
-  }
+  constructor(private readonly dal: OrcaDAL) {}
 
   public getInitPoolTransaction(param: InitPoolTransactionParam): TransactionBuilder {
     const {
