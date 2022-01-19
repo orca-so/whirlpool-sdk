@@ -117,10 +117,10 @@ export class OrcaWhirlpool {
       this.dal.programId
     );
 
-    const [tickArrayLower, tickArrayUpper] = await Promise.all([
-      this.dal.getTickArray(tickArrayLowerPda.publicKey, true),
-      this.dal.getTickArray(tickArrayUpperPda.publicKey, true),
-    ]);
+    const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
+      [tickArrayLowerPda.publicKey, tickArrayUpperPda.publicKey],
+      true
+    );
 
     if (tickArrayLower === null) {
       txBuilder.addInstruction(
@@ -345,7 +345,7 @@ export class OrcaWhirlpool {
     };
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool, refresh);
+    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
       whirlpool,
@@ -510,27 +510,22 @@ export class OrcaWhirlpool {
   }
 
   /*** Helpers (private) ***/
-  private async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolData> {
+  private async getWhirlpool(address: PublicKey, refresh?: boolean): Promise<WhirlpoolData> {
     const whirlpool = await this.dal.getPool(address, refresh);
     invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
     return whirlpool;
   }
 
-  private async getPosition(address: PublicKey, refresh = false): Promise<PositionData> {
+  private async getPosition(address: PublicKey, refresh?: boolean): Promise<PositionData> {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaWhirlpool - position does not exist");
     return position;
   }
 
-  private async getTokenMintInfos(
-    whirlpool: WhirlpoolData,
-    refresh = false
-  ): Promise<[MintInfo, MintInfo]> {
-    const mintInfos = await this.dal.listMintInfos(
-      [whirlpool.tokenMintA, whirlpool.tokenMintB],
-      refresh
-    );
-    invariant(!!mintInfos && mintInfos.length === 2, "OrcaWhirlpool - mint infos do not exist");
+  private async getTokenMintInfos(whirlpool: WhirlpoolData): Promise<[MintInfo, MintInfo]> {
+    const mintInfos = await this.dal.listMintInfos([whirlpool.tokenMintA, whirlpool.tokenMintB]);
+    invariant(!!mintInfos && mintInfos.length === 2, "OrcaWhirlpool - unable to get mint infos");
+    invariant(!!mintInfos[0] && !!mintInfos[1], "OrcaPosition - mint infos do not exist");
     return [mintInfos[0], mintInfos[1]];
   }
 

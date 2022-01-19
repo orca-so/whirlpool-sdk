@@ -362,7 +362,8 @@ export class OrcaPosition {
 
   private async getTokenMintInfos(whirlpool: WhirlpoolData): Promise<[MintInfo, MintInfo]> {
     const mintInfos = await this.dal.listMintInfos([whirlpool.tokenMintA, whirlpool.tokenMintB]);
-    invariant(!!mintInfos && mintInfos.length === 2, "OrcaPosition - mint infos do not exist");
+    invariant(!!mintInfos && mintInfos.length === 2, "OrcaPosition - unable to get mint infos");
+    invariant(!!mintInfos[0] && !!mintInfos[1], "OrcaPosition - mint infos do not exist");
     return [mintInfos[0], mintInfos[1]];
   }
 
