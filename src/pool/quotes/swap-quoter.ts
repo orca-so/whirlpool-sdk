@@ -67,6 +67,7 @@ type SwapSimulationOutput = {
 type SwapStepSimulationInput = {
   sqrtPriceLimitX64: Decimal;
   tickArray: TickArrayData;
+  sqrtPriceX64: Decimal;
   tickIndex: Decimal;
   liquidity: Decimal;
   amount: Decimal;
@@ -131,6 +132,7 @@ export class SwapSimulator {
     ) {
       const swapStepSimulationInput: SwapStepSimulationInput = {
         sqrtPriceLimitX64,
+        sqrtPriceX64: state.sqrtPriceX64,
         amount: state.specifiedAmountLeft,
         tickArray: state.tickArray,
         tickIndex: state.tickIndex,
@@ -218,11 +220,12 @@ export class SwapSimulator {
       amount: specifiedTokenAmount,
       liquidity: currentLiquidity,
       tickIndex: currentTickIndex,
+      sqrtPriceX64: currentSqrtPriceX64,
       tickArray: currentTickArrayAccount,
       sqrtPriceLimitX64,
     } = input;
 
-    const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
+    // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
 
     console.log("START MIDDLE OF SWAP STEP");
 
@@ -480,7 +483,7 @@ export class SwapSimulator {
       calculateSqrtPriceLimit: SwapSimulator.calculateLowerSqrtPriceAfterSlippage,
       calculateNewLiquidity: SwapSimulator.subCurrentTickLiquidityNet,
       sqrtPriceWithinLimit: (sqrtPriceX64: Decimal, sqrtPriceLimitX64: Decimal) =>
-        sqrtPriceX64 >= sqrtPriceLimitX64,
+        sqrtPriceX64 > sqrtPriceLimitX64,
     },
     [SwapDirection.BtoA]: {
       // TODO: Account for edge case where we're at MAX_TICK
@@ -489,7 +492,7 @@ export class SwapSimulator {
       calculateSqrtPriceLimit: SwapSimulator.calculateUpperSqrtPriceAfterSlippage,
       calculateNewLiquidity: SwapSimulator.addNextTickLiquidityNet,
       sqrtPriceWithinLimit: (sqrtPriceX64: Decimal, sqrtPriceLimitX64: Decimal) =>
-        sqrtPriceX64 <= sqrtPriceLimitX64,
+        sqrtPriceX64 < sqrtPriceLimitX64,
     },
   };
 

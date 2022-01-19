@@ -21,6 +21,8 @@ import { TickArrayOutOfBoundsError, TickUtil } from "../../src/utils/whirlpool/t
 const WhirlpoolsJSON = require("./fixtures/swap/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/swap/TickArrays.json");
 
+Decimal.set({ precision: 40 });
+
 function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData {
   return {
     whirlpoolsConfig: new PublicKey(whirlpoolJson.whirlpoolsConfig),
@@ -167,7 +169,7 @@ describe("swap", () => {
       amountSpecified: AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
       protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
-      slippageTolerance: Percentage.fromFraction(1, 10), // 10% just to give enough room
+      slippageTolerance: Percentage.fromFraction(25, 1000), // 2.5% just to give enough room
       fetchTickArray,
       fetchTick,
       getPrevInitializedTickIndex,
