@@ -17,7 +17,6 @@ import { createATAInstruction, createWSOLAccountInstructions } from "./token-ins
  */
 export async function resolveOrCreateAssociatedTokenAddress(
   connection: Connection,
-  commitment: Commitment,
   walletAddress: PublicKey,
   tokenMint: PublicKey,
   wrappedSolAmountIn = new u64(0)
@@ -27,7 +26,7 @@ export async function resolveOrCreateAssociatedTokenAddress(
 
     // Check if current wallet has an ATA for this spl-token mint. If not, create one.
     let resolveAtaInstruction = emptyInstruction;
-    await connection.getAccountInfo(derivedAddress, commitment).then((info) => {
+    await connection.getAccountInfo(derivedAddress).then((info) => {
       const tokenAccountInfo = deserializeTokenAccount(info?.data);
 
       if (!tokenAccountInfo) {
@@ -48,8 +47,7 @@ export async function resolveOrCreateAssociatedTokenAddress(
     };
   } else {
     const accountRentExempt = await connection.getMinimumBalanceForRentExemption(
-      AccountLayout.span,
-      commitment
+      AccountLayout.span
     );
     // Create a temp-account to transfer SOL in the form of WSOL
     return createWSOLAccountInstructions(walletAddress, wrappedSolAmountIn, accountRentExempt);

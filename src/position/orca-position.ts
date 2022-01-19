@@ -59,8 +59,7 @@ export class OrcaPosition {
     param: AddLiquidityTransactionParam
   ): Promise<TransactionExecutable> {
     const { provider, address, quote } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -78,8 +77,7 @@ export class OrcaPosition {
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -87,8 +85,7 @@ export class OrcaPosition {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
@@ -120,8 +117,7 @@ export class OrcaPosition {
     param: RemoveLiquidityTransactionParam
   ): Promise<TransactionExecutable> {
     const { provider, address, quote } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -139,8 +135,7 @@ export class OrcaPosition {
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -148,8 +143,7 @@ export class OrcaPosition {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
@@ -181,8 +175,7 @@ export class OrcaPosition {
     param: CollectFeesAndRewardsTransactionParam
   ): Promise<TransactionExecutable> {
     const { provider, address } = param;
-    const { connection, commitment, programId } = this.dal;
-    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(address, true);
@@ -213,8 +206,7 @@ export class OrcaPosition {
     // step 2. collect fees
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintA
       );
@@ -222,8 +214,7 @@ export class OrcaPosition {
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
       await resolveOrCreateAssociatedTokenAddress(
-        connection,
-        commitment,
+        provider.connection,
         provider.wallet.publicKey,
         whirlpool.tokenMintB
       );
@@ -250,8 +241,7 @@ export class OrcaPosition {
       if (PoolUtil.isRewardInitialized(whirlpool.rewardInfos[i])) {
         const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } =
           await resolveOrCreateAssociatedTokenAddress(
-            connection,
-            commitment,
+            provider.connection,
             provider.wallet.publicKey,
             whirlpool.rewardInfos[i].mint
           );

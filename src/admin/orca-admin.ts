@@ -2,7 +2,6 @@ import { getWhirlpoolPda, NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
-import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   InitPoolTransactionParam,
@@ -17,9 +16,6 @@ import {
 } from "..";
 import { OrcaDAL } from "../dal/orca-dal";
 
-// TODO few keypairs sus
-//      emissionsPerSecondX64 BN
-//      initSqrtPrice
 export class OrcaAdmin {
   private readonly dal: OrcaDAL;
 

@@ -1,6 +1,5 @@
-import { Commitment, Connection, ParsedAccountData, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { OrcaNetwork } from "..";
 import { AccountInfo, MintInfo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   PositionData,
@@ -17,7 +16,6 @@ import {
   ParsableWhirlpoolConfig,
 } from "./parse";
 import { getPositionPda, WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
-import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "../constants/programs";
 
 /**
  * Supported accounts
@@ -47,20 +45,13 @@ export class OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
   public readonly connection: Connection;
-  public readonly commitment: Commitment;
 
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
 
-  constructor(
-    whirlpoolsConfig: PublicKey,
-    programId: PublicKey,
-    connection: Connection,
-    commitment: Commitment
-  ) {
+  constructor(whirlpoolsConfig: PublicKey, programId: PublicKey, connection: Connection) {
     this.whirlpoolsConfig = whirlpoolsConfig;
     this.programId = programId;
     this.connection = connection;
-    this.commitment = commitment;
   }
 
   /*** Public Methods ***/
@@ -200,14 +191,10 @@ export class OrcaDAL {
     walletAddress: PublicKey,
     mint: PublicKey
   ): Promise<PublicKey | null> {
-    const { value } = await this.connection.getParsedTokenAccountsByOwner(
-      walletAddress,
-      {
-        programId: TOKEN_PROGRAM_ID,
-        mint,
-      },
-      this.commitment
-    );
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_PROGRAM_ID,
+      mint,
+    });
 
     if (!value || value.length === 0) {
       return null;
@@ -238,13 +225,9 @@ export class OrcaDAL {
    */
   public async listUserPositions(walletAddress: PublicKey): Promise<PositionData[]> {
     // get user token accounts
-    const { value } = await this.connection.getParsedTokenAccountsByOwner(
-      walletAddress,
-      {
-        programId: TOKEN_PROGRAM_ID,
-      },
-      this.commitment
-    );
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(walletAddress, {
+      programId: TOKEN_PROGRAM_ID,
+    });
 
     // get mint addresses of all token accounts with amount equal to 1
     // then derive Position addresses and filter out if accounts don't exist
@@ -301,7 +284,7 @@ export class OrcaDAL {
       return cachedValue as T | null;
     }
 
-    const accountInfo = await this.connection.getAccountInfo(address, this.commitment);
+    const accountInfo = await this.connection.getAccountInfo(address);
     const accountData = accountInfo?.data;
     const value = entity.parse(accountData);
     this._cache[key] = { entity, value };
@@ -350,15 +333,21 @@ export class OrcaDAL {
    * Make batch rpc request
    */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
-    const requests = addresses.map((address: string) => ({
-      methodName: "getAccountInfo",
-      args: this.connection._buildArgs([address], this.commitment),
-    }));
+    // @ts-ignore
+    const res = await this.connection._rpcRequest("getMultipleAccounts", [
+      addresses,
+      { commitment: this.connection.commitment },
+    ]);
+    invariant(!res.error, "bulkRequest result error");
+    invariant(!!res.result?.value, "bulkRequest no value");
+    invariant(res.result.value.length === addresses.length, "bulkRequest not enough results");
 
-    const infos: any[] | null = await (this.connection as any)._rpcBatchRequest(requests);
-    invariant(infos !== null, "bulkRequest no results");
-    invariant(addresses.length === infos.length, "bulkRequest not enough results");
+    return res.result.value.map((account: { data: [string, string] } | null) => {
+      if (!account || account.data[1] !== "base64") {
+        return null;
+      }
 
-    return infos.map((info) => info.result.value.data);
+      return Buffer.from(account.data[0], "base64");
+    });
   }
 }
