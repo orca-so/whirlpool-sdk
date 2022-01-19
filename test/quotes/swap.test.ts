@@ -178,6 +178,7 @@ describe("swap", () => {
     const swapSimulationOutput = await swapSimulator.simulateSwap({
       amount: new Decimal(7_051_000),
       currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
+      currentSqrtPriceX64: new Decimal(whirlpool.sqrtPrice.toString()),
       currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
       currentLiquidity: new Decimal(whirlpool.liquidity.toString()),
     });

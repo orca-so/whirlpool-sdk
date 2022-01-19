@@ -7,6 +7,7 @@ import {
 import { TickArrayData, TickData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo } from "@solana/spl-token";
 import Decimal from "decimal.js";
+import invariant from "tiny-invariant";
 import { Percentage } from "../..";
 import { DecimalUtil } from "../../utils/decimal-utils";
 
@@ -51,6 +52,7 @@ type SwapState = {
 type SwapSimulationInput = {
   amount: Decimal;
   currentTickArray: TickArrayData;
+  currentSqrtPriceX64: Decimal;
   currentTickIndex: Decimal;
   currentLiquidity: Decimal;
 };
@@ -76,6 +78,9 @@ type SwapStepSimulationOutput = {
   output: Decimal;
 };
 
+const MIN_SQRT_PRICE_X64 = "4295048016";
+const MAX_SQRT_PRICE_X64 = "79226673515401279992447579061";
+
 export class SwapSimulator {
   public constructor(private readonly config: SwapSimulatorConfig) {}
 
@@ -89,10 +94,21 @@ export class SwapSimulator {
     const { resolveSpecifiedAndOtherAmounts, resolveInputAndOutputAmounts } =
       SwapSimulator.functionsByAmountSpecified[amountSpecified];
 
-    const { currentTickIndex, currentTickArray, currentLiquidity, amount: specifiedAmount } = input;
+    const {
+      currentTickIndex,
+      currentTickArray,
+      currentLiquidity,
+      amount: specifiedAmount,
+      currentSqrtPriceX64,
+    } = input;
 
-    const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(new Decimal(currentTickIndex));
+    // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(new Decimal(currentTickIndex));
     const sqrtPriceLimitX64 = calculateSqrtPriceLimit(currentSqrtPriceX64, slippageTolerance);
+
+    invariant(
+      sqrtPriceLimitX64.gte(MIN_SQRT_PRICE_X64) && sqrtPriceLimitX64.lte(MAX_SQRT_PRICE_X64),
+      "sqrtPriceLimitX64 out of bounds"
+    );
 
     const state: SwapState = {
       sqrtPriceX64: currentSqrtPriceX64,
