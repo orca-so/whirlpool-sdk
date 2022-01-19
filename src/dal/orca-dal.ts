@@ -13,7 +13,7 @@ import {
   ParsableTickArray,
   ParsableTokenInfo,
   ParsableWhirlpool,
-  ParsableWhirlpoolConfig,
+  ParsableWhirlpoolsConfig,
 } from "./parse";
 import { getPositionPda, WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 
@@ -122,7 +122,7 @@ export class OrcaDAL {
     address: PublicKey,
     refresh = false
   ): Promise<WhirlpoolConfigAccount | null> {
-    return this.get(address, ParsableWhirlpoolConfig, refresh);
+    return this.get(address, ParsableWhirlpoolsConfig, refresh);
   }
 
   /**

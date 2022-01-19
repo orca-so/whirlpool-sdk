@@ -2,7 +2,7 @@ import {
   parsePosition,
   parseTickArray,
   parseWhirlpool,
-  parseWhirlpoolConfig,
+  parseWhirlpoolsConfig,
   WhirlpoolConfigAccount,
 } from "@orca-so/whirlpool-client-sdk";
 import {
@@ -10,12 +10,12 @@ import {
   TickArrayData,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { AccountInfo, AccountLayout, MintInfo, MintLayout, u64 } from "@solana/spl-token";
+import { AccountInfo, MintInfo, MintLayout, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { deserializeTokenAccount } from "../utils/web3/deserialize-token-account";
 
 @staticImplements<ParsableEntity<WhirlpoolConfigAccount>>()
-export class ParsableWhirlpoolConfig {
+export class ParsableWhirlpoolsConfig {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): WhirlpoolConfigAccount | null {
@@ -23,7 +23,7 @@ export class ParsableWhirlpoolConfig {
       return null;
     }
 
-    return parseWhirlpoolConfig(data);
+    return parseWhirlpoolsConfig(data);
   }
 }
 
