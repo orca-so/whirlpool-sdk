@@ -13,7 +13,7 @@ import {
   ParsableTickArray,
   ParsableTokenInfo,
   ParsableWhirlpool,
-  ParsableWhirlpoolConfig,
+  ParsableWhirlpoolsConfig,
 } from "./parse";
 import { getPositionPda, WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 
@@ -122,7 +122,7 @@ export class OrcaDAL {
     address: PublicKey,
     refresh = false
   ): Promise<WhirlpoolConfigAccount | null> {
-    return this.get(address, ParsableWhirlpoolConfig, refresh);
+    return this.get(address, ParsableWhirlpoolsConfig, refresh);
   }
 
   /**
@@ -132,7 +132,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns whirlpool accounts
    */
-  public async listPools(addresses: PublicKey[], refresh = false): Promise<WhirlpoolData[]> {
+  public async listPools(
+    addresses: PublicKey[],
+    refresh = false
+  ): Promise<(WhirlpoolData | null)[]> {
     return this.list(addresses, ParsableWhirlpool, refresh);
   }
 
@@ -143,7 +146,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns position accounts
    */
-  public async listPositions(addresses: PublicKey[], refresh = false): Promise<PositionData[]> {
+  public async listPositions(
+    addresses: PublicKey[],
+    refresh = false
+  ): Promise<(PositionData | null)[]> {
     return this.list(addresses, ParsablePosition, refresh);
   }
 
@@ -154,7 +160,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns tick array accounts
    */
-  public async listTickArrays(addresses: PublicKey[], refresh = false): Promise<TickArrayData[]> {
+  public async listTickArrays(
+    addresses: PublicKey[],
+    refresh = false
+  ): Promise<(TickArrayData | null)[]> {
     return this.list(addresses, ParsableTickArray, refresh);
   }
 
@@ -165,7 +174,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns token info accounts
    */
-  public async listTokenInfos(addresses: PublicKey[], refresh = false): Promise<AccountInfo[]> {
+  public async listTokenInfos(
+    addresses: PublicKey[],
+    refresh = false
+  ): Promise<(AccountInfo | null)[]> {
     return this.list(addresses, ParsableTokenInfo, refresh);
   }
 
@@ -176,7 +188,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns mint info accounts
    */
-  public async listMintInfos(addresses: PublicKey[], refresh = false): Promise<MintInfo[]> {
+  public async listMintInfos(
+    addresses: PublicKey[],
+    refresh = false
+  ): Promise<(MintInfo | null)[]> {
     return this.list(addresses, ParsableMintInfo, refresh);
   }
 
@@ -246,7 +261,8 @@ export class OrcaDAL {
       addresses.push(positionAddress);
     });
 
-    return await this.listPositions(addresses, true);
+    const positions = await this.listPositions(addresses, true);
+    return positions.filter((position): position is PositionData => position !== null);
   }
 
   /**
@@ -299,7 +315,7 @@ export class OrcaDAL {
     addresses: PublicKey[],
     entity: ParsableEntity<T>,
     refresh: boolean
-  ): Promise<T[]> {
+  ): Promise<(T | null)[]> {
     const keys = addresses.map((address) => address.toBase58());
     const cachedValues: (CachedValue | null | undefined)[] = keys.map(
       (key) => this._cache[key]?.value
@@ -326,7 +342,7 @@ export class OrcaDAL {
       cachedValues[cachedIdx] = value;
     }
 
-    return cachedValues.filter((value): value is T => value !== null);
+    return cachedValues.filter((value): value is T | null => value !== undefined);
   }
 
   /**
