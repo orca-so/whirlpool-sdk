@@ -64,6 +64,6 @@ export type SetRewardAuthorityBySuperAuthorityTransactionParam = {
 
 export type SetRewardEmissionsBySuperAuthorityTransactionParam = {
   provider: Provider;
-  rewardEmissionsSuperAuthorityKeypair: Keypair;
+  rewardEmissionsSuperAuthority: PublicKey;
   newRewardEmissionsSuperAuthority: PublicKey;
 };

@@ -72,19 +72,28 @@ export class OrcaWhirlpool {
 
     const positionMintKeypair = Keypair.generate();
     const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
-    const positionTokenAccountKeypair = Keypair.generate();
+
+    const { address: positionTokenAccountAddress, ...positionTokenAccountIx } =
+      await resolveOrCreateAssociatedTokenAddress(
+        provider.connection,
+        provider.wallet.publicKey,
+        positionMintKeypair.publicKey
+      );
+    txBuilder.addInstruction(positionTokenAccountIx);
 
     txBuilder.addInstruction(
       client
         .openPositionTx({
+          funder: provider.wallet.publicKey,
           ownerKey: provider.wallet.publicKey,
           positionPda,
-          positionMintKeypair,
-          positionTokenAccountKeypair,
+          positionMintAddress: positionMintKeypair.publicKey,
+          positionTokenAccountAddress,
           whirlpoolKey: address,
           tickLowerIndex,
           tickUpperIndex,
         })
+        .addSigner(positionMintKeypair)
         .compressIx(false)
     );
 
@@ -158,7 +167,7 @@ export class OrcaWhirlpool {
           whirlpool: address,
           positionAuthority: provider.wallet.publicKey,
           position: address,
-          positionTokenAccount: positionTokenAccountKeypair.publicKey,
+          positionTokenAccount: positionTokenAccountAddress,
           tokenOwnerAccountA,
           tokenOwnerAccountB,
           tokenVaultA: whirlpool.tokenVaultA,
@@ -195,7 +204,7 @@ export class OrcaWhirlpool {
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserTokenAccount(
+    const positionTokenAccount = await this.dal.getUserNFTAccount(
       provider.wallet.publicKey,
       position.positionMint
     );
@@ -299,9 +308,10 @@ export class OrcaWhirlpool {
           amountSpecifiedIsInput: !fixedOutput,
           aToB,
           whirlpool: whirlpoolAddress,
+          tokenAuthority: provider.wallet.publicKey, // TODO(scuba)
           tokenOwnerAccountA,
-          tokenOwnerAccountB,
           tokenVaultA: whirlpool.tokenVaultA,
+          tokenOwnerAccountB,
           tokenVaultB: whirlpool.tokenVaultB,
           tickArray0,
           tickArray1,

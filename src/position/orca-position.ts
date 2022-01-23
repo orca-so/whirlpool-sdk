@@ -65,7 +65,7 @@ export class OrcaPosition {
     // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserTokenAccount(
+    const positionTokenAccount = await this.dal.getUserNFTAccount(
       provider.wallet.publicKey,
       position.positionMint
     );
@@ -123,7 +123,7 @@ export class OrcaPosition {
     // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserTokenAccount(
+    const positionTokenAccount = await this.dal.getUserNFTAccount(
       provider.wallet.publicKey,
       position.positionMint
     );
@@ -182,7 +182,7 @@ export class OrcaPosition {
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserTokenAccount(
+    const positionTokenAccount = await this.dal.getUserNFTAccount(
       provider.wallet.publicKey,
       position.positionMint
     );

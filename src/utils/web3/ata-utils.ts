@@ -1,8 +1,15 @@
-import { AccountLayout, NATIVE_MINT, u64 } from "@solana/spl-token";
-import { Commitment, Connection, PublicKey } from "@solana/web3.js";
+import {
+  AccountLayout,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  NATIVE_MINT,
+  Token,
+  TOKEN_PROGRAM_ID,
+  u64,
+} from "@solana/spl-token";
+import { Connection, PublicKey } from "@solana/web3.js";
 import { deserializeTokenAccount } from "./deserialize-token-account";
-import { deriveATA, emptyInstruction, ResolvedTokenAddressInstruction } from "./helpers";
-import { createATAInstruction, createWSOLAccountInstructions } from "./token-instructions";
+import { emptyInstruction, ResolvedTokenAddressInstruction } from "./helpers";
+import { createWSOLAccountInstructions } from "./token-instructions";
 
 /**
  * IMPORTANT: wrappedSolAmountIn should only be used for input/source token that
@@ -10,46 +17,50 @@ import { createATAInstruction, createWSOLAccountInstructions } from "./token-ins
  *            destination, and thus does not need to be wrapped with an amount.
  *
  * @param connection Solana connection class
- * @param owner The keypair for the user's wallet or just the user's public key
+ * @param ownerAddress The user's public key
  * @param tokenMint Token mint address
  * @param wrappedSolAmountIn Optional. Only use for input/source token that could be SOL
  * @returns
  */
 export async function resolveOrCreateAssociatedTokenAddress(
   connection: Connection,
-  walletAddress: PublicKey,
+  ownerAddress: PublicKey,
   tokenMint: PublicKey,
   wrappedSolAmountIn = new u64(0)
 ): Promise<ResolvedTokenAddressInstruction> {
   if (!tokenMint.equals(NATIVE_MINT)) {
-    const derivedAddress = deriveATA(walletAddress, tokenMint);
+    const ataAddress = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenMint,
+      ownerAddress
+    );
 
-    // Check if current wallet has an ATA for this spl-token mint. If not, create one.
-    let resolveAtaInstruction = emptyInstruction;
-    await connection.getAccountInfo(derivedAddress).then((info) => {
-      const tokenAccountInfo = deserializeTokenAccount(info?.data);
+    const tokenAccountInfo = await connection.getAccountInfo(ataAddress);
+    const tokenAccount = deserializeTokenAccount(tokenAccountInfo?.data);
+    if (!tokenAccount) {
+      return { address: ataAddress, ...emptyInstruction };
+    }
 
-      if (!tokenAccountInfo) {
-        resolveAtaInstruction = createATAInstruction(
-          derivedAddress,
-          walletAddress,
-          walletAddress,
-          tokenMint
-        );
-      }
-    });
+    const createAtaInstruction = Token.createAssociatedTokenAccountInstruction(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      tokenMint,
+      ataAddress,
+      ownerAddress,
+      ownerAddress
+    );
 
     return {
-      address: derivedAddress,
-      instructions: resolveAtaInstruction.instructions,
-      cleanupInstructions: resolveAtaInstruction.cleanupInstructions,
-      signers: resolveAtaInstruction.signers,
+      address: ataAddress,
+      instructions: [createAtaInstruction],
+      cleanupInstructions: [],
+      signers: [],
     };
   } else {
     const accountRentExempt = await connection.getMinimumBalanceForRentExemption(
       AccountLayout.span
     );
-    // Create a temp-account to transfer SOL in the form of WSOL
-    return createWSOLAccountInstructions(walletAddress, wrappedSolAmountIn, accountRentExempt);
+    return createWSOLAccountInstructions(ownerAddress, wrappedSolAmountIn, accountRentExempt);
   }
 }

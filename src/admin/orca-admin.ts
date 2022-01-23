@@ -83,7 +83,7 @@ export class OrcaAdmin {
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    return client.setFeeAuthorityIx({
+    return client.setFeeAuthorityTx({
       whirlpoolsConfig,
       feeAuthority: provider.wallet.publicKey,
       newFeeAuthority,
@@ -98,7 +98,7 @@ export class OrcaAdmin {
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    return client.setCollectProtocolFeesAuthorityIx({
+    return client.setCollectProtocolFeesAuthorityTx({
       whirlpoolsConfig,
       collectProtocolFeesAuthority: provider.wallet.publicKey,
       newCollectProtocolFeesAuthority,
@@ -134,7 +134,7 @@ export class OrcaAdmin {
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
-    return client.setRewardAuthorityIx({
+    return client.setRewardAuthorityTx({
       whirlpool,
       rewardAuthority: provider.wallet.publicKey,
       newRewardAuthority,
@@ -170,7 +170,7 @@ export class OrcaAdmin {
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
-    return client.setRewardAuthorityBySuperAuthorityIx({
+    return client.setRewardAuthorityBySuperAuthorityTx({
       whirlpoolsConfig,
       whirlpool,
       rewardEmissionsSuperAuthority: provider.wallet.publicKey,
@@ -182,15 +182,14 @@ export class OrcaAdmin {
   public getSetRewardEmissionsBySuperAuthorityTransaction(
     param: SetRewardEmissionsBySuperAuthorityTransactionParam
   ): TransactionBuilder {
-    const { provider, rewardEmissionsSuperAuthorityKeypair, newRewardEmissionsSuperAuthority } =
-      param;
+    const { provider, rewardEmissionsSuperAuthority, newRewardEmissionsSuperAuthority } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    return client.setRewardEmissionsSuperAuthorityIx({
+    return client.setRewardEmissionsSuperAuthorityTx({
       whirlpoolsConfig,
-      rewardEmissionsSuperAuthorityKeypair,
+      rewardEmissionsSuperAuthority,
       newRewardEmissionsSuperAuthority,
     });
   }

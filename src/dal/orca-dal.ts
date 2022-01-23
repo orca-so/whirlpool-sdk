@@ -197,12 +197,13 @@ export class OrcaDAL {
 
   /**
    * Fetch the user token account of the given token mint.
+   * Note: not cached.
    *
    * @param walletAddress wallet address
    * @param mint
    * @returns account address or null if the account does not exist
    */
-  public async getUserTokenAccount(
+  public async getUserNFTAccount(
     walletAddress: PublicKey,
     mint: PublicKey
   ): Promise<PublicKey | null> {
@@ -233,7 +234,7 @@ export class OrcaDAL {
 
   /**
    * Fetch a list of positions owned by the wallet address.
-   * Note: not cached
+   * Note: not cached.
    *
    * @param walletAddress wallet address
    * @returns a list of positions owned by the wallet address
