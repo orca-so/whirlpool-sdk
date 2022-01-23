@@ -42,7 +42,7 @@ import {
 } from "../position/quotes/add-liquidity";
 import { DecimalUtil } from "../utils/decimal-utils";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
-import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
+import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
 import { TickArrayOutOfBoundsError, TickUtil } from "../utils/whirlpool/tick-util";
@@ -73,44 +73,40 @@ export class OrcaWhirlpool {
     const positionMintKeypair = Keypair.generate();
     const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
 
-    const { address: positionTokenAccountAddress, ...positionTokenAccountIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        positionMintKeypair.publicKey
-      );
-    txBuilder.addInstruction(positionTokenAccountIx);
-
-    txBuilder.addInstruction(
-      client
-        .openPositionTx({
-          funder: provider.wallet.publicKey,
-          ownerKey: provider.wallet.publicKey,
-          positionPda,
-          positionMintAddress: positionMintKeypair.publicKey,
-          positionTokenAccountAddress,
-          whirlpoolKey: address,
-          tickLowerIndex,
-          tickUpperIndex,
-        })
-        .addSigner(positionMintKeypair)
-        .compressIx(false)
+    const positionTokenAccountAddress = await deriveATA(
+      provider.wallet.publicKey,
+      positionMintKeypair.publicKey
     );
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    txBuilder
+      .addInstruction(
+        client
+          .openPositionTx({
+            funder: provider.wallet.publicKey,
+            ownerKey: provider.wallet.publicKey,
+            positionPda,
+            positionMintAddress: positionMintKeypair.publicKey,
+            positionTokenAccountAddress,
+            whirlpoolKey: address,
+            tickLowerIndex,
+            tickUpperIndex,
+          })
+          .compressIx(false)
+      )
+      .addSigner(positionMintKeypair);
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(
@@ -210,20 +206,18 @@ export class OrcaWhirlpool {
     );
     invariant(!!positionTokenAccount, "no position token account");
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     txBuilder.addInstruction(
@@ -274,20 +268,18 @@ export class OrcaWhirlpool {
     const whirlpool = await this.getWhirlpool(whirlpoolAddress);
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const nextTickArrayJump = aToB ? -TICK_ARRAY_SIZE : TICK_ARRAY_SIZE;

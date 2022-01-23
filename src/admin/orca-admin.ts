@@ -1,4 +1,4 @@
-import { getWhirlpoolPda, NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
+import { getWhirlpoolPda, NUM_REWARDS, toX64 } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
@@ -42,7 +42,7 @@ export class OrcaAdmin {
     );
 
     return client.initPoolTx({
-      initSqrtPrice,
+      initSqrtPrice: toX64(initSqrtPrice),
       whirlpoolConfigKey,
       tokenMintA,
       tokenMintB,

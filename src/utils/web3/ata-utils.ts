@@ -22,19 +22,14 @@ import { createWSOLAccountInstructions } from "./token-instructions";
  * @param wrappedSolAmountIn Optional. Only use for input/source token that could be SOL
  * @returns
  */
-export async function resolveOrCreateAssociatedTokenAddress(
+export async function resolveOrCreateATA(
   connection: Connection,
   ownerAddress: PublicKey,
   tokenMint: PublicKey,
   wrappedSolAmountIn = new u64(0)
 ): Promise<ResolvedTokenAddressInstruction> {
   if (!tokenMint.equals(NATIVE_MINT)) {
-    const ataAddress = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      tokenMint,
-      ownerAddress
-    );
+    const ataAddress = await deriveATA(tokenMint, ownerAddress);
 
     const tokenAccountInfo = await connection.getAccountInfo(ataAddress);
     const tokenAccount = deserializeTokenAccount(tokenAccountInfo?.data);
@@ -63,4 +58,13 @@ export async function resolveOrCreateAssociatedTokenAddress(
     );
     return createWSOLAccountInstructions(ownerAddress, wrappedSolAmountIn, accountRentExempt);
   }
+}
+
+export async function deriveATA(ownerAddress: PublicKey, tokenMint: PublicKey): Promise<PublicKey> {
+  return await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    tokenMint,
+    ownerAddress
+  );
 }

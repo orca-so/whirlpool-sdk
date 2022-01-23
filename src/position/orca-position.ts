@@ -29,7 +29,7 @@ import { DecimalUtil } from "../utils/decimal-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/whirlpool/tick-util";
-import { resolveOrCreateAssociatedTokenAddress } from "../utils/web3/ata-utils";
+import { resolveOrCreateATA } from "../utils/web3/ata-utils";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
@@ -71,20 +71,18 @@ export class OrcaPosition {
     );
     invariant(!!positionTokenAccount, "no position token account");
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const addLiquidityIx = client
@@ -129,20 +127,18 @@ export class OrcaPosition {
     );
     invariant(!!positionTokenAccount, "no position token account");
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const removeLiquidityIx = client
@@ -200,20 +196,18 @@ export class OrcaPosition {
     mainTxBuilder.addInstruction(updateIx);
 
     // step 2. collect fees
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintA
-      );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
     ataTxBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } =
-      await resolveOrCreateAssociatedTokenAddress(
-        provider.connection,
-        provider.wallet.publicKey,
-        whirlpool.tokenMintB
-      );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
     ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const feeIx = client
@@ -235,12 +229,11 @@ export class OrcaPosition {
     // step 3. collect rewards A, B, C
     for (const i of [...Array(NUM_REWARDS).keys()]) {
       if (PoolUtil.isRewardInitialized(whirlpool.rewardInfos[i])) {
-        const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } =
-          await resolveOrCreateAssociatedTokenAddress(
-            provider.connection,
-            provider.wallet.publicKey,
-            whirlpool.rewardInfos[i].mint
-          );
+        const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } = await resolveOrCreateATA(
+          provider.connection,
+          provider.wallet.publicKey,
+          whirlpool.rewardInfos[i].mint
+        );
         ataTxBuilder.addInstruction(rewardOwnerAccountIx);
 
         const rewardTx = client.collectRewardTx({
