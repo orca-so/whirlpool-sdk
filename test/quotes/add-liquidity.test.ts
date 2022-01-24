@@ -7,6 +7,9 @@ import {
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
+const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
+const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
+const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");
 
 Decimal.set({ precision: 40 });
 
@@ -76,3 +79,35 @@ function deserializePosition(positionJson: Record<string, any>): PositionData {
     ),
   };
 }
+
+describe("Add Liquidity", () => {
+  const whirlpoolsMap: Record<string, WhirlpoolData> = Object.keys(WhirlpoolsJSON).reduce(
+    (map, key) => ({
+      ...map,
+      [key]: deserializeWhirlpool(WhirlpoolsJSON[key]),
+    }),
+    {}
+  );
+
+  const tickArraysMap: Record<string, TickArrayData> = Object.keys(TickArraysJSON).reduce(
+    (map, key) => ({
+      ...map,
+      [key]: deserializeTickArray(TickArraysJSON[key]),
+    }),
+    {}
+  );
+
+  const positionsMap: Record<string, PositionData> = Object.keys(PositionsJSON).reduce(
+    (map, key) => ({
+      ...map,
+      [key]: deserializePosition(PositionsJSON[key]),
+    }),
+    {}
+  );
+
+  test("base case: increase liquidity of a position spanning two tick arrays", () => {
+    const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+    const whirlpoolAddress = new PublicKey("6wADQSNfubas7sExoKhoFo4vXM72RaYqin3mk7ce3tf7");
+    const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
+  });
+});

@@ -14,8 +14,7 @@ describe("Mocking Orca DAL", () => {
     const orcaDal = new OrcaDAL(
       PublicKey.default,
       PublicKey.default,
-      new Connection("http://google.com"),
-      defaultCommitment
+      new Connection("http://google.com")
     );
     expect(orcaDal.getPool(PublicKey.default)).toEqual("default-mock");
     getPoolMock.mockImplementation(() => "custom-mock");
