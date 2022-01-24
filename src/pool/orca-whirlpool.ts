@@ -329,8 +329,17 @@ export class OrcaWhirlpool {
       refresh,
     } = param;
 
-    const tickLowerIndex = sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())).toNumber();
-    const tickUpperIndex = sqrtPriceX64ToTickIndex(toX64(priceUpper.sqrt())).toNumber();
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
+    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
+
+    const tickLowerIndex = TickUtil.getNearestValidTickIndex(
+      sqrtPriceX64ToTickIndex(toX64(priceLower)).toNumber(),
+      whirlpool.tickSpacing
+    );
+    const tickUpperIndex = TickUtil.getNearestValidTickIndex(
+      sqrtPriceX64ToTickIndex(toX64(priceUpper)).toNumber(),
+      whirlpool.tickSpacing
+    );
 
     const dummyPosition = {
       whirlpool: whirlpoolAddress,
@@ -345,9 +354,6 @@ export class OrcaWhirlpool {
       feeOwedB: new u64(0),
       rewardInfos: [],
     };
-
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
       whirlpool,
