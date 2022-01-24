@@ -1,4 +1,3 @@
-import { fromX64, toX64 } from "@orca-so/whirlpool-client-sdk";
 import {
   TickArrayData,
   TickData,
@@ -9,7 +8,6 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { Percentage } from "../../src";
-import { defaultSlippagePercentage } from "../../src/constants/defaults";
 import {
   AmountSpecified,
   SwapDirection,
