@@ -124,8 +124,6 @@ export class SwapSimulator {
 
     let i = 0;
 
-    console.log(`SWAP STATE ${i}`, state);
-
     while (
       state.specifiedAmountLeft.gt(1e-10) &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
@@ -178,11 +176,9 @@ export class SwapSimulator {
         }
 
         if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
-          console.log(`SWAP STATE ${i}`, state);
           break;
         }
       }
-      console.log(`SWAP STATE ${i}`, state);
     }
 
     const [inputAmount, outputAmount] = resolveInputAndOutputAmounts(
@@ -199,7 +195,6 @@ export class SwapSimulator {
   }
 
   public async simulateSwapStep(input: SwapStepSimulationInput): Promise<SwapStepSimulationOutput> {
-    console.log("START OF SWAP STEP");
     const {
       swapDirection,
       amountSpecified,
@@ -227,8 +222,6 @@ export class SwapSimulator {
 
     // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
 
-    console.log("START MIDDLE OF SWAP STEP");
-
     // TODO(atamari): What do we do if next/prev initialized tick is more than one tick array account apart
     // Currently, if we're moving between ticks, we stop at the last tick on the adjacent tick array account (due to the whirlpool program limitation)
     const [prevInitializedTickIndex, nextInitializedTickIndex] = await Promise.all([
@@ -236,15 +229,11 @@ export class SwapSimulator {
       getNextInitializedTickIndex(),
     ]);
 
-    console.log("MIDDLE MIDDLE MIDDLE OF SWAP STEP");
-
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
       sqrtPriceLimitX64,
       prevInitializedTickIndex,
       nextInitializedTickIndex
     );
-
-    console.log("MIDDLE MIDDLE OF SWAP STEP");
 
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
@@ -256,8 +245,6 @@ export class SwapSimulator {
       specifiedTokenAmount,
       feeRate
     );
-
-    console.log("MIDDLE OF SWAP STEP");
 
     const nextSqrtPriceX64 = specifiedTokenGivenDelta.gte(specifiedTokenMaxDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
@@ -285,8 +272,6 @@ export class SwapSimulator {
       specifiedTokenActualDelta,
       otherTokenDelta
     );
-
-    console.log("END OF SWAP STEP");
 
     return {
       currentTickIndex: sqrtPriceX64ToTickIndex(nextSqrtPriceX64),

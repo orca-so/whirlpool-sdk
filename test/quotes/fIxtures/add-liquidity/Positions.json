@@ -1,0 +1,27 @@
+{
+  "5GhgBXfuKuFvqhz7h8LAQabEievmWgiXiiVwYHQFejLw": {
+    "whirlpool": "6wADQSNfubas7sExoKhoFo4vXM72RaYqin3mk7ce3tf7",
+    "positionMint": "D7kaDbZ7J9D1THtgRZiYrrD98CBtDSH9CZtkmj9AP2Ag",
+    "liquidity": "0",
+    "tickLowerIndex": -1280,
+    "tickUpperIndex": 1280,
+    "feeGrowthCheckpointA": "0",
+    "feeOwedA": "0",
+    "feeGrowthCheckpointB": "0",
+    "feeOwedB": "0",
+    "rewardInfos": [
+      {
+        "growthInsideCheckpoint": "0",
+        "amountOwed": "0"
+      },
+      {
+        "growthInsideCheckpoint": "0",
+        "amountOwed": "0"
+      },
+      {
+        "growthInsideCheckpoint": "0",
+        "amountOwed": "0"
+      }
+    ]
+  }
+}
