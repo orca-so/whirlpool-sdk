@@ -144,7 +144,7 @@ describe("Add Liquidity", () => {
     OrcaDALFileMock.clearAllMocks();
   });
 
-  test.only("base case: increase liquidity of a position spanning two tick arrays", async () => {
+  test("base case: increase liquidity of a position spanning two tick arrays", async () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("6wADQSNfubas7sExoKhoFo4vXM72RaYqin3mk7ce3tf7");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
