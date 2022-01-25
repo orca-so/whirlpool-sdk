@@ -35,5 +35,6 @@ export function getInitWhirlpoolConfigsTransaction({
     rewardEmissionsSuperAuthority,
     defaultFeeRate,
     defaultProtocolFeeRate,
+    funder: provider.wallet.publicKey,
   });
 }

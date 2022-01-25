@@ -125,9 +125,10 @@ export class OrcaWhirlpool {
       txBuilder.addInstruction(
         client
           .initTickArrayTx({
-            whirlpoolKey: address,
+            whirlpool: address,
             tickArrayPda: tickArrayLowerPda,
             startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
+            funder: provider.wallet.publicKey,
           })
           .compressIx(false)
       );
@@ -140,9 +141,10 @@ export class OrcaWhirlpool {
       txBuilder.addInstruction(
         client
           .initTickArrayTx({
-            whirlpoolKey: address,
+            whirlpool: address,
             tickArrayPda: tickArrayUpperPda,
             startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
+            funder: provider.wallet.publicKey,
           })
           .compressIx(false)
       );
