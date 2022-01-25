@@ -50,6 +50,7 @@ export class OrcaAdmin {
       tokenVaultAKeypair,
       tokenVaultBKeypair,
       tickSpacing,
+      funder: provider.wallet.publicKey,
     });
   }
 

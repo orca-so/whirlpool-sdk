@@ -10,20 +10,19 @@ import {
   TickArrayData,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { u64 } from "@solana/spl-token";
+import { OrcaDAL } from "../../src/dal/orca-dal";
+import { OrcaPosition } from "../../src/position/orca-position";
+import { AddLiquidityQuote, AddLiquidityQuoteParam, Percentage } from "../../src";
+import { defaultSlippagePercentage } from "../../src/constants/defaults";
 const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
 const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");
 
 Decimal.set({ precision: 40 });
-
-// TODO: OrcaDAL functions to mock
-// - getPool
-// - getPosition
-// - listMintInfos
 
 function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData {
   return {
@@ -92,6 +91,18 @@ function deserializePosition(positionJson: Record<string, any>): PositionData {
   };
 }
 
+function serializeAddLiquidityQuote(addLiquidityQuote: AddLiquidityQuote): string {
+  return JSON.stringify(
+    {
+      maxTokenA: addLiquidityQuote.maxTokenA.toString(),
+      maxTokenB: addLiquidityQuote.maxTokenB.toString(),
+      liquidity: addLiquidityQuote.liquidity.toString(),
+    },
+    null,
+    2
+  );
+}
+
 describe("Add Liquidity", () => {
   const whirlpoolsMap: Record<string, WhirlpoolData> = Object.keys(WhirlpoolsJSON).reduce(
     (map, key) => ({
@@ -133,9 +144,34 @@ describe("Add Liquidity", () => {
     OrcaDALFileMock.clearAllMocks();
   });
 
-  test("base case: increase liquidity of a position spanning two tick arrays", () => {
+  test.only("base case: increase liquidity of a position spanning two tick arrays", async () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("6wADQSNfubas7sExoKhoFo4vXM72RaYqin3mk7ce3tf7");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
+    const expectedLiquidityAmount = new BN("1250000");
+    const tokenAAmount = new BN(0);
+    const tokenBAmount = new BN("167000");
+
+    const mockDal = new OrcaDAL(
+      PublicKey.default,
+      PublicKey.default,
+      new Connection("http://google.com")
+    );
+
+    const orcaPosition = new OrcaPosition(mockDal);
+
+    const params: AddLiquidityQuoteParam = {
+      address: new PublicKey("5GhgBXfuKuFvqhz7h8LAQabEievmWgiXiiVwYHQFejLw"),
+      tokenMint: whirlpool.tokenMintB,
+      tokenAmount: tokenBAmount,
+      refresh: true,
+      slippageTolerence: defaultSlippagePercentage,
+    };
+
+    const addLiquidityQuote = await orcaPosition.getAddLiquidityQuote(params);
+
+    expect(addLiquidityQuote.maxTokenA.toString()).toEqual(tokenAAmount.toString());
+    expect(addLiquidityQuote.maxTokenB.toString()).toEqual(tokenBAmount.toString());
+    expect(addLiquidityQuote.liquidity.toString()).toEqual(expectedLiquidityAmount.toString());
   });
 });

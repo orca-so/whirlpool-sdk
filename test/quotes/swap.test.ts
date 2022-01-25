@@ -108,8 +108,6 @@ describe("swap", () => {
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        console.log("FINDING PREV TICK");
-
         try {
           prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
             currentTickArray,
@@ -134,8 +132,6 @@ describe("swap", () => {
 
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
-
-        console.log("FINDING NEXT TICK");
 
         try {
           prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
@@ -177,7 +173,6 @@ describe("swap", () => {
       currentLiquidity: whirlpool.liquidity,
     });
 
-    console.log(JSON.stringify(swapSimulationOutput, null, 2));
     expect(1).toEqual(1);
   });
 });

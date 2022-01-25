@@ -4,7 +4,8 @@ import {
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { OrcaDAL } from "../../src/dal/orca-dal";
 
 // TODO: Add proper mocks
 
