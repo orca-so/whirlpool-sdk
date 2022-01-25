@@ -1,15 +1,13 @@
-import { fromX64, toX64 } from "@orca-so/whirlpool-client-sdk";
 import {
   TickArrayData,
   TickData,
   TICK_ARRAY_SIZE,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
-import Decimal from "decimal.js";
 import { Percentage } from "../../src";
-import { defaultSlippagePercentage } from "../../src/constants/defaults";
 import {
   AmountSpecified,
   SwapDirection,
@@ -20,8 +18,6 @@ import { PoolUtil } from "../../src/utils/whirlpool/pool-util";
 import { TickArrayOutOfBoundsError, TickUtil } from "../../src/utils/whirlpool/tick-util";
 const WhirlpoolsJSON = require("./fixtures/swap/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/swap/TickArrays.json");
-
-Decimal.set({ precision: 40 });
 
 function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData {
   return {
@@ -91,9 +87,9 @@ describe("swap", () => {
     const whirlpoolAddress = new PublicKey("FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
 
-    async function fetchTickArray(tickIndex: Decimal): Promise<TickArrayData> {
+    async function fetchTickArray(tickIndex: number): Promise<TickArrayData> {
       const tickArrayAddress = TickUtil.getAddressContainingTickIndex(
-        tickIndex.toNumber(),
+        tickIndex,
         whirlpool.tickSpacing,
         new PublicKey(whirlpoolAddress),
         new PublicKey(whirlpoolProgramId)
@@ -101,20 +97,16 @@ describe("swap", () => {
       return tickArraysMap[tickArrayAddress.toBase58()]!;
     }
 
-    async function fetchTick(tickIndex: Decimal): Promise<TickData> {
-      return TickUtil.getTick(
-        await fetchTickArray(tickIndex),
-        tickIndex.toNumber(),
-        whirlpool.tickSpacing
-      );
+    async function fetchTick(tickIndex: number): Promise<TickData> {
+      return TickUtil.getTick(await fetchTickArray(tickIndex), tickIndex, whirlpool.tickSpacing);
     }
 
-    async function getPrevInitializedTickIndex(): Promise<Decimal> {
+    async function getPrevInitializedTickIndex(): Promise<number> {
       let currentTickIndex = whirlpool.tickCurrentIndex;
       let prevInitializedTickIndex: number | undefined = undefined;
 
       while (!prevInitializedTickIndex) {
-        const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+        const currentTickArray = await fetchTickArray(currentTickIndex);
 
         console.log("FINDING PREV TICK");
 
@@ -133,15 +125,15 @@ describe("swap", () => {
         }
       }
 
-      return new Decimal(prevInitializedTickIndex);
+      return prevInitializedTickIndex;
     }
 
-    async function getNextInitializedTickIndex(): Promise<Decimal> {
+    async function getNextInitializedTickIndex(): Promise<number> {
       let currentTickIndex = whirlpool.tickCurrentIndex;
       let prevInitializedTickIndex: number | undefined = undefined;
 
       while (!prevInitializedTickIndex) {
-        const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+        const currentTickArray = await fetchTickArray(currentTickIndex);
 
         console.log("FINDING NEXT TICK");
 
@@ -161,7 +153,7 @@ describe("swap", () => {
         }
       }
 
-      return new Decimal(prevInitializedTickIndex);
+      return prevInitializedTickIndex;
     }
 
     const swapSimulatorConfig: SwapSimulatorConfig = {
@@ -178,11 +170,11 @@ describe("swap", () => {
 
     const swapSimulator = new SwapSimulator(swapSimulatorConfig);
     const swapSimulationOutput = await swapSimulator.simulateSwap({
-      amount: new Decimal(7_051_000),
-      currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
-      currentSqrtPriceX64: new Decimal(whirlpool.sqrtPrice.toString()),
-      currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
-      currentLiquidity: new Decimal(whirlpool.liquidity.toString()),
+      amount: new u64(7_051_000),
+      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
+      currentSqrtPriceX64: whirlpool.sqrtPrice,
+      currentTickIndex: whirlpool.tickCurrentIndex,
+      currentLiquidity: whirlpool.liquidity,
     });
 
     console.log(JSON.stringify(swapSimulationOutput, null, 2));

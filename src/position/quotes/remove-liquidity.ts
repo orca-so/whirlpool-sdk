@@ -1,8 +1,6 @@
-import { fromX64, tickIndexToSqrtPriceX64, toX64 } from "@orca-so/whirlpool-client-sdk";
+import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
 import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { MintInfo, u64 } from "@solana/spl-token";
-import Decimal from "decimal.js";
-import { DecimalUtil } from "../../utils/decimal-utils";
 import { Percentage } from "../../utils/public/percentage";
 import { RemoveLiquidityQuote } from "../public";
 
@@ -22,17 +20,17 @@ export function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
 
   const { position, tokenAMintInfo, liquidity, slippageTolerence } = param;
 
-  const liquidityX64 = toX64(DecimalUtil.fromU64(liquidity));
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickLowerIndex));
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickUpperIndex));
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
 
-  const tokenAAmountX64 = liquidityX64
+  const tokenAmountA = liquidity
+    .shln(64)
     .mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
     .div(sqrtPriceLowerX64)
     .div(sqrtPriceUpperX64);
 
   return {
-    minTokenA: DecimalUtil.toU64(fromX64(tokenAAmountX64), tokenAMintInfo.decimals),
+    minTokenA: tokenAmountA,
     minTokenB: new u64(0),
     liquidity,
   };
@@ -46,20 +44,20 @@ export function getRemoveLiquidityQuoteWhenPositionIsInRange(
   const { whirlpool, position, tokenAMintInfo, tokenBMintInfo, liquidity, slippageTolerence } =
     param;
 
-  const liquidityX64 = toX64(DecimalUtil.fromU64(liquidity));
-  const sqrtPriceX64 = DecimalUtil.fromU64(whirlpool.sqrtPrice);
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickLowerIndex));
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickUpperIndex));
+  const sqrtPriceX64 = whirlpool.sqrtPrice;
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
 
-  const tokenAAmountX64 = liquidityX64
+  const tokenAmountA = liquidity
+    .shln(64)
     .mul(sqrtPriceUpperX64.sub(sqrtPriceX64))
     .div(sqrtPriceX64)
     .div(sqrtPriceUpperX64);
-  const tokenBAmountX64 = liquidityX64.mul(sqrtPriceX64.sub(sqrtPriceLowerX64));
+  const tokenAmountB = liquidity.mul(sqrtPriceX64.sub(sqrtPriceLowerX64)).shrn(64);
 
   return {
-    minTokenA: DecimalUtil.toU64(fromX64(tokenAAmountX64), tokenAMintInfo.decimals),
-    minTokenB: DecimalUtil.toU64(fromX64(tokenBAmountX64), tokenBMintInfo.decimals),
+    minTokenA: tokenAmountA,
+    minTokenB: tokenAmountB,
     liquidity,
   };
 }
@@ -71,15 +69,14 @@ export function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
 
   const { position, tokenBMintInfo, liquidity, slippageTolerence } = param;
 
-  const liquidityX64 = toX64(DecimalUtil.fromU64(liquidity));
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickLowerIndex));
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(new Decimal(position.tickUpperIndex));
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
 
-  const tokenBAmountX64 = liquidityX64.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
+  const tokenAmountB = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64)).shrn(64);
 
   return {
     minTokenA: new u64(0),
-    minTokenB: DecimalUtil.toU64(fromX64(tokenBAmountX64), tokenBMintInfo.decimals),
+    minTokenB: tokenAmountB,
     liquidity,
   };
 }
