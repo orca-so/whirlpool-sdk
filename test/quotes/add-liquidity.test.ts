@@ -1,17 +1,29 @@
 import {
+  getPoolMock,
+  getPositionMock,
+  listMintInfosMock,
+  OrcaDALFileMock,
+} from "../mocks/orca-dal";
+import {
   PositionData,
   PositionRewardInfoData,
   TickArrayData,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
+import { u64 } from "@solana/spl-token";
 const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
 const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");
 
 Decimal.set({ precision: 40 });
+
+// TODO: OrcaDAL functions to mock
+// - getPool
+// - getPosition
+// - listMintInfos
 
 function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData {
   return {
@@ -104,6 +116,22 @@ describe("Add Liquidity", () => {
     }),
     {}
   );
+
+  getPoolMock.mockImplementation((address: PublicKey) => whirlpoolsMap[address.toBase58()]);
+  getPositionMock.mockImplementation((address: PublicKey) => positionsMap[address.toBase58()]);
+  listMintInfosMock.mockImplementation((addresses: PublicKey[]) =>
+    addresses.map(() => ({
+      mintAuthority: null,
+      supply: new u64(1e6),
+      decimals: 0,
+      isInitialized: true,
+      freezeAuthority: null,
+    }))
+  );
+
+  beforeEach(() => {
+    OrcaDALFileMock.clearAllMocks();
+  });
 
   test("base case: increase liquidity of a position spanning two tick arrays", () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
