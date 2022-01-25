@@ -1,6 +1,5 @@
 import { getPoolMock, OrcaDALFileMock } from "../mocks/orca-dal";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { defaultCommitment } from "../../src/constants/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 
 describe("Mocking Orca DAL", () => {
@@ -14,8 +13,7 @@ describe("Mocking Orca DAL", () => {
     const orcaDal = new OrcaDAL(
       PublicKey.default,
       PublicKey.default,
-      new Connection("http://google.com"),
-      defaultCommitment
+      new Connection("http://google.com")
     );
     expect(orcaDal.getPool(PublicKey.default)).toEqual("default-mock");
     getPoolMock.mockImplementation(() => "custom-mock");

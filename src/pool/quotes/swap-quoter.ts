@@ -121,7 +121,7 @@ export class SwapSimulator {
     console.log(`SWAP STATE ${i}`, state);
 
     while (
-      // state.specifiedAmountLeft.gt(1e-10) &&
+      state.specifiedAmountLeft.gt(new BN(0)) &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
     ) {
       const swapStepSimulationInput: SwapStepSimulationInput = {
