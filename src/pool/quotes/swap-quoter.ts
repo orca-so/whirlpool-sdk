@@ -30,8 +30,8 @@ export type SwapSimulatorConfig = {
   slippageTolerance: Percentage;
   fetchTickArray: (tickIndex: number) => Promise<TickArrayData>;
   fetchTick: (tickIndex: number) => Promise<TickData>;
-  getPrevInitializedTickIndex: () => Promise<number>;
-  getNextInitializedTickIndex: () => Promise<number>;
+  getPrevInitializedTickIndex: (currentTickIndex: number) => Promise<number>;
+  getNextInitializedTickIndex: (currentTickIndex: number) => Promise<number>;
 };
 
 type SwapState = {
@@ -118,12 +118,24 @@ export class SwapSimulator {
 
     let i = 0;
 
-    console.log(`SWAP STATE ${i}`, state);
+    let loopCount = 0;
 
     while (
+      // state.specifiedAmountLeft.gt(new BN("2529369")) &&
       state.specifiedAmountLeft.gt(new BN(0)) &&
+      // loopCount < 3 &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
     ) {
+      console.log("ITERATION " + loopCount);
+      loopCount += 1;
+      console.log("SWAP STATE", {
+        sqrtPriceX64: state.sqrtPriceX64.toString(),
+        tickIndex: state.tickIndex,
+        tickArray: state.tickArray.startTickIndex,
+        liquidity: state.liquidity.toString(),
+        specifiedAmountLeft: state.specifiedAmountLeft.toString(),
+        otherAmountCalculated: state.otherAmountCalculated.toString(),
+      });
       const swapStepSimulationInput: SwapStepSimulationInput = {
         sqrtPriceLimitX64,
         sqrtPriceX64: state.sqrtPriceX64,
@@ -172,11 +184,17 @@ export class SwapSimulator {
         }
 
         if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
-          console.log(`SWAP STATE ${i}`, state);
           break;
         }
       }
-      console.log(`SWAP STATE ${i}`, state);
+      console.log("SWAP STATE", {
+        sqrtPriceX64: state.sqrtPriceX64.toString(),
+        tickIndex: state.tickIndex,
+        tickArray: state.tickArray.startTickIndex,
+        liquidity: state.liquidity.toString(),
+        specifiedAmountLeft: state.specifiedAmountLeft.toString(),
+        otherAmountCalculated: state.otherAmountCalculated.toString(),
+      });
     }
 
     const [inputAmount, outputAmount] = resolveInputAndOutputAmounts(
@@ -193,7 +211,6 @@ export class SwapSimulator {
   }
 
   public async simulateSwapStep(input: SwapStepSimulationInput): Promise<SwapStepSimulationOutput> {
-    console.log("START OF SWAP STEP");
     const {
       swapDirection,
       amountSpecified,
@@ -221,16 +238,12 @@ export class SwapSimulator {
 
     // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
 
-    console.log("START MIDDLE OF SWAP STEP");
-
     // TODO(atamari): What do we do if next/prev initialized tick is more than one tick array account apart
     // Currently, if we're moving between ticks, we stop at the last tick on the adjacent tick array account (due to the whirlpool program limitation)
     const [prevInitializedTickIndex, nextInitializedTickIndex] = await Promise.all([
-      getPrevInitializedTickIndex(),
-      getNextInitializedTickIndex(),
+      getPrevInitializedTickIndex(input.tickIndex),
+      getNextInitializedTickIndex(input.tickIndex),
     ]);
-
-    console.log("MIDDLE MIDDLE MIDDLE OF SWAP STEP");
 
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
       sqrtPriceLimitX64,
@@ -238,7 +251,13 @@ export class SwapSimulator {
       nextInitializedTickIndex
     );
 
-    console.log("MIDDLE MIDDLE OF SWAP STEP");
+    console.log("SQRT PRICE LIMIT", {
+      targetSqrtPriceX64: sqrtPriceLimitX64.toString(),
+    });
+
+    console.log("NEXT INITIALIZED TICK", {
+      nextInitializedTickIndex: nextInitializedTickIndex,
+    });
 
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
@@ -251,8 +270,9 @@ export class SwapSimulator {
       feeRate
     );
 
-    console.log("MIDDLE OF SWAP STEP");
-
+    console.log("TARGET SQRT PRICE", {
+      targetSqrtPriceX64: targetSqrtPriceX64.toString(),
+    });
     const nextSqrtPriceX64 = specifiedTokenGivenDelta.gte(specifiedTokenMaxDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
       : calculateNextSqrtPriceGivenTokenDelta(
@@ -261,11 +281,23 @@ export class SwapSimulator {
           currentSqrtPriceX64
         );
 
+    console.log("SWAP TYPE", {
+      swapDirection: swapDirection,
+      amountSpecified: amountSpecified,
+    });
+
     const otherTokenDelta = calculateOtherTokenDelta(
       currentLiquidity,
       BN.min(currentSqrtPriceX64, nextSqrtPriceX64),
       BN.max(currentSqrtPriceX64, nextSqrtPriceX64)
     );
+
+    console.log("OTHER TOKEN DELTA", {
+      otherTokenDelta: otherTokenDelta.toString(),
+      currentLiquidity: currentLiquidity.toString(),
+      currentSqrtPriceX64: currentSqrtPriceX64.toString(),
+      nextSqrtPriceX64: nextSqrtPriceX64.toString(),
+    });
 
     const specifiedTokenActualDelta = nextSqrtPriceX64.eq(targetSqrtPriceX64)
       ? specifiedTokenMaxDelta
@@ -280,7 +312,7 @@ export class SwapSimulator {
       otherTokenDelta
     );
 
-    console.log("END OF SWAP STEP");
+    console.log("FINISHING SWAP STEP");
 
     return {
       currentTickIndex: sqrtPriceX64ToTickIndex(nextSqrtPriceX64),
@@ -309,29 +341,36 @@ export class SwapSimulator {
 
   private static calculateTokenADelta =
     (rounding: Rounding) =>
-    (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): BN => {
+    (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
       // Use eq 6.16 from univ3 whitepaper to find deltaA
       // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
       // => deltaA = ((sqrt(upper) - sqrt(lower)) / (sqrt(lower) * sqrt(upper))) * state.currLiquidity
       // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / (sqrt(upper) * sqrt(lower))
       // Precision analysis: (x0 * (x64 - x64)) / (x64 * x64)
       const numeratorX64 = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
-      const denominatorX64 = sqrtPriceUpperX64.mul(sqrtPriceLowerX64);
+      const denominatorX64 = sqrtPriceUpperX64.mul(sqrtPriceLowerX64).shrn(64);
       const tokenADelta = numeratorX64.div(denominatorX64);
 
-      // Using regular div and not BN utils since the result is not an X64
-      return tokenADelta;
+      if (rounding === Rounding.Up) {
+        return new u64(tokenADelta.add(new BN(1)));
+      }
+
+      return new u64(tokenADelta);
     };
 
   private static calculateTokenBDelta =
     (rounding: Rounding) =>
-    (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): BN => {
+    (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
       // Use eq 6.14 from univ3 whitepaper: ΔY = ΔP·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
       // Analyzing the precisions here: (X64 - X64) * X0 => X64
       // We need to shave off decimal part since we need to return an X0 for token amount
       const tokenBDeltaX64 = sqrtPriceUpperX64.sub(sqrtPriceLowerX64).mul(liquidity);
 
-      return tokenBDeltaX64.shrn(64);
+      if (rounding === Rounding.Up) {
+        return new u64(tokenBDeltaX64.shrn(64).add(new BN(1)));
+      }
+
+      return new u64(tokenBDeltaX64.shrn(64));
     };
 
   private static calculateSqrtPriceAtPrevInitializedTick(

@@ -82,7 +82,7 @@ describe("swap", () => {
     {}
   );
 
-  test("base case", async () => {
+  test.only("base case", async () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
@@ -101,14 +101,11 @@ describe("swap", () => {
       return TickUtil.getTick(await fetchTickArray(tickIndex), tickIndex, whirlpool.tickSpacing);
     }
 
-    async function getPrevInitializedTickIndex(): Promise<number> {
-      let currentTickIndex = whirlpool.tickCurrentIndex;
+    async function getPrevInitializedTickIndex(currentTickIndex: number): Promise<number> {
       let prevInitializedTickIndex: number | undefined = undefined;
 
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
-
-        console.log("FINDING PREV TICK");
 
         try {
           prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
@@ -128,14 +125,11 @@ describe("swap", () => {
       return prevInitializedTickIndex;
     }
 
-    async function getNextInitializedTickIndex(): Promise<number> {
-      let currentTickIndex = whirlpool.tickCurrentIndex;
+    async function getNextInitializedTickIndex(currentTickIndex: number): Promise<number> {
       let prevInitializedTickIndex: number | undefined = undefined;
 
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
-
-        console.log("FINDING NEXT TICK");
 
         try {
           prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
@@ -177,7 +171,13 @@ describe("swap", () => {
       currentLiquidity: whirlpool.liquidity,
     });
 
-    console.log(JSON.stringify(swapSimulationOutput, null, 2));
+    console.log("SWAP SIM OUTPUT", {
+      sqrtPriceLimitX64: swapSimulationOutput.sqrtPriceLimitX64.toString(),
+      amountIn: swapSimulationOutput.amountIn.toString(),
+      amountOut: swapSimulationOutput.amountOut.toString(),
+      sqrtPriceAfterSwapX64: swapSimulationOutput.sqrtPriceAfterSwapX64.toString(),
+    });
+
     expect(1).toEqual(1);
   });
 });
