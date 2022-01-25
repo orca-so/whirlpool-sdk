@@ -33,6 +33,10 @@ export class TickArrayOutOfBoundsError extends Error {
 export class TickUtil {
   private constructor() {}
 
+  public static getNearestValidTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+    return tickIndex - (tickIndex % tickSpacing);
+  }
+
   // NOTE: within this tick array
   public static getPrevInitializedTickIndex(
     account: TickArrayData,

@@ -1,9 +1,4 @@
-import {
-  fromX64,
-  getPositionPda,
-  sqrtPriceX64ToTickIndex,
-  toX64,
-} from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, sqrtPriceX64ToTickIndex, toX64 } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
@@ -14,7 +9,6 @@ import {
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
@@ -40,7 +34,6 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
-import { DecimalUtil } from "../utils/decimal-utils";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
@@ -54,6 +47,7 @@ export class OrcaWhirlpool {
   /*** Transactions (public) ***/
 
   /** 1. Open position tx **/
+  // TODO adding liquidity should be optional
   public async getOpenPositionTransaction(
     param: OpenPositionTransactionParam
   ): Promise<OpenPositionTransaction> {
@@ -157,9 +151,9 @@ export class OrcaWhirlpool {
     txBuilder.addInstruction(
       client
         .increaseLiquidityTx({
-          liquidityAmount: DecimalUtil.fromU64(liquidity),
-          tokenMaxA: DecimalUtil.fromU64(maxTokenA),
-          tokenMaxB: DecimalUtil.fromU64(maxTokenB),
+          liquidityAmount: liquidity,
+          tokenMaxA: maxTokenA,
+          tokenMaxB: maxTokenB,
           whirlpool: address,
           positionAuthority: provider.wallet.publicKey,
           position: address,
@@ -178,6 +172,7 @@ export class OrcaWhirlpool {
   }
 
   /** 2. Close position tx **/
+  // TODO check if position has liquidity first
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
   ): Promise<ClosePositionTransaction> {
@@ -223,9 +218,9 @@ export class OrcaWhirlpool {
     txBuilder.addInstruction(
       client
         .decreaseLiquidityTx({
-          liquidityAmount: DecimalUtil.fromU64(position.liquidity), // Decrease liquidity to 0
-          tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
-          tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
+          liquidityAmount: position.liquidity,
+          tokenMaxA: quote.minTokenA,
+          tokenMaxB: quote.minTokenB,
           whirlpool: position.whirlpool,
           positionAuthority: provider.wallet.publicKey,
           position: positionAddress,
@@ -296,7 +291,7 @@ export class OrcaWhirlpool {
       client
         .swapTx({
           amount: fixedOutput ? amountOut : amountIn,
-          sqrtPriceLimit: fromX64(sqrtPriceLimitX64), // TODO(atamari): Make sure this is not expected to be X64
+          sqrtPriceLimit: sqrtPriceLimitX64, // TODO(atamari): Make sure this is not expected to be X64
           amountSpecifiedIsInput: !fixedOutput,
           aToB,
           whirlpool: whirlpoolAddress,
@@ -329,8 +324,17 @@ export class OrcaWhirlpool {
       refresh,
     } = param;
 
-    const tickLowerIndex = sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())).toNumber();
-    const tickUpperIndex = sqrtPriceX64ToTickIndex(toX64(priceUpper.sqrt())).toNumber();
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
+    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
+
+    const tickLowerIndex = TickUtil.getNearestValidTickIndex(
+      sqrtPriceX64ToTickIndex(toX64(priceLower)),
+      whirlpool.tickSpacing
+    );
+    const tickUpperIndex = TickUtil.getNearestValidTickIndex(
+      sqrtPriceX64ToTickIndex(toX64(priceUpper)),
+      whirlpool.tickSpacing
+    );
 
     const dummyPosition = {
       whirlpool: whirlpoolAddress,
@@ -345,9 +349,6 @@ export class OrcaWhirlpool {
       feeOwedB: new u64(0),
       rewardInfos: [],
     };
-
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
       whirlpool,
@@ -416,10 +417,10 @@ export class OrcaWhirlpool {
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
 
-    const fetchTickArray = async (tickIndex: Decimal) => {
+    const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
         TickUtil.getAddressContainingTickIndex(
-          tickIndex.toNumber(),
+          tickIndex,
           whirlpool.tickSpacing,
           whirlpoolAddress,
           this.dal.programId
@@ -429,9 +430,9 @@ export class OrcaWhirlpool {
       return tickArray;
     };
 
-    const fetchTick = async (tickIndex: Decimal) => {
+    const fetchTick = async (tickIndex: number) => {
       const tickArray = await fetchTickArray(tickIndex);
-      return TickUtil.getTick(tickArray, tickIndex.toNumber(), whirlpool.tickSpacing);
+      return TickUtil.getTick(tickArray, tickIndex, whirlpool.tickSpacing);
     };
 
     const swapDirection =
@@ -449,7 +450,7 @@ export class OrcaWhirlpool {
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+          const currentTickArray = await fetchTickArray(currentTickIndex);
 
           try {
             prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
@@ -466,14 +467,14 @@ export class OrcaWhirlpool {
           }
         }
 
-        return new Decimal(prevInitializedTickIndex);
+        return prevInitializedTickIndex;
       },
       getNextInitializedTickIndex: async () => {
         let currentTickIndex = whirlpool.tickCurrentIndex;
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+          const currentTickArray = await fetchTickArray(currentTickIndex);
 
           try {
             prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
@@ -490,16 +491,16 @@ export class OrcaWhirlpool {
           }
         }
 
-        return new Decimal(prevInitializedTickIndex);
+        return prevInitializedTickIndex;
       },
     });
 
     const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
-      amount: DecimalUtil.fromU64(tokenAmount),
-      currentSqrtPriceX64: new Decimal(whirlpool.sqrtPrice.toString()),
-      currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
-      currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
-      currentLiquidity: DecimalUtil.fromU64(whirlpool.liquidity),
+      amount: tokenAmount,
+      currentSqrtPriceX64: whirlpool.sqrtPrice,
+      currentTickIndex: whirlpool.tickCurrentIndex,
+      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
+      currentLiquidity: whirlpool.liquidity,
     });
 
     return {

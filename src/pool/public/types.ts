@@ -1,5 +1,5 @@
 import { u64 } from "@solana/spl-token";
-import { Provider } from "@project-serum/anchor";
+import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { Percentage } from "../..";
@@ -45,10 +45,9 @@ export type SwapQuoteParam = {
 };
 
 export type SwapQuote = {
-  // TODO(atamari)
-  sqrtPriceLimitX64: Decimal;
-  amountIn: Decimal;
-  amountOut: Decimal;
+  sqrtPriceLimitX64: BN;
+  amountIn: u64;
+  amountOut: u64;
   aToB: boolean;
   fixedOutput: boolean;
 };
