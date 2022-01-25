@@ -9,7 +9,6 @@ import {
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
@@ -35,7 +34,6 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
-import { DecimalUtil } from "../utils/decimal-utils";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
@@ -419,10 +417,10 @@ export class OrcaWhirlpool {
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
 
-    const fetchTickArray = async (tickIndex: Decimal) => {
+    const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
         TickUtil.getAddressContainingTickIndex(
-          tickIndex.toNumber(),
+          tickIndex,
           whirlpool.tickSpacing,
           whirlpoolAddress,
           this.dal.programId
@@ -432,9 +430,9 @@ export class OrcaWhirlpool {
       return tickArray;
     };
 
-    const fetchTick = async (tickIndex: Decimal) => {
+    const fetchTick = async (tickIndex: number) => {
       const tickArray = await fetchTickArray(tickIndex);
-      return TickUtil.getTick(tickArray, tickIndex.toNumber(), whirlpool.tickSpacing);
+      return TickUtil.getTick(tickArray, tickIndex, whirlpool.tickSpacing);
     };
 
     const swapDirection =
@@ -452,7 +450,7 @@ export class OrcaWhirlpool {
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+          const currentTickArray = await fetchTickArray(currentTickIndex);
 
           try {
             prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
@@ -469,14 +467,14 @@ export class OrcaWhirlpool {
           }
         }
 
-        return new Decimal(prevInitializedTickIndex);
+        return prevInitializedTickIndex;
       },
       getNextInitializedTickIndex: async () => {
         let currentTickIndex = whirlpool.tickCurrentIndex;
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(new Decimal(currentTickIndex));
+          const currentTickArray = await fetchTickArray(currentTickIndex);
 
           try {
             prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
@@ -493,16 +491,16 @@ export class OrcaWhirlpool {
           }
         }
 
-        return new Decimal(prevInitializedTickIndex);
+        return prevInitializedTickIndex;
       },
     });
 
     const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
-      amount: DecimalUtil.fromU64(tokenAmount),
-      currentSqrtPriceX64: new Decimal(whirlpool.sqrtPrice.toString()),
-      currentTickIndex: new Decimal(whirlpool.tickCurrentIndex),
-      currentTickArray: await fetchTickArray(new Decimal(whirlpool.tickCurrentIndex)),
-      currentLiquidity: DecimalUtil.fromU64(whirlpool.liquidity),
+      amount: tokenAmount,
+      currentSqrtPriceX64: whirlpool.sqrtPrice,
+      currentTickIndex: whirlpool.tickCurrentIndex,
+      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
+      currentLiquidity: whirlpool.liquidity,
     });
 
     return {
