@@ -1,11 +1,11 @@
-import { fromX64, NUM_REWARDS, toX64 } from "@orca-so/whirlpool-client-sdk";
+import { NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
 import {
   WhirlpoolData,
   PositionData,
   TickData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import Decimal from "decimal.js";
-import { DecimalUtil } from "../../utils/decimal-utils";
+import { BN } from "@project-serum/anchor";
+import invariant from "tiny-invariant";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { CollectRewardsQuote } from "../public";
 
@@ -27,68 +27,69 @@ export function getCollectRewardsQuoteInternal(
   // Calculate the reward growths inside the position
 
   const range = [...Array(NUM_REWARDS).keys()];
-  const rewardGrowthsBelowX64: Decimal[] = range.map(() => new Decimal(0));
-  const rewardGrowthsAboveX64: Decimal[] = range.map(() => new Decimal(0));
+  const rewardGrowthsBelowX64: BN[] = range.map(() => new BN(0));
+  const rewardGrowthsAboveX64: BN[] = range.map(() => new BN(0));
 
   for (const i of range) {
+    const growthGlobalX64 = whirlpoolRewardsInfos[i].growthGlobalX64;
+    const lowerRewardGrowthsOutside = tickLower.rewardGrowthsOutside[i];
+    const upperRewardGrowthsOutside = tickUpper.rewardGrowthsOutside[i];
+
     if (tickCurrentIndex < tickLowerIndex) {
-      const growthGlobalX64 = toX64(DecimalUtil.fromU64(whirlpoolRewardsInfos[i].growthGlobalX64));
-      const rewardGrowthsOutsideX64 = toX64(DecimalUtil.fromU64(tickLower.rewardGrowthsOutside[i]));
-      rewardGrowthsBelowX64[i] = growthGlobalX64.sub(rewardGrowthsOutsideX64);
+      rewardGrowthsBelowX64[i] = growthGlobalX64.sub(lowerRewardGrowthsOutside);
     } else {
-      rewardGrowthsBelowX64[i] = toX64(DecimalUtil.fromU64(tickLower.rewardGrowthsOutside[i]));
+      rewardGrowthsBelowX64[i] = lowerRewardGrowthsOutside;
     }
 
     if (tickCurrentIndex < tickUpperIndex) {
-      rewardGrowthsAboveX64[i] = toX64(DecimalUtil.fromU64(tickUpper.rewardGrowthsOutside[i]));
+      rewardGrowthsAboveX64[i] = upperRewardGrowthsOutside;
     } else {
-      const growthGlobalX64 = toX64(DecimalUtil.fromU64(whirlpoolRewardsInfos[i].growthGlobalX64));
-      const rewardGrowthsOutsideX64 = toX64(DecimalUtil.fromU64(tickUpper.rewardGrowthsOutside[i]));
-      rewardGrowthsAboveX64[i] = growthGlobalX64.sub(rewardGrowthsOutsideX64);
+      rewardGrowthsAboveX64[i] = growthGlobalX64.sub(upperRewardGrowthsOutside);
     }
   }
 
-  const rewardGrowthsInsideX64: [Decimal, boolean][] = range.map(() => [new Decimal(0), false]);
+  const rewardGrowthsInsideX64: [BN, boolean][] = range.map(() => [new BN(0), false]);
 
   for (const i of range) {
-    if (PoolUtil.isRewardInitialized(whirlpoolRewardsInfos[i])) {
-      const growthGlobalX64 = toX64(DecimalUtil.fromU64(whirlpoolRewardsInfos[i].growthGlobalX64));
-      rewardGrowthsInsideX64[i] = [
-        growthGlobalX64.sub(rewardGrowthsBelowX64[i]).sub(rewardGrowthsAboveX64[i]),
-        true,
-      ];
+    const isRewardInitialized = PoolUtil.isRewardInitialized(whirlpoolRewardsInfos[i]);
+
+    if (isRewardInitialized) {
+      const growthInsde = whirlpoolRewardsInfos[i].growthGlobalX64
+        .sub(rewardGrowthsBelowX64[i])
+        .sub(rewardGrowthsAboveX64[i]);
+      rewardGrowthsInsideX64[i] = [growthInsde, true];
     }
   }
 
   // Calculate the updated rewards owed
 
-  const liquidityX64 = toX64(DecimalUtil.fromU64(liquidity));
-  const updatedRewardInfosX64: Decimal[] = range.map(() => new Decimal(0));
+  const updatedRewardInfosX64: BN[] = range.map(() => new BN(0));
 
   for (const i of range) {
-    if (rewardGrowthsInsideX64[i][1]) {
-      const amountOwedX64 = toX64(DecimalUtil.fromU64(rewardInfos[i].amountOwed));
-      const growthInsideCheckpointX64 = toX64(
-        DecimalUtil.fromU64(rewardInfos[i].growthInsideCheckpoint)
-      );
+    const [rewardGrowthInsideX64, isRewardInitialized] = rewardGrowthsInsideX64[i];
 
+    if (isRewardInitialized) {
+      const amountOwedX64 = rewardInfos[i].amountOwed.shln(64);
+      const growthInsideCheckpointX64 = rewardInfos[i].growthInsideCheckpoint;
       updatedRewardInfosX64[i] = amountOwedX64.add(
-        liquidityX64.mul(rewardGrowthsInsideX64[i][0].sub(growthInsideCheckpointX64))
+        liquidity.mul(rewardGrowthInsideX64.sub(growthInsideCheckpointX64))
       );
     }
   }
+
+  invariant(rewardGrowthsInsideX64.length >= 3, "rewards length is less than 3");
 
   const rewardExistsA = rewardGrowthsInsideX64[0][1];
   const rewardExistsB = rewardGrowthsInsideX64[1][1];
   const rewardExistsC = rewardGrowthsInsideX64[2][1];
 
-  const rewardOwedAX64 = updatedRewardInfosX64[0];
-  const rewardOwedBX64 = updatedRewardInfosX64[1];
-  const rewardOwedCX64 = updatedRewardInfosX64[2];
+  const rewardOwedA = rewardExistsA ? updatedRewardInfosX64[0].shrn(64) : undefined;
+  const rewardOwedB = rewardExistsB ? updatedRewardInfosX64[1].shrn(64) : undefined;
+  const rewardOwedC = rewardExistsC ? updatedRewardInfosX64[2].shrn(64) : undefined;
 
   return {
-    rewardOwedA: rewardExistsA ? DecimalUtil.toU64(fromX64(rewardOwedAX64)) : undefined,
-    rewardOwedB: rewardExistsB ? DecimalUtil.toU64(fromX64(rewardOwedBX64)) : undefined,
-    rewardOwedC: rewardExistsC ? DecimalUtil.toU64(fromX64(rewardOwedCX64)) : undefined,
+    rewardOwedA,
+    rewardOwedB,
+    rewardOwedC,
   };
 }

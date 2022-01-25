@@ -5,7 +5,8 @@ import {
   toX64,
 } from "@orca-so/whirlpool-client-sdk";
 import { TickArrayData, TickData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { MintInfo } from "@solana/spl-token";
+import { BN } from "@project-serum/anchor";
+import { u64 } from "@solana/spl-token";
 import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import { Percentage } from "../..";
@@ -58,10 +59,10 @@ type SwapSimulationInput = {
 };
 
 type SwapSimulationOutput = {
-  sqrtPriceLimitX64: Decimal;
-  amountIn: Decimal;
-  amountOut: Decimal;
-  sqrtPriceAfterSwapX64: Decimal;
+  sqrtPriceLimitX64: BN;
+  amountIn: u64;
+  amountOut: u64;
+  sqrtPriceAfterSwapX64: BN;
 };
 
 type SwapStepSimulationInput = {

@@ -1,9 +1,4 @@
-import {
-  fromX64,
-  getPositionPda,
-  sqrtPriceX64ToTickIndex,
-  toX64,
-} from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, sqrtPriceX64ToTickIndex, toX64 } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import {
@@ -54,6 +49,7 @@ export class OrcaWhirlpool {
   /*** Transactions (public) ***/
 
   /** 1. Open position tx **/
+  // TODO adding liquidity should be optional
   public async getOpenPositionTransaction(
     param: OpenPositionTransactionParam
   ): Promise<OpenPositionTransaction> {
@@ -157,9 +153,9 @@ export class OrcaWhirlpool {
     txBuilder.addInstruction(
       client
         .increaseLiquidityTx({
-          liquidityAmount: DecimalUtil.fromU64(liquidity),
-          tokenMaxA: DecimalUtil.fromU64(maxTokenA),
-          tokenMaxB: DecimalUtil.fromU64(maxTokenB),
+          liquidityAmount: liquidity,
+          tokenMaxA: maxTokenA,
+          tokenMaxB: maxTokenB,
           whirlpool: address,
           positionAuthority: provider.wallet.publicKey,
           position: address,
@@ -178,6 +174,7 @@ export class OrcaWhirlpool {
   }
 
   /** 2. Close position tx **/
+  // TODO check if position has liquidity first
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
   ): Promise<ClosePositionTransaction> {
@@ -223,9 +220,9 @@ export class OrcaWhirlpool {
     txBuilder.addInstruction(
       client
         .decreaseLiquidityTx({
-          liquidityAmount: DecimalUtil.fromU64(position.liquidity), // Decrease liquidity to 0
-          tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
-          tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
+          liquidityAmount: position.liquidity,
+          tokenMaxA: quote.minTokenA,
+          tokenMaxB: quote.minTokenB,
           whirlpool: position.whirlpool,
           positionAuthority: provider.wallet.publicKey,
           position: positionAddress,
@@ -296,7 +293,7 @@ export class OrcaWhirlpool {
       client
         .swapTx({
           amount: fixedOutput ? amountOut : amountIn,
-          sqrtPriceLimit: fromX64(sqrtPriceLimitX64), // TODO(atamari): Make sure this is not expected to be X64
+          sqrtPriceLimit: sqrtPriceLimitX64, // TODO(atamari): Make sure this is not expected to be X64
           amountSpecifiedIsInput: !fixedOutput,
           aToB,
           whirlpool: whirlpoolAddress,
@@ -333,11 +330,11 @@ export class OrcaWhirlpool {
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const tickLowerIndex = TickUtil.getNearestValidTickIndex(
-      sqrtPriceX64ToTickIndex(toX64(priceLower)).toNumber(),
+      sqrtPriceX64ToTickIndex(toX64(priceLower)),
       whirlpool.tickSpacing
     );
     const tickUpperIndex = TickUtil.getNearestValidTickIndex(
-      sqrtPriceX64ToTickIndex(toX64(priceUpper)).toNumber(),
+      sqrtPriceX64ToTickIndex(toX64(priceUpper)),
       whirlpool.tickSpacing
     );
 

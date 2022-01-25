@@ -25,7 +25,6 @@ import {
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
-import { DecimalUtil } from "../utils/decimal-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/whirlpool/tick-util";
@@ -87,9 +86,9 @@ export class OrcaPosition {
 
     const addLiquidityIx = client
       .increaseLiquidityTx({
-        liquidityAmount: DecimalUtil.fromU64(quote.liquidity),
-        tokenMaxA: DecimalUtil.fromU64(quote.maxTokenA),
-        tokenMaxB: DecimalUtil.fromU64(quote.maxTokenB),
+        liquidityAmount: quote.liquidity,
+        tokenMaxA: quote.maxTokenA,
+        tokenMaxB: quote.maxTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
         position: address,
@@ -143,9 +142,9 @@ export class OrcaPosition {
 
     const removeLiquidityIx = client
       .decreaseLiquidityTx({
-        liquidityAmount: DecimalUtil.fromU64(quote.liquidity),
-        tokenMaxA: DecimalUtil.fromU64(quote.minTokenA), // TODO update lower level sdk name change to tokenMinA
-        tokenMaxB: DecimalUtil.fromU64(quote.minTokenB), // TODO update lower level sdk name change to tokenMinB
+        liquidityAmount: quote.liquidity,
+        tokenMaxA: quote.minTokenA,
+        tokenMaxB: quote.minTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
         position: address,
