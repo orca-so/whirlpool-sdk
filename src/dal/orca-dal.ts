@@ -239,7 +239,7 @@ export class OrcaDAL {
    * @param walletAddress wallet address
    * @returns a list of positions owned by the wallet address
    */
-  public async listUserPositions(walletAddress: PublicKey): Promise<PositionData[]> {
+  public async listUserPositions(walletAddress: PublicKey): Promise<PublicKey[]> {
     // get user token accounts
     const { value } = await this.connection.getParsedTokenAccountsByOwner(walletAddress, {
       programId: TOKEN_PROGRAM_ID,
@@ -263,7 +263,13 @@ export class OrcaDAL {
     });
 
     const positions = await this.listPositions(addresses, true);
-    return positions.filter((position): position is PositionData => position !== null);
+    invariant(addresses.length === positions.length, "not enough positions data");
+
+    const validPositionAddresses: PublicKey[] = addresses.filter((_address, index) => {
+      return positions[index] !== null;
+    });
+
+    return validPositionAddresses;
   }
 
   /**
@@ -343,7 +349,10 @@ export class OrcaDAL {
       cachedValues[cachedIdx] = value;
     }
 
-    return cachedValues.filter((value): value is T | null => value !== undefined);
+    const result = cachedValues.filter((value): value is T | null => value !== undefined);
+    invariant(result.length === addresses.length, "error while fetching accounts");
+
+    return result;
   }
 
   /**
