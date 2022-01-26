@@ -6,7 +6,7 @@ export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
     case OrcaNetwork.MAINNET:
       throw new Error("TODO");
     case OrcaNetwork.DEVNET:
-      throw new Error("TODO");
+      return new PublicKey("HSf6yfFfaNsn5yTteBMrNhMNRQ6ZB3z1AqxuwZkznq9E");
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }
