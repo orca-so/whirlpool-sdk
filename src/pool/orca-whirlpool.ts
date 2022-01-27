@@ -72,6 +72,11 @@ export class OrcaWhirlpool {
       positionMintKeypair.publicKey
     );
 
+    // TODO create position token account
+    // https://discord.com/channels/908746763513495622/908746765363216393/931010126305951805
+    // https://discord.com/channels/908746763513495622/908746765363216393/925264151851434037
+    // https://discord.com/channels/908746763513495622/908746765363216393/932914584099115059
+
     txBuilder
       .addInstruction(
         client
@@ -252,6 +257,8 @@ export class OrcaWhirlpool {
         })
         .compressIx(false)
     );
+
+    // TODO close position token account
 
     return new TransactionExecutable(provider, [txBuilder]);
   }
