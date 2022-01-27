@@ -331,7 +331,9 @@ export class OrcaDAL {
     const undefinedAccounts: { cachedIdx: number; key: string }[] = [];
     cachedValues.forEach((val, cachedIdx) => {
       if (val === undefined || refresh) {
-        undefinedAccounts.push({ cachedIdx, key: keys[cachedIdx] });
+        const key = keys[cachedIdx];
+        invariant(!!key, "key cannot be undefined");
+        undefinedAccounts.push({ cachedIdx, key });
       }
     });
 

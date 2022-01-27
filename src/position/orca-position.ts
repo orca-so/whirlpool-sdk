@@ -227,11 +227,14 @@ export class OrcaPosition {
 
     // step 3. collect rewards A, B, C
     for (const i of [...Array(NUM_REWARDS).keys()]) {
-      if (PoolUtil.isRewardInitialized(whirlpool.rewardInfos[i])) {
+      const rewardInfo = whirlpool.rewardInfos[i];
+      invariant(!!rewardInfo, "rewardInfo cannot be undefined");
+
+      if (PoolUtil.isRewardInitialized(rewardInfo)) {
         const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } = await resolveOrCreateATA(
           provider.connection,
           provider.wallet.publicKey,
-          whirlpool.rewardInfos[i].mint
+          rewardInfo.mint
         );
         ataTxBuilder.addInstruction(rewardOwnerAccountIx);
 
@@ -241,7 +244,7 @@ export class OrcaPosition {
           position: address,
           positionTokenAccount,
           rewardOwnerAccount,
-          rewardVault: whirlpool.rewardInfos[i].vault,
+          rewardVault: rewardInfo.vault,
           tickArrayLower,
           tickArrayUpper,
           rewardIndex: i,
@@ -260,18 +263,25 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const positionStatus = PositionUtil.getPositionStatus(whirlpool, position);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
+    const { tickLowerIndex, tickUpperIndex } = position;
 
     const quoteParam: InternalAddLiquidityQuoteParam = {
       whirlpool,
-      position,
       tokenAMintInfo,
       tokenBMintInfo,
       tokenMint,
       tokenAmount,
+      tickLowerIndex,
+      tickUpperIndex,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
     };
+
+    const positionStatus = PositionUtil.getPositionStatus(
+      whirlpool.tickCurrentIndex,
+      tickLowerIndex,
+      tickUpperIndex
+    );
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
@@ -292,7 +302,6 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, refresh);
     const whirlpool = await this.getWhirlpool(position, refresh);
-    const positionStatus = PositionUtil.getPositionStatus(whirlpool, position);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const quoteParam: InternalRemoveLiquidityQuoteParam = {
@@ -303,6 +312,12 @@ export class OrcaPosition {
       liquidity,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
     };
+
+    const positionStatus = PositionUtil.getPositionStatus(
+      whirlpool.tickCurrentIndex,
+      position.tickLowerIndex,
+      position.tickUpperIndex
+    );
 
     switch (positionStatus) {
       case PositionStatus.BelowRange:
