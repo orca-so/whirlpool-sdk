@@ -10,12 +10,10 @@ export class PositionUtil {
   private constructor() {}
 
   public static getPositionStatus(
-    whirlpool: WhirlpoolData,
-    position: PositionData
+    tickCurrentIndex: number,
+    tickLowerIndex: number,
+    tickUpperIndex: number
   ): PositionStatus {
-    const { tickCurrentIndex } = whirlpool;
-    const { tickLowerIndex, tickUpperIndex } = position;
-
     if (tickCurrentIndex < tickLowerIndex) {
       return PositionStatus.BelowRange;
     } else if (tickCurrentIndex <= tickUpperIndex) {

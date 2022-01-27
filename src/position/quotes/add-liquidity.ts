@@ -1,5 +1,5 @@
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { BN } from "@project-serum/anchor";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
@@ -9,18 +9,27 @@ import { Percentage } from "../../utils/public/percentage";
 
 export type InternalAddLiquidityQuoteParam = {
   whirlpool: WhirlpoolData;
-  position: PositionData;
   tokenAMintInfo: MintInfo;
   tokenBMintInfo: MintInfo;
   tokenMint: PublicKey;
   tokenAmount: u64;
+  tickLowerIndex: number;
+  tickUpperIndex: number;
   slippageTolerence: Percentage;
 };
 
 export function getAddLiquidityQuoteWhenPositionIsBelowRange(
   param: InternalAddLiquidityQuoteParam
 ): AddLiquidityQuote {
-  const { whirlpool, position, tokenAMintInfo, tokenMint, tokenAmount, slippageTolerence } = param;
+  const {
+    whirlpool,
+    tokenAMintInfo,
+    tokenMint,
+    tokenAmount,
+    tickLowerIndex,
+    tickUpperIndex,
+    slippageTolerence,
+  } = param;
 
   if (!whirlpool.tokenMintA.equals(tokenMint)) {
     return {
@@ -32,13 +41,13 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
 
   // TODO: Use slippage tolerance here
 
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
   const liquidity = tokenAmount
     .mul(sqrtPriceLowerX64)
     .mul(sqrtPriceUpperX64)
     .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
-    .shrn(64);
+    .shrn(64 + tokenAMintInfo.decimals); // TODO
 
   return {
     maxTokenA: tokenAmount,
@@ -52,19 +61,20 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
 ): AddLiquidityQuote {
   const {
     whirlpool,
-    position,
     tokenAMintInfo,
     tokenBMintInfo,
     tokenMint,
     tokenAmount,
+    tickLowerIndex,
+    tickUpperIndex,
     slippageTolerence,
   } = param;
 
   // TODO: Use slippage tolerance here
 
   const sqrtPriceX64 = whirlpool.sqrtPrice;
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
   let [tokenAmountA, tokenAmountB] = whirlpool.tokenMintA.equals(tokenMint)
     ? [tokenAmount, undefined]
@@ -100,7 +110,15 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
 export function getAddLiquidityQuoteWhenPositionIsAboveRange(
   param: InternalAddLiquidityQuoteParam
 ): AddLiquidityQuote {
-  const { whirlpool, position, tokenBMintInfo, tokenMint, tokenAmount, slippageTolerence } = param;
+  const {
+    whirlpool,
+    tokenBMintInfo,
+    tokenMint,
+    tokenAmount,
+    tickLowerIndex,
+    tickUpperIndex,
+    slippageTolerence,
+  } = param;
 
   if (!whirlpool.tokenMintB.equals(tokenMint)) {
     return {
@@ -110,9 +128,12 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
     };
   }
 
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
-  const liquidity = tokenAmount.shln(64).div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
+  const liquidity = tokenAmount
+    .shln(64)
+    .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
+    .shrn(tokenBMintInfo.decimals); // TODO
 
   return {
     maxTokenA: new u64(0),

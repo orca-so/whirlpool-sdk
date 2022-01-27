@@ -150,25 +150,27 @@ export class OrcaWhirlpool {
       );
     }
 
-    txBuilder.addInstruction(
-      client
-        .increaseLiquidityTx({
-          liquidityAmount: liquidity,
-          tokenMaxA: maxTokenA,
-          tokenMaxB: maxTokenB,
-          whirlpool: address,
-          positionAuthority: provider.wallet.publicKey,
-          position: address,
-          positionTokenAccount: positionTokenAccountAddress,
-          tokenOwnerAccountA,
-          tokenOwnerAccountB,
-          tokenVaultA: whirlpool.tokenVaultA,
-          tokenVaultB: whirlpool.tokenVaultB,
-          tickArrayLower: tickArrayLowerPda.publicKey,
-          tickArrayUpper: tickArrayLowerPda.publicKey,
-        })
-        .compressIx(false)
-    );
+    if (liquidity.gt(new u64(0))) {
+      txBuilder.addInstruction(
+        client
+          .increaseLiquidityTx({
+            liquidityAmount: liquidity,
+            tokenMaxA: maxTokenA,
+            tokenMaxB: maxTokenB,
+            whirlpool: address,
+            positionAuthority: provider.wallet.publicKey,
+            position: address,
+            positionTokenAccount: positionTokenAccountAddress,
+            tokenOwnerAccountA,
+            tokenOwnerAccountB,
+            tokenVaultA: whirlpool.tokenVaultA,
+            tokenVaultB: whirlpool.tokenVaultB,
+            tickArrayLower: tickArrayLowerPda.publicKey,
+            tickArrayUpper: tickArrayLowerPda.publicKey,
+          })
+          .compressIx(false)
+      );
+    }
 
     return new TransactionExecutable(provider, [txBuilder]);
   }
@@ -194,6 +196,8 @@ export class OrcaWhirlpool {
       position.tickLowerIndex,
       position.tickUpperIndex
     );
+    invariant(!!tickArrayLower, "tickArrayLower cannot be undefined");
+    invariant(!!tickArrayUpper, "tickArrayUpper cannot be undefined");
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
@@ -288,6 +292,9 @@ export class OrcaWhirlpool {
       whirlpool.tickCurrentIndex + nextTickArrayJump,
       whirlpool.tickCurrentIndex + 2 * nextTickArrayJump
     );
+    invariant(!!tickArray0, "tickArray0 cannot be undefined");
+    invariant(!!tickArray1, "tickArray1 cannot be undefined");
+    invariant(!!tickArray2, "tickArray2 cannot be undefined");
 
     txBuilder.addInstruction(
       client
@@ -338,33 +345,25 @@ export class OrcaWhirlpool {
       whirlpool.tickSpacing
     );
 
-    const dummyPosition = {
-      whirlpool: whirlpoolAddress,
-      positionMint: Keypair.generate().publicKey,
-      liquidity: new u64(0),
-      tickLowerIndex,
-      tickUpperIndex,
-      // TODO(atamari): Make sure these values make sense (or we just treat this is a dummy value and ignore)
-      feeGrowthCheckpointA: new u64(0),
-      feeOwedA: new u64(0),
-      feeGrowthCheckpointB: new u64(0),
-      feeOwedB: new u64(0),
-      rewardInfos: [],
-    };
-
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
       whirlpool,
-      position: dummyPosition,
       tokenAMintInfo,
       tokenBMintInfo,
       tokenMint,
       tokenAmount,
+      tickLowerIndex,
+      tickUpperIndex,
       slippageTolerence,
     };
 
-    let addLiquidityQuote: AddLiquidityQuote;
+    const positionStatus = PositionUtil.getPositionStatus(
+      whirlpool.tickCurrentIndex,
+      tickLowerIndex,
+      tickUpperIndex
+    );
 
-    switch (PositionUtil.getPositionStatus(whirlpool, dummyPosition)) {
+    let addLiquidityQuote: AddLiquidityQuote;
+    switch (positionStatus) {
       case PositionStatus.BelowRange:
         addLiquidityQuote = getAddLiquidityQuoteWhenPositionIsBelowRange(addLiquidityParams);
         break;
@@ -393,17 +392,12 @@ export class OrcaWhirlpool {
     const position = await this.getPosition(positionAddress, refresh);
 
     // Get remove liquidity quote for all of this position's liquidity
-    const { minTokenA, minTokenB } = await new OrcaPosition(this.dal).getRemoveLiquidityQuote({
+    return await new OrcaPosition(this.dal).getRemoveLiquidityQuote({
       address: positionAddress,
       liquidity: position.liquidity,
       refresh,
       slippageTolerence,
     });
-
-    return {
-      minTokenA,
-      minTokenB,
-    };
   }
 
   /** 3. Swap quote **/

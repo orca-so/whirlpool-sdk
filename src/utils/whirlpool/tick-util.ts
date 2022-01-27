@@ -74,7 +74,10 @@ export class TickUtil {
     const index = Math.floor(tickIndex / tickSpacing) % TICK_ARRAY_SIZE;
     invariant(index >= 0, "tick index out of range");
     invariant(index < account.ticks.length, "tick index out of range");
-    return account.ticks[index];
+
+    const tick = account.ticks[index];
+    invariant(!!tick, "account");
+    return tick;
   }
 
   public static deriveTickArrayPDA(
@@ -150,7 +153,7 @@ export class TickUtil {
       nextInitializedTickArrayIndex >= 0 &&
       nextInitializedTickArrayIndex < account.ticks.length
     ) {
-      if (account.ticks[nextInitializedTickArrayIndex].initialized) {
+      if (account.ticks[nextInitializedTickArrayIndex]?.initialized) {
         return TickUtil.tickArrayIndexToTickIndex(
           account,
           nextInitializedTickArrayIndex,

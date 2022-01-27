@@ -31,9 +31,14 @@ export function getCollectRewardsQuoteInternal(
   const rewardGrowthsAboveX64: BN[] = range.map(() => new BN(0));
 
   for (const i of range) {
-    const growthGlobalX64 = whirlpoolRewardsInfos[i].growthGlobalX64;
+    const rewardInfo = whirlpoolRewardsInfos[i];
+    invariant(!!rewardInfo, "whirlpoolRewardsInfos cannot be undefined");
+
+    const growthGlobalX64 = rewardInfo.growthGlobalX64;
     const lowerRewardGrowthsOutside = tickLower.rewardGrowthsOutside[i];
     const upperRewardGrowthsOutside = tickUpper.rewardGrowthsOutside[i];
+    invariant(!!lowerRewardGrowthsOutside, "lowerRewardGrowthsOutside cannot be undefined");
+    invariant(!!upperRewardGrowthsOutside, "upperRewardGrowthsOutside cannot be undefined");
 
     if (tickCurrentIndex < tickLowerIndex) {
       rewardGrowthsBelowX64[i] = growthGlobalX64.sub(lowerRewardGrowthsOutside);
@@ -51,12 +56,18 @@ export function getCollectRewardsQuoteInternal(
   const rewardGrowthsInsideX64: [BN, boolean][] = range.map(() => [new BN(0), false]);
 
   for (const i of range) {
-    const isRewardInitialized = PoolUtil.isRewardInitialized(whirlpoolRewardsInfos[i]);
+    const rewardInfo = whirlpoolRewardsInfos[i];
+    invariant(!!rewardInfo, "whirlpoolRewardsInfos cannot be undefined");
+
+    const isRewardInitialized = PoolUtil.isRewardInitialized(rewardInfo);
 
     if (isRewardInitialized) {
-      const growthInsde = whirlpoolRewardsInfos[i].growthGlobalX64
-        .sub(rewardGrowthsBelowX64[i])
-        .sub(rewardGrowthsAboveX64[i]);
+      const growthBelowX64 = rewardGrowthsBelowX64[i];
+      const growthAboveX64 = rewardGrowthsAboveX64[i];
+      invariant(!!growthBelowX64, "growthBelowX64 cannot be undefined");
+      invariant(!!growthAboveX64, "growthAboveX64 cannot be undefined");
+
+      const growthInsde = rewardInfo.growthGlobalX64.sub(growthBelowX64).sub(growthAboveX64);
       rewardGrowthsInsideX64[i] = [growthInsde, true];
     }
   }
@@ -66,11 +77,17 @@ export function getCollectRewardsQuoteInternal(
   const updatedRewardInfosX64: BN[] = range.map(() => new BN(0));
 
   for (const i of range) {
-    const [rewardGrowthInsideX64, isRewardInitialized] = rewardGrowthsInsideX64[i];
+    const growthInsideX64 = rewardGrowthsInsideX64[i];
+    invariant(!!growthInsideX64, "growthInsideX64 cannot be undefined");
+
+    const [rewardGrowthInsideX64, isRewardInitialized] = growthInsideX64;
 
     if (isRewardInitialized) {
-      const amountOwedX64 = rewardInfos[i].amountOwed.shln(64);
-      const growthInsideCheckpointX64 = rewardInfos[i].growthInsideCheckpoint;
+      const rewardInfo = rewardInfos[i];
+      invariant(!!rewardInfo, "rewardInfo cannot be undefined");
+
+      const amountOwedX64 = rewardInfo.amountOwed.shln(64);
+      const growthInsideCheckpointX64 = rewardInfo.growthInsideCheckpoint;
       updatedRewardInfosX64[i] = amountOwedX64.add(
         liquidity.mul(rewardGrowthInsideX64.sub(growthInsideCheckpointX64))
       );
@@ -79,13 +96,13 @@ export function getCollectRewardsQuoteInternal(
 
   invariant(rewardGrowthsInsideX64.length >= 3, "rewards length is less than 3");
 
-  const rewardExistsA = rewardGrowthsInsideX64[0][1];
-  const rewardExistsB = rewardGrowthsInsideX64[1][1];
-  const rewardExistsC = rewardGrowthsInsideX64[2][1];
+  const rewardExistsA = rewardGrowthsInsideX64[0]?.[1];
+  const rewardExistsB = rewardGrowthsInsideX64[1]?.[1];
+  const rewardExistsC = rewardGrowthsInsideX64[2]?.[1];
 
-  const rewardOwedA = rewardExistsA ? updatedRewardInfosX64[0].shrn(64) : undefined;
-  const rewardOwedB = rewardExistsB ? updatedRewardInfosX64[1].shrn(64) : undefined;
-  const rewardOwedC = rewardExistsC ? updatedRewardInfosX64[2].shrn(64) : undefined;
+  const rewardOwedA = rewardExistsA ? updatedRewardInfosX64[0]?.shrn(64) : undefined;
+  const rewardOwedB = rewardExistsB ? updatedRewardInfosX64[1]?.shrn(64) : undefined;
+  const rewardOwedC = rewardExistsC ? updatedRewardInfosX64[2]?.shrn(64) : undefined;
 
   return {
     rewardOwedA,

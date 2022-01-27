@@ -32,6 +32,7 @@ export type ClosePositionQuoteParam = {
 export type ClosePositionQuote = {
   minTokenA: u64;
   minTokenB: u64;
+  liquidity: u64;
 };
 
 export type SwapQuoteParam = {

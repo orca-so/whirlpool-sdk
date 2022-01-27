@@ -154,6 +154,8 @@ export class SwapSimulator {
         input,
         output
       );
+      invariant(!!specifiedAmountUsed, "specifiedAmountUsed cannot be undefined");
+      invariant(!!otherAmountCalculated, "otherAmountCalculated cannot be undefined");
 
       state.specifiedAmountLeft = state.specifiedAmountLeft.sub(specifiedAmountUsed);
       state.otherAmountCalculated = state.otherAmountCalculated.add(otherAmountCalculated);
@@ -201,6 +203,8 @@ export class SwapSimulator {
       specifiedAmount.sub(state.specifiedAmountLeft),
       state.otherAmountCalculated
     );
+    invariant(!!inputAmount, "inputAmount cannot be undefined");
+    invariant(!!outputAmount, "outputAmount cannot be undefined");
 
     return {
       sqrtPriceAfterSwapX64: state.sqrtPriceX64,
@@ -311,6 +315,8 @@ export class SwapSimulator {
       specifiedTokenActualDelta,
       otherTokenDelta
     );
+    invariant(!!inputDelta, "inputDelta cannot be undefined");
+    invariant(!!outputDelta, "outputDelta cannot be undefined");
 
     console.log("FINISHING SWAP STEP");
 

@@ -103,7 +103,7 @@ function serializeAddLiquidityQuote(addLiquidityQuote: AddLiquidityQuote): strin
   );
 }
 
-describe("Add Liquidity", () => {
+describe.only("Add Liquidity", () => {
   const whirlpoolsMap: Record<string, WhirlpoolData> = Object.keys(WhirlpoolsJSON).reduce(
     (map, key) => ({
       ...map,
