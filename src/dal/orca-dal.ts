@@ -359,6 +359,7 @@ export class OrcaDAL {
 
   /**
    * Make batch rpc request
+   * TODO: size limit?
    */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     // @ts-ignore
