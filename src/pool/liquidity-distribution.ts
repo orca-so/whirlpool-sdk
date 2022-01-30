@@ -1,3 +1,4 @@
+import { fromX64 } from "@orca-so/whirlpool-client-sdk";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
@@ -11,14 +12,18 @@ export type LiquidityDataPoint = {
   price: Decimal;
   tickIndex: number;
 };
-export type LiquidityDistribution = LiquidityDataPoint[];
+export type LiquidityDistribution = {
+  currentPrice: Decimal;
+  currentTickIndex: number;
+  datapoints: LiquidityDataPoint[];
+};
 
 export async function getLiquidityDistribution(
   dal: OrcaDAL,
   poolAddress: Address,
   refresh: boolean
 ): Promise<LiquidityDistribution | null> {
-  const result: LiquidityDistribution = [];
+  const datapoints: LiquidityDataPoint[] = [];
 
   const pool = await dal.getPool(poolAddress, refresh);
   if (pool) {
@@ -36,12 +41,18 @@ export async function getLiquidityDistribution(
         const tickIndex = startIndex + index * pool.tickSpacing;
         const price = new Decimal(1.0001).pow(tickIndex);
         liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
-        result.push({ liquidity: new Decimal(liquidity), price, tickIndex });
+        datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
       });
     });
+
+    return {
+      currentPrice: fromX64(pool.sqrtPrice).pow(2),
+      currentTickIndex: pool.tickCurrentIndex,
+      datapoints,
+    };
   }
 
-  return result;
+  return null;
 }
 
 // TODO min, max check for left edge and right edge

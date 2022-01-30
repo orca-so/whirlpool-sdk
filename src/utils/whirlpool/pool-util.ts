@@ -19,7 +19,7 @@ export class PoolUtil {
      * // u16::MAX corresponds to ~6.5%
      * pub fee_rate: u16,
      */
-    return Percentage.fromFraction(account.feeRate, 1e6);
+    return Percentage.fromFraction(account.feeRate, 1e6); // TODO
   }
 
   public static getProtocolFeeRate(account: WhirlpoolData): Percentage {
@@ -28,6 +28,6 @@ export class PoolUtil {
      * // Denominator for portion of fee rate taken (1/x)%
      * pub protocol_fee_rate: u16,
      */
-    return Percentage.fromFraction(1, account.protocolFeeRate.toNumber() * 100);
+    return Percentage.fromFraction(1, account.protocolFeeRate.toNumber() * 100); // TODO
   }
 }
