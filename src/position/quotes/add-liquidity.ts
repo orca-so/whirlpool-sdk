@@ -1,7 +1,7 @@
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { BN } from "@project-serum/anchor";
-import { MintInfo, u64 } from "@solana/spl-token";
+import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { AddLiquidityQuote } from "../..";
 import { Percentage } from "../../utils/public/percentage";
@@ -9,8 +9,6 @@ import { Percentage } from "../../utils/public/percentage";
 export type InternalAddLiquidityQuoteParam = {
   address: PublicKey;
   whirlpool: WhirlpoolData;
-  tokenAMintInfo: MintInfo;
-  tokenBMintInfo: MintInfo;
   tokenMint: PublicKey;
   tokenAmount: u64;
   tickLowerIndex: number;
@@ -24,7 +22,6 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
   const {
     address,
     whirlpool,
-    tokenAMintInfo,
     tokenMint,
     tokenAmount,
     tickLowerIndex,
@@ -47,7 +44,7 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
     .mul(sqrtPriceLowerX64)
     .mul(sqrtPriceUpperX64)
     .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
-    .shrn(64 + tokenAMintInfo.decimals); // TODO
+    .shrn(64);
   const liquidityAfterSlippage = liquidity
     .mul(slippageTolerence.denominator)
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
@@ -66,16 +63,12 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
   const {
     address,
     whirlpool,
-    tokenAMintInfo,
-    tokenBMintInfo,
     tokenMint,
     tokenAmount,
     tickLowerIndex,
     tickUpperIndex,
     slippageTolerence,
   } = param;
-
-  // TODO: Use slippage tolerance here
 
   const sqrtPriceX64 = whirlpool.sqrtPrice;
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
@@ -122,7 +115,6 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
   const {
     address,
     whirlpool,
-    tokenBMintInfo,
     tokenMint,
     tokenAmount,
     tickLowerIndex,
@@ -141,10 +133,7 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
 
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
-  const liquidity = tokenAmount
-    .shln(64)
-    .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
-    .shrn(tokenBMintInfo.decimals); // TODO
+  const liquidity = tokenAmount.shln(64).div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
   const liquidityAfterSlippage = liquidity
     .mul(slippageTolerence.denominator)
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));

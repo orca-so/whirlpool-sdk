@@ -320,7 +320,6 @@ export class OrcaWhirlpool {
     const shouldRefresh = refresh === undefined ? true : refresh;
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const tickLowerIndex = TickUtil.getNearestValidTickIndex(
       sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())),
@@ -334,8 +333,6 @@ export class OrcaWhirlpool {
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
       address: PublicKey.default,
       whirlpool,
-      tokenAMintInfo,
-      tokenBMintInfo,
       tokenMint,
       tokenAmount,
       tickLowerIndex,
@@ -511,16 +508,6 @@ export class OrcaWhirlpool {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaWhirlpool - position does not exist");
     return position;
-  }
-
-  private async getTokenMintInfos(whirlpool: WhirlpoolData): Promise<[MintInfo, MintInfo]> {
-    const mintInfos = await this.dal.listMintInfos(
-      [whirlpool.tokenMintA, whirlpool.tokenMintB],
-      false
-    );
-    invariant(!!mintInfos && mintInfos.length === 2, "OrcaWhirlpool - unable to get mint infos");
-    invariant(!!mintInfos[0] && !!mintInfos[1], "OrcaPosition - mint infos do not exist");
-    return [mintInfos[0], mintInfos[1]];
   }
 
   private getTickArrayAddresses(

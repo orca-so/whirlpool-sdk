@@ -235,14 +235,11 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
     const { tickLowerIndex, tickUpperIndex } = position;
 
     const quoteParam: InternalAddLiquidityQuoteParam = {
       address,
       whirlpool,
-      tokenAMintInfo,
-      tokenBMintInfo,
       tokenMint,
       tokenAmount,
       tickLowerIndex,
@@ -276,14 +273,11 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
-    const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const quoteParam: InternalRemoveLiquidityQuoteParam = {
       address,
       whirlpool,
       position,
-      tokenAMintInfo,
-      tokenBMintInfo,
       liquidity,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
     };
@@ -318,16 +312,6 @@ export class OrcaPosition {
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
     return whirlpool;
-  }
-
-  private async getTokenMintInfos(whirlpool: WhirlpoolData): Promise<[MintInfo, MintInfo]> {
-    const mintInfos = await this.dal.listMintInfos(
-      [whirlpool.tokenMintA, whirlpool.tokenMintB],
-      false
-    );
-    invariant(!!mintInfos && mintInfos.length === 2, "OrcaPosition - unable to get mint infos");
-    invariant(!!mintInfos[0] && !!mintInfos[1], "OrcaPosition - mint infos do not exist");
-    return [mintInfos[0], mintInfos[1]];
   }
 
   private getTickArrayAddress(

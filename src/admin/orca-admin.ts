@@ -22,7 +22,7 @@ export class OrcaAdmin {
   public getInitPoolTransaction(param: InitPoolTransactionParam): TransactionBuilder {
     const {
       provider,
-      initSqrtPrice,
+      initialPrice,
       tokenMintA,
       tokenMintB,
       tokenVaultAKeypair,
@@ -42,7 +42,7 @@ export class OrcaAdmin {
     );
 
     return client.initPoolTx({
-      initSqrtPrice: toX64(initSqrtPrice),
+      initSqrtPrice: toX64(initialPrice.sqrt()),
       whirlpoolConfigKey,
       tokenMintA,
       tokenMintB,

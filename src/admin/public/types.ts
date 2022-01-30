@@ -5,7 +5,7 @@ import Decimal from "decimal.js";
 
 export type InitPoolTransactionParam = {
   provider: Provider;
-  initSqrtPrice: Decimal;
+  initialPrice: Decimal;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
   tokenVaultAKeypair: Keypair;
