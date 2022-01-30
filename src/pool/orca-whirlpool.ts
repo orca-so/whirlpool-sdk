@@ -14,15 +14,12 @@ import {
   AddLiquidityQuote,
   ClosePositionQuote,
   ClosePositionQuoteParam,
-  ClosePositionTransaction,
   ClosePositionTransactionParam,
   OpenPositionQuote,
   OpenPositionQuoteParam,
-  OpenPositionTransaction,
   OpenPositionTransactionParam,
   SwapQuote,
   SwapQuoteParam,
-  SwapTransaction,
   SwapTransactionParam,
 } from "..";
 import { defaultSlippagePercentage } from "../constants/defaults";
@@ -34,7 +31,7 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
-import { TransactionExecutable } from "../utils/public/transaction-executable";
+import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
@@ -50,7 +47,7 @@ export class OrcaWhirlpool {
   // TODO adding liquidity should be optional
   public async getOpenPositionTransaction(
     param: OpenPositionTransactionParam
-  ): Promise<OpenPositionTransaction> {
+  ): Promise<MultiTransactionBuilder> {
     // TODO(atamari): Might have to split the transaction into 2 (if needed after testing)
     const {
       provider,
@@ -172,14 +169,14 @@ export class OrcaWhirlpool {
     //   );
     // }
 
-    return new TransactionExecutable(provider, [txBuilder]);
+    return new MultiTransactionBuilder(provider, [txBuilder]);
   }
 
   /** 2. Close position tx **/
   // TODO check if position has liquidity first
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
-  ): Promise<ClosePositionTransaction> {
+  ): Promise<MultiTransactionBuilder> {
     // 1. remove all liquidity
     // 2. close position
     const { provider, position: positionAddress, quote } = param;
@@ -251,11 +248,11 @@ export class OrcaWhirlpool {
 
     // TODO close position token account
 
-    return new TransactionExecutable(provider, [txBuilder]);
+    return new MultiTransactionBuilder(provider, [txBuilder]);
   }
 
   /** 3. Swap tx **/
-  public async getSwapTransaction(param: SwapTransactionParam): Promise<SwapTransaction> {
+  public async getSwapTransaction(param: SwapTransactionParam): Promise<MultiTransactionBuilder> {
     const {
       provider,
       whirlpool: whirlpoolAddress,
@@ -314,7 +311,7 @@ export class OrcaWhirlpool {
         .compressIx(false)
     );
 
-    return new TransactionExecutable(provider, [txBuilder]);
+    return new MultiTransactionBuilder(provider, [txBuilder]);
   }
 
   /*** Quotes (public) ***/

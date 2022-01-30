@@ -13,7 +13,7 @@ import { OrcaDAL } from "./dal/orca-dal";
 import { OrcaWhirlpool } from "./pool/orca-whirlpool";
 import { OrcaPosition } from "./position/orca-position";
 import { toPubKey } from "./utils/address";
-import { getTokenUSDPrices, TokenUSDPrices } from "./pool/price";
+import { getTokenUSDPrices, TokenUSDPrices } from "./pool/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from ".";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";

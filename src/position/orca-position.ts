@@ -18,7 +18,7 @@ import {
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
-import { TransactionExecutable } from "../utils/public/transaction-executable";
+import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import {
@@ -165,7 +165,7 @@ export class OrcaPosition {
 
   public async getCollectFeesAndRewardsTransaction(
     param: CollectFeesAndRewardsTransactionParam
-  ): Promise<TransactionExecutable> {
+  ): Promise<MultiTransactionBuilder> {
     const { provider, address } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -250,7 +250,7 @@ export class OrcaPosition {
       }
     }
 
-    return new TransactionExecutable(provider, [ataTxBuilder, mainTxBuilder]);
+    return new MultiTransactionBuilder(provider, [ataTxBuilder, mainTxBuilder]);
   }
 
   /*** Quotes ***/

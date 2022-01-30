@@ -3,7 +3,6 @@ import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { Percentage } from "../..";
-import { TransactionExecutable } from "../../utils/public/transaction-executable";
 
 export type OpenPositionQuoteParam = {
   whirlpoolAddress: PublicKey;
@@ -59,8 +58,6 @@ export type OpenPositionTransactionParam = {
   quote: OpenPositionQuote;
 };
 
-export type OpenPositionTransaction = TransactionExecutable;
-
 export type ClosePositionTransactionParam = {
   provider: Provider;
   positionAuthority?: PublicKey;
@@ -69,12 +66,8 @@ export type ClosePositionTransactionParam = {
   quote: ClosePositionQuote;
 };
 
-export type ClosePositionTransaction = TransactionExecutable;
-
 export type SwapTransactionParam = {
   provider: Provider;
   whirlpool: PublicKey;
   quote: SwapQuote;
 };
-
-export type SwapTransaction = TransactionExecutable;

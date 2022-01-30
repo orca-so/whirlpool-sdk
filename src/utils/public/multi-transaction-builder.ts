@@ -1,7 +1,10 @@
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { Provider } from "@project-serum/anchor";
 
-export class TransactionExecutable {
+/**
+ * Collection of TransactionBuilders for grouping multiple transactions together for sendAll.
+ */
+export class MultiTransactionBuilder {
   private readonly provider: Provider;
   private readonly txBuilders: TransactionBuilder[];
 
@@ -10,7 +13,7 @@ export class TransactionExecutable {
     this.txBuilders = txBuilders;
   }
 
-  async executeAll(): Promise<string[]> {
+  async buildAndExecute(): Promise<string[]> {
     const txRequest = await Promise.all(
       this.txBuilders.map(async (txBuilder) => {
         const { transaction, signers } = await txBuilder.build();
