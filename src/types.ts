@@ -6,6 +6,8 @@ import Decimal from "decimal.js";
 
 export type PoolData = {
   address: PublicKey;
+  tokenMintA: PublicKey;
+  tokenMintB: PublicKey;
   tickSpacing: TickSpacing;
   feeRate: Decimal;
   protocolFeeRate: Decimal;

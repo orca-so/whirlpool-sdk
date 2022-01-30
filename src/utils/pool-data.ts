@@ -71,6 +71,8 @@ export async function convertWhirlpoolDataToPoolData(
 
     result[poolId] = {
       address: toPubKey(address),
+      tokenMintA: pool.tokenMintA,
+      tokenMintB: pool.tokenMintB,
       tickSpacing: pool.tickSpacing,
       feeRate,
       protocolFeeRate,
