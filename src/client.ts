@@ -1,10 +1,9 @@
 import { getPositionPda, getWhirlpoolPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import invariant from "tiny-invariant";
 import { OrcaNetwork } from "./constants/public/network";
 import { PoolData } from "./types";
 import { OrcaAdmin } from "./admin/orca-admin";
