@@ -1,4 +1,5 @@
 export * from "./client";
+export * from "./types";
 export * from "./admin/public";
 export * from "./pool/public";
 export * from "./position/public";

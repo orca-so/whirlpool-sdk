@@ -15,7 +15,7 @@ import {
   ParsableWhirlpool,
   ParsableWhirlpoolsConfig,
 } from "./parse";
-import { getPositionPda, WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
+import { WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { toPubKey, toPubKeys } from "../utils/address";
 
@@ -46,8 +46,8 @@ interface CachedContent<T extends CachedValue> {
 export class OrcaDAL {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
-  public readonly connection: Connection;
 
+  private readonly connection: Connection;
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
 
   constructor(whirlpoolsConfig: Address, programId: Address, connection: Connection) {
@@ -192,77 +192,28 @@ export class OrcaDAL {
   }
 
   /**
-   * Fetch the user token account of the given token mint.
-   * Note: not cached.
+   * Retrieve a list of tokens owned by the user.
    *
-   * @param walletAddress wallet address
-   * @param mint
-   * @returns account address or null if the account does not exist
+   * @param walletAddress user wallet address
+   * @param mint optional mint address to filter by
+   * @returns user tokens
    */
-  public async getUserNFTAccount(walletAddress: Address, mint: Address): Promise<PublicKey | null> {
-    const { value } = await this.connection.getParsedTokenAccountsByOwner(toPubKey(walletAddress), {
-      programId: TOKEN_PROGRAM_ID,
-      mint: toPubKey(mint),
-    });
+  public async listUserTokens(walletAddress: Address, mint?: Address): Promise<UserToken[]> {
+    const filter = mint
+      ? { programId: TOKEN_PROGRAM_ID, mint: toPubKey(mint) }
+      : { programId: TOKEN_PROGRAM_ID };
 
-    if (!value || value.length === 0) {
-      return null;
-    }
+    const { value } = await this.connection.getParsedTokenAccountsByOwner(
+      toPubKey(walletAddress),
+      filter
+    );
 
-    let tokenAccount: PublicKey | null = null;
-    for (const accountInfo of value) {
-      const amount: string | undefined =
-        accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount;
-      const decimals: number | undefined =
-        accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals;
-
-      if (amount === "1" && decimals === 0) {
-        tokenAccount = accountInfo.pubkey;
-        break;
-      }
-    }
-
-    return tokenAccount;
-  }
-
-  /**
-   * Fetch a list of positions owned by the wallet address.
-   * Note: not cached.
-   *
-   * @param walletAddress wallet address
-   * @returns a list of positions owned by the wallet address
-   */
-  public async listUserPositions(walletAddress: Address): Promise<PublicKey[]> {
-    // get user token accounts
-    const { value } = await this.connection.getParsedTokenAccountsByOwner(toPubKey(walletAddress), {
-      programId: TOKEN_PROGRAM_ID,
-    });
-
-    // get mint addresses of all token accounts with amount equal to 1
-    // then derive Position addresses and filter out if accounts don't exist
-    const addresses: PublicKey[] = [];
-    value.forEach((accountInfo) => {
-      const amount: string | undefined =
-        accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount;
-      const decimals: number | undefined =
-        accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals;
-      const mint: string | undefined = accountInfo.account?.data?.parsed?.info?.mint;
-
-      if (amount !== "1" || decimals !== 0 || !mint) {
-        return;
-      }
-      const positionAddress = getPositionPda(this.programId, new PublicKey(mint)).publicKey;
-      addresses.push(positionAddress);
-    });
-
-    const positions = await this.listPositions(addresses, true);
-    invariant(addresses.length === positions.length, "not enough positions data");
-
-    const validPositionAddresses: PublicKey[] = addresses.filter((_address, index) => {
-      return positions[index] !== null;
-    });
-
-    return validPositionAddresses;
+    return value.map((accountInfo) => ({
+      address: accountInfo.pubkey,
+      amount: accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount,
+      decimals: accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals,
+      mint: accountInfo.account?.data?.parsed?.info?.mint,
+    }));
   }
 
   /**
@@ -279,33 +230,6 @@ export class OrcaDAL {
 
       this._cache[key] = { entity, value };
     }
-  }
-
-  /**
-   * Populate the cache with whirlpool data, and all of its associated data, including:
-   *   tokenMintA, tokenMintB, tokenVaultA, tokenVaultB, rewardInfo.mint, rewardInfo.vault
-   */
-  public async hydratePools(addresses: Address[]): Promise<void> {
-    const pools = await this.listPools(addresses, true);
-
-    const allTokenAccounts: Set<string> = new Set();
-    const allMintInfos: Set<string> = new Set();
-    pools.forEach((pool) => {
-      if (pool) {
-        allTokenAccounts.add(pool.tokenVaultA.toBase58());
-        allTokenAccounts.add(pool.tokenVaultB.toBase58());
-        allMintInfos.add(pool.tokenMintA.toBase58());
-        allMintInfos.add(pool.tokenMintB.toBase58());
-
-        pool.rewardInfos.forEach(({ vault, mint }) => {
-          allTokenAccounts.add(vault.toBase58());
-          allMintInfos.add(mint.toBase58());
-        });
-      }
-    });
-
-    await this.listTokenInfos(Array.from(allTokenAccounts));
-    await this.listMintInfos(Array.from(allMintInfos));
   }
 
   /*** Private Methods ***/
@@ -407,3 +331,12 @@ export class OrcaDAL {
     return combinedResult;
   }
 }
+
+/*** Utility Types ***/
+
+type UserToken = {
+  address: PublicKey;
+  amount?: string;
+  decimals?: number;
+  mint?: string;
+};
