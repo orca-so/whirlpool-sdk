@@ -33,7 +33,11 @@ export class TickArrayOutOfBoundsError extends Error {
 export class TickUtil {
   private constructor() {}
 
-  public static getNearestValidTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+  /**
+   * Get the nearest (rounding down) valid tick index from the tickIndex.
+   * A valid tick index is a point on the tick spacing grid line.
+   */
+  public static floorToValid(tickIndex: number, tickSpacing: TickSpacing): number {
     return tickIndex - (tickIndex % tickSpacing);
   }
 
@@ -80,51 +84,25 @@ export class TickUtil {
     return tick;
   }
 
-  public static deriveTickArrayPDA(
+  public static getPdaWithTickIndex(
     tickIndex: number,
     tickSpacing: TickSpacing,
-    whirlpoolAddress: PublicKey,
-    programId: PublicKey
+    whirlpool: PublicKey,
+    programId: PublicKey,
+    tickArrayOffset = 0
   ): PDA {
-    const startTick = TickUtil.getStartTickIndex(tickIndex, tickSpacing);
-    return getTickArrayPda(programId, whirlpoolAddress, startTick);
+    const startIndex = TickUtil.getStartTickIndex(tickIndex, tickSpacing, tickArrayOffset);
+    return TickUtil.getPda(startIndex, whirlpool, programId);
   }
 
-  public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
-    return Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
+  public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
+    const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
+    return (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
   }
 
-  public static getPrevStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
-    return (
-      (Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) - 1) * tickSpacing * TICK_ARRAY_SIZE
-    );
+  private static getPda(startIndex: number, whirlpool: PublicKey, programId: PublicKey): PDA {
+    return getTickArrayPda(programId, whirlpool, startIndex);
   }
-
-  public static getNextStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
-    return (
-      (Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) + 1) * tickSpacing * TICK_ARRAY_SIZE
-    );
-  }
-
-  public static getAddressContainingTickIndex(
-    tickIndex: number,
-    tickSpacing: TickSpacing,
-    whirlpoolAddress: PublicKey,
-    programId: PublicKey
-  ): PublicKey {
-    return TickUtil.deriveTickArrayPDA(tickIndex, tickSpacing, whirlpoolAddress, programId)
-      .publicKey;
-  }
-
-  // private static isValidTickIndexWithinAccount(account: TickArrayData, tickIndex: number) {
-  //   return (
-  //     tickIndex >= account.startTickIndex && tickIndex < account.startTickIndex + tickSpacing * TICK_ARRAY_SIZE
-  //   );
-  // }
-
-  // private static isValidTickArrayIndex(account: TickArrayData, tickArrayIndex: number) {
-  //   return tickArrayIndex >= 0 && tickArrayIndex < account.ticks.length;
-  // }
 
   private static tickIndexToTickArrayIndex(
     account: TickArrayData,

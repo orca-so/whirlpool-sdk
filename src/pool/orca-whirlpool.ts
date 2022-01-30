@@ -97,13 +97,13 @@ export class OrcaWhirlpool {
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(
+    const tickArrayLowerPda = TickUtil.getPdaWithTickIndex(
       tickLowerIndex,
       whirlpool.tickSpacing,
       address,
       this.dal.programId
     );
-    const tickArrayUpperPda = TickUtil.deriveTickArrayPDA(
+    const tickArrayUpperPda = TickUtil.getPdaWithTickIndex(
       tickUpperIndex,
       whirlpool.tickSpacing,
       address,
@@ -268,7 +268,7 @@ export class OrcaWhirlpool {
     );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    const nextTickArrayJump = aToB ? -TICK_ARRAY_SIZE : TICK_ARRAY_SIZE;
+    const nextTickArrayJump = aToB ? -TICK_ARRAY_SIZE : TICK_ARRAY_SIZE; // TODO fix
 
     const [tickArray0, tickArray1, tickArray2] = this.getTickArrayAddresses(
       whirlpoolAddress,
@@ -321,11 +321,11 @@ export class OrcaWhirlpool {
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
 
-    const tickLowerIndex = TickUtil.getNearestValidTickIndex(
+    const tickLowerIndex = TickUtil.floorToValid(
       sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())),
       whirlpool.tickSpacing
     );
-    const tickUpperIndex = TickUtil.getNearestValidTickIndex(
+    const tickUpperIndex = TickUtil.floorToValid(
       sqrtPriceX64ToTickIndex(toX64(priceUpper.sqrt())),
       whirlpool.tickSpacing
     );
@@ -403,12 +403,12 @@ export class OrcaWhirlpool {
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
-        TickUtil.getAddressContainingTickIndex(
+        TickUtil.getPdaWithTickIndex(
           tickIndex,
           whirlpool.tickSpacing,
           whirlpoolAddress,
           this.dal.programId
-        ),
+        ).publicKey,
         refresh || false
       );
       invariant(!!tickArray, "tickArray is null");
@@ -515,13 +515,14 @@ export class OrcaWhirlpool {
     whirlpoolData: WhirlpoolData,
     ...tickIndexes: number[]
   ): PublicKey[] {
-    return tickIndexes.map((tickIndex) =>
-      TickUtil.getAddressContainingTickIndex(
-        tickIndex,
-        whirlpoolData.tickSpacing,
-        whirlpool,
-        this.dal.programId
-      )
+    return tickIndexes.map(
+      (tickIndex) =>
+        TickUtil.getPdaWithTickIndex(
+          tickIndex,
+          whirlpoolData.tickSpacing,
+          whirlpool,
+          this.dal.programId
+        ).publicKey
     );
   }
 }

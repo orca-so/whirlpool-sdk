@@ -85,15 +85,15 @@ describe("swap", () => {
   test.only("base case", async () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6");
-    const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
+    const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()] as WhirlpoolData;
 
     async function fetchTickArray(tickIndex: number): Promise<TickArrayData> {
-      const tickArrayAddress = TickUtil.getAddressContainingTickIndex(
+      const tickArrayAddress = TickUtil.getPdaWithTickIndex(
         tickIndex,
         whirlpool.tickSpacing,
         new PublicKey(whirlpoolAddress),
         new PublicKey(whirlpoolProgramId)
-      );
+      ).publicKey;
       return tickArraysMap[tickArrayAddress.toBase58()]!;
     }
 

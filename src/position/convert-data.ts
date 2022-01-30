@@ -168,17 +168,17 @@ function getTickArrayAddress(
   whirlpool: WhirlpoolData,
   programId: PublicKey
 ): [PublicKey, PublicKey] {
-  const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
+  const tickLowerAddress = TickUtil.getPdaWithTickIndex(
     position.tickLowerIndex,
     whirlpool.tickSpacing,
     position.whirlpool,
     programId
-  );
-  const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
+  ).publicKey;
+  const tickUpperAddress = TickUtil.getPdaWithTickIndex(
     position.tickUpperIndex,
     whirlpool.tickSpacing,
     position.whirlpool,
     programId
-  );
+  ).publicKey;
   return [tickLowerAddress, tickUpperAddress];
 }
