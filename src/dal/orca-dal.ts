@@ -359,24 +359,31 @@ export class OrcaDAL {
 
   /**
    * Make batch rpc request
-   * TODO: size limit?
+   * Note: getMultipleAccounts has limitation of 100 accounts per request
    */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
-    // @ts-ignore
-    const res = await this.connection._rpcRequest("getMultipleAccounts", [
-      addresses,
-      { commitment: this.connection.commitment },
-    ]);
-    invariant(!res.error, "bulkRequest result error");
-    invariant(!!res.result?.value, "bulkRequest no value");
-    invariant(res.result.value.length === addresses.length, "bulkRequest not enough results");
+    const chunk = 100;
+    const combinedResult: (Buffer | null)[] = [];
 
-    return res.result.value.map((account: { data: [string, string] } | null) => {
-      if (!account || account.data[1] !== "base64") {
-        return null;
-      }
+    for (let i = 0; i < addresses.length; i += chunk) {
+      const subsetAddresses = addresses.slice(i, i + chunk);
+      const res = await (this.connection as any)._rpcRequest("getMultipleAccounts", [
+        subsetAddresses,
+        { commitment: this.connection.commitment },
+      ]);
+      invariant(!res.error, `bulkRequest result error: ${res.error}`);
+      invariant(!!res.result?.value, "bulkRequest no value");
+      invariant(res.result.value.length === addresses.length, "bulkRequest not enough results");
 
-      return Buffer.from(account.data[0], "base64");
-    });
+      res.result.value.forEach((account: { data: [string, string] } | null) => {
+        if (!account || account.data[1] !== "base64") {
+          combinedResult.push(null);
+        } else {
+          combinedResult.push(Buffer.from(account.data[0], account.data[1]));
+        }
+      });
+    }
+
+    return combinedResult;
   }
 }

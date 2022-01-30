@@ -2,7 +2,7 @@ import { AccountInfo, AccountLayout, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
 export const deserializeTokenAccount = (data: Buffer | undefined): AccountInfo | null => {
-  if (data == undefined || data.length == 0) {
+  if (!data) {
     return null;
   }
 

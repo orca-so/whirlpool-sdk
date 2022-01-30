@@ -19,7 +19,7 @@ export class ParsableWhirlpoolsConfig {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): WhirlpoolConfigAccount | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
@@ -32,7 +32,7 @@ export class ParsableWhirlpool {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): WhirlpoolData | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
@@ -45,7 +45,7 @@ export class ParsablePosition {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): PositionData | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
@@ -58,7 +58,7 @@ export class ParsableTickArray {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): TickArrayData | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
@@ -71,7 +71,7 @@ export class ParsableTokenInfo {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): AccountInfo | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
@@ -84,7 +84,7 @@ export class ParsableMintInfo {
   private constructor() {}
 
   public static parse(data: Buffer | undefined | null): MintInfo | null {
-    if (data === undefined || data === null || data.length === 0) {
+    if (!data) {
       return null;
     }
 
