@@ -1,5 +1,6 @@
 import { fromX64 } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
+import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { PoolRewardInfo } from "..";
 import { OrcaDAL } from "../dal/orca-dal";
@@ -25,8 +26,10 @@ export async function convertWhirlpoolDataToPoolData(
         allMintInfos.add(pool.tokenMintB.toBase58());
 
         pool.rewardInfos.forEach(({ vault, mint }) => {
-          allTokenAccounts.add(vault.toBase58());
-          allMintInfos.add(mint.toBase58());
+          if (!mint.equals(PublicKey.default)) {
+            allTokenAccounts.add(vault.toBase58());
+            allMintInfos.add(mint.toBase58());
+          }
         });
       }
     });
@@ -58,17 +61,18 @@ export async function convertWhirlpoolDataToPoolData(
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
-      const amount = (await dal.getTokenInfo(vault, false))?.amount;
-      const decimals = (await dal.getMintInfo(mint, false))?.decimals;
+      let amount = undefined;
+      let decimals = undefined;
+      if (!mint.equals(PublicKey.default)) {
+        amount = (await dal.getTokenInfo(vault, false))?.amount;
+        decimals = (await dal.getMintInfo(mint, false))?.decimals;
+      }
 
       let vaultAmount = new Decimal(0);
       if (amount && decimals !== undefined) {
         vaultAmount = DecimalUtil.fromU64(amount, decimals);
       }
-
-      const emissionsPerSecond = fromX64(emissionsPerSecondX64);
-
-      rewards.push({ mint, vaultAmount, emissionsPerSecond });
+      rewards.push({ mint, vaultAmount, emissionsPerSecond: fromX64(emissionsPerSecondX64) });
     }
 
     result[poolId] = {

@@ -71,7 +71,10 @@ export async function convertPositionDataToUserPositionData(
     const rewards: UserPositionRewardInfo[] = [];
     for (const [index, { mint }] of whirlpool.rewardInfos.entries()) {
       const quote = rewardsQuote[index];
-      const decimals = (await dal.getMintInfo(mint, false))?.decimals;
+      let decimals = undefined;
+      if (!mint.equals(PublicKey.default)) {
+        decimals = (await dal.getMintInfo(mint, false))?.decimals;
+      }
       const amountOwed =
         quote && decimals !== undefined ? DecimalUtil.fromU64(quote, decimals) : undefined;
       rewards.push({ mint, amountOwed });
@@ -128,11 +131,13 @@ async function getUserPositions(
         allMintInfos.add(pool.tokenMintA.toBase58());
         allMintInfos.add(pool.tokenMintB.toBase58());
         pool.rewardInfos.forEach(({ mint }) => {
-          allMintInfos.add(mint.toBase58());
+          if (!mint.equals(PublicKey.default)) {
+            allMintInfos.add(mint.toBase58());
+          }
         });
       }
     });
-    await dal.listMintInfos(Array.from(allMintInfos), false);
+    const x = await dal.listMintInfos(Array.from(allMintInfos), false);
 
     /*** Refresh tick arrays ***/
     const tickArrayAddresses: Set<string> = new Set();
