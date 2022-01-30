@@ -7,7 +7,7 @@ import {
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
-import { MintInfo } from "@solana/spl-token";
+import { MintInfo, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -44,30 +44,28 @@ export class OrcaWhirlpool {
   /*** Transactions (public) ***/
 
   /** 1. Open position tx **/
-  // TODO adding liquidity should be optional
   public async getOpenPositionTransaction(
     param: OpenPositionTransactionParam
   ): Promise<MultiTransactionBuilder> {
-    // TODO(atamari): Might have to split the transaction into 2 (if needed after testing)
     const {
       provider,
       whirlpool: address,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex },
     } = param;
+    invariant(liquidity.gt(new u64(0)), "liquidity must be greater than zero");
+
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.getWhirlpool(address, true);
-
-    const txBuilder = new TransactionBuilder(ctx.provider);
-
+    const whirlpool = await this.getWhirlpool(address, false);
     const positionMintKeypair = Keypair.generate();
     const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
-
     const positionTokenAccountAddress = await deriveATA(
       provider.wallet.publicKey,
       positionMintKeypair.publicKey
     );
+
+    const txBuilder = new TransactionBuilder(ctx.provider);
 
     txBuilder
       .addInstruction(
@@ -91,13 +89,12 @@ export class OrcaWhirlpool {
       provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
-    txBuilder.addInstruction(tokenOwnerAccountAIx);
-
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const tickArrayLowerPda = TickUtil.deriveTickArrayPDA(
@@ -112,7 +109,6 @@ export class OrcaWhirlpool {
       address,
       this.dal.programId
     );
-
     const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
       [tickArrayLowerPda.publicKey, tickArrayUpperPda.publicKey],
       true
@@ -147,46 +143,39 @@ export class OrcaWhirlpool {
       );
     }
 
-    // if (liquidity.gt(new u64(0))) {
-    //   txBuilder.addInstruction(
-    //     client
-    //       .increaseLiquidityTx({
-    //         liquidityAmount: liquidity,
-    //         tokenMaxA: maxTokenA,
-    //         tokenMaxB: maxTokenB,
-    //         whirlpool: address,
-    //         positionAuthority: provider.wallet.publicKey,
-    //         position: address,
-    //         positionTokenAccount: positionTokenAccountAddress,
-    //         tokenOwnerAccountA,
-    //         tokenOwnerAccountB,
-    //         tokenVaultA: whirlpool.tokenVaultA,
-    //         tokenVaultB: whirlpool.tokenVaultB,
-    //         tickArrayLower: tickArrayLowerPda.publicKey,
-    //         tickArrayUpper: tickArrayLowerPda.publicKey,
-    //       })
-    //       .compressIx(false)
-    //   );
-    // }
+    txBuilder.addInstruction(
+      client
+        .increaseLiquidityTx({
+          liquidityAmount: liquidity,
+          tokenMaxA: maxTokenA,
+          tokenMaxB: maxTokenB,
+          whirlpool: address,
+          positionAuthority: provider.wallet.publicKey,
+          position: address,
+          positionTokenAccount: positionTokenAccountAddress,
+          tokenOwnerAccountA,
+          tokenOwnerAccountB,
+          tokenVaultA: whirlpool.tokenVaultA,
+          tokenVaultB: whirlpool.tokenVaultB,
+          tickArrayLower: tickArrayLowerPda.publicKey,
+          tickArrayUpper: tickArrayLowerPda.publicKey,
+        })
+        .compressIx(false)
+    );
 
     return new MultiTransactionBuilder(provider, [txBuilder]);
   }
 
   /** 2. Close position tx **/
-  // TODO check if position has liquidity first
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
   ): Promise<MultiTransactionBuilder> {
-    // 1. remove all liquidity
-    // 2. close position
     const { provider, position: positionAddress, quote } = param;
-    const { positionAuthority = provider.wallet.publicKey, receiver = provider.wallet.publicKey } =
-      param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(positionAddress, true);
-    const whirlpool = await this.getWhirlpool(position.whirlpool, true);
+    const whirlpool = await this.getWhirlpool(position.whirlpool, false);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(
       position.whirlpool,
       whirlpool,
@@ -196,49 +185,50 @@ export class OrcaWhirlpool {
     invariant(!!tickArrayLower, "tickArrayLower cannot be undefined");
     invariant(!!tickArrayUpper, "tickArrayUpper cannot be undefined");
 
-    const txBuilder = new TransactionBuilder(ctx.provider);
-
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
+
+    const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
-    txBuilder.addInstruction(tokenOwnerAccountAIx);
-
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    txBuilder.addInstruction(
-      client
-        .decreaseLiquidityTx({
-          liquidityAmount: position.liquidity,
-          tokenMaxA: quote.minTokenA,
-          tokenMaxB: quote.minTokenB,
-          whirlpool: position.whirlpool,
-          positionAuthority: provider.wallet.publicKey,
-          position: positionAddress,
-          positionTokenAccount,
-          tokenOwnerAccountA,
-          tokenOwnerAccountB,
-          tokenVaultA: whirlpool.tokenVaultA,
-          tokenVaultB: whirlpool.tokenVaultB,
-          tickArrayLower,
-          tickArrayUpper,
-        })
-        .compressIx(false)
-    );
+    if (position.liquidity.gt(new u64(0))) {
+      txBuilder.addInstruction(
+        client
+          .decreaseLiquidityTx({
+            liquidityAmount: position.liquidity,
+            tokenMaxA: quote.minTokenA,
+            tokenMaxB: quote.minTokenB,
+            whirlpool: position.whirlpool,
+            positionAuthority: provider.wallet.publicKey,
+            position: positionAddress,
+            positionTokenAccount,
+            tokenOwnerAccountA,
+            tokenOwnerAccountB,
+            tokenVaultA: whirlpool.tokenVaultA,
+            tokenVaultB: whirlpool.tokenVaultB,
+            tickArrayLower,
+            tickArrayUpper,
+          })
+          .compressIx(false)
+      );
+    }
 
     txBuilder.addInstruction(
       client
         .closePositionTx({
-          positionAuthority,
-          receiver,
+          positionAuthority: provider.wallet.publicKey,
+          receiver: provider.wallet.publicKey,
           positionTokenAccount,
           position: positionAddress,
           positionMint: position.positionMint,
@@ -261,7 +251,7 @@ export class OrcaWhirlpool {
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress);
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, true);
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
@@ -327,8 +317,9 @@ export class OrcaWhirlpool {
       slippageTolerence = defaultSlippagePercentage,
       refresh,
     } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh;
 
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const tickLowerIndex = TickUtil.getNearestValidTickIndex(
@@ -341,6 +332,7 @@ export class OrcaWhirlpool {
     );
 
     const addLiquidityParams: InternalAddLiquidityQuoteParam = {
+      address: PublicKey.default,
       whirlpool,
       tokenAMintInfo,
       tokenBMintInfo,
@@ -371,7 +363,9 @@ export class OrcaWhirlpool {
     }
 
     return {
-      ...addLiquidityQuote,
+      maxTokenA: addLiquidityQuote.maxTokenA,
+      maxTokenB: addLiquidityQuote.maxTokenB,
+      liquidity: addLiquidityQuote.liquidity,
       tickLowerIndex,
       tickUpperIndex,
     };
@@ -384,7 +378,8 @@ export class OrcaWhirlpool {
       refresh,
       slippageTolerence = defaultSlippagePercentage,
     } = param;
-    const position = await this.getPosition(positionAddress, refresh);
+    const shouldRefresh = refresh === undefined ? true : refresh;
+    const position = await this.getPosition(positionAddress, shouldRefresh);
 
     // Get remove liquidity quote for all of this position's liquidity
     return await new OrcaPosition(this.dal).getRemoveLiquidityQuote({
@@ -405,8 +400,9 @@ export class OrcaWhirlpool {
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh;
 
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, refresh);
+    const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
@@ -505,13 +501,13 @@ export class OrcaWhirlpool {
   }
 
   /*** Helpers (private) ***/
-  private async getWhirlpool(address: PublicKey, refresh = false): Promise<WhirlpoolData> {
+  private async getWhirlpool(address: PublicKey, refresh: boolean): Promise<WhirlpoolData> {
     const whirlpool = await this.dal.getPool(address, refresh);
     invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
     return whirlpool;
   }
 
-  private async getPosition(address: PublicKey, refresh = false): Promise<PositionData> {
+  private async getPosition(address: PublicKey, refresh: boolean): Promise<PositionData> {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaWhirlpool - position does not exist");
     return position;

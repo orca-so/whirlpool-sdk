@@ -43,21 +43,16 @@ export class OrcaPosition {
   public async getAddLiquidityTransaction(
     param: AddLiquidityTransactionParam
   ): Promise<TransactionBuilder> {
-    const { provider, address, quote } = param;
+    const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, true);
-    const whirlpool = await this.getWhirlpool(position, true);
+    const position = await this.getPosition(quote.address, false);
+    const whirlpool = await this.getWhirlpool(position, false);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
-
-    const txBuilder = new TransactionBuilder(ctx.provider);
-
-    /* Get user's position nft */
-
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
-    /* Get user's associated token accounts for tokenA and tokenB */
+    const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
@@ -79,7 +74,7 @@ export class OrcaPosition {
         tokenMaxB: quote.maxTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: address,
+        position: quote.address,
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -97,21 +92,16 @@ export class OrcaPosition {
   public async getRemoveLiquidityTransaction(
     param: RemoveLiquidityTransactionParam
   ): Promise<TransactionBuilder> {
-    const { provider, address, quote } = param;
+    const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, true);
-    const whirlpool = await this.getWhirlpool(position, true);
+    const position = await this.getPosition(quote.address, false);
+    const whirlpool = await this.getWhirlpool(position, false);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
-
-    const txBuilder = new TransactionBuilder(ctx.provider);
-
-    /* Get user's position nft */
-
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
-    /* Get user's associated token accounts for tokenA and tokenB */
+    const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
@@ -133,7 +123,7 @@ export class OrcaPosition {
         tokenMaxB: quote.minTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: address,
+        position: quote.address,
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -155,15 +145,14 @@ export class OrcaPosition {
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, true);
+    const position = await this.getPosition(address, false);
     const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
+    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
-
-    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     // step 1. update state of owed fees and rewards
     const updateIx = client
@@ -242,13 +231,15 @@ export class OrcaPosition {
 
   public async getAddLiquidityQuote(param: AddLiquidityQuoteParam): Promise<AddLiquidityQuote> {
     const { address, tokenMint, tokenAmount, refresh, slippageTolerence } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh;
 
-    const position = await this.getPosition(address, refresh);
-    const whirlpool = await this.getWhirlpool(position, refresh);
+    const position = await this.getPosition(address, shouldRefresh);
+    const whirlpool = await this.getWhirlpool(position, shouldRefresh);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
     const { tickLowerIndex, tickUpperIndex } = position;
 
     const quoteParam: InternalAddLiquidityQuoteParam = {
+      address,
       whirlpool,
       tokenAMintInfo,
       tokenBMintInfo,
@@ -281,12 +272,14 @@ export class OrcaPosition {
     param: RemoveLiquidityQuoteParam
   ): Promise<RemoveLiquidityQuote> {
     const { address, liquidity, refresh, slippageTolerence } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh;
 
-    const position = await this.getPosition(address, refresh);
-    const whirlpool = await this.getWhirlpool(position, refresh);
+    const position = await this.getPosition(address, shouldRefresh);
+    const whirlpool = await this.getWhirlpool(position, shouldRefresh);
     const [tokenAMintInfo, tokenBMintInfo] = await this.getTokenMintInfos(whirlpool);
 
     const quoteParam: InternalRemoveLiquidityQuoteParam = {
+      address,
       whirlpool,
       position,
       tokenAMintInfo,
@@ -315,13 +308,13 @@ export class OrcaPosition {
 
   /*** Helpers ***/
 
-  private async getPosition(address: PublicKey, refresh = false): Promise<PositionData> {
+  private async getPosition(address: PublicKey, refresh: boolean): Promise<PositionData> {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaPosition - position does not exist");
     return position;
   }
 
-  private async getWhirlpool(position: PositionData, refresh = false): Promise<WhirlpoolData> {
+  private async getWhirlpool(position: PositionData, refresh: boolean): Promise<WhirlpoolData> {
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     invariant(!!whirlpool, "OrcaPosition - whirlpool does not exist");
     return whirlpool;

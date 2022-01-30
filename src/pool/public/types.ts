@@ -60,8 +60,6 @@ export type OpenPositionTransactionParam = {
 
 export type ClosePositionTransactionParam = {
   provider: Provider;
-  positionAuthority?: PublicKey;
-  receiver?: PublicKey;
   position: PublicKey;
   quote: ClosePositionQuote;
 };

@@ -7,13 +7,11 @@ import { Percentage } from "../../utils/public/percentage";
 
 export type AddLiquidityTransactionParam = {
   provider: Provider;
-  address: PublicKey;
   quote: AddLiquidityQuote;
 };
 
 export type RemoveLiquidityTransactionParam = {
   provider: Provider;
-  address: PublicKey;
   quote: RemoveLiquidityQuote;
 };
 
@@ -33,6 +31,7 @@ export type AddLiquidityQuoteParam = {
 };
 
 export type AddLiquidityQuote = {
+  address: PublicKey;
   maxTokenA: u64;
   maxTokenB: u64;
   liquidity: u64;
@@ -46,6 +45,7 @@ export type RemoveLiquidityQuoteParam = {
 };
 
 export type RemoveLiquidityQuote = {
+  address: PublicKey;
   minTokenA: u64;
   minTokenB: u64;
   liquidity: u64;

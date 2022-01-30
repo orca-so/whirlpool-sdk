@@ -3,11 +3,11 @@ import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-t
 import { BN } from "@project-serum/anchor";
 import { MintInfo, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
-import invariant from "tiny-invariant";
 import { AddLiquidityQuote } from "../..";
 import { Percentage } from "../../utils/public/percentage";
 
 export type InternalAddLiquidityQuoteParam = {
+  address: PublicKey;
   whirlpool: WhirlpoolData;
   tokenAMintInfo: MintInfo;
   tokenBMintInfo: MintInfo;
@@ -22,6 +22,7 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
   param: InternalAddLiquidityQuoteParam
 ): AddLiquidityQuote {
   const {
+    address,
     whirlpool,
     tokenAMintInfo,
     tokenMint,
@@ -33,6 +34,7 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
 
   if (!whirlpool.tokenMintA.equals(tokenMint)) {
     return {
+      address,
       maxTokenA: new u64(0),
       maxTokenB: new u64(0),
       liquidity: new u64(0),
@@ -51,6 +53,7 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
+    address,
     maxTokenA: new u64(tokenAmount),
     maxTokenB: new u64(0),
     liquidity: new u64(liquidityAfterSlippage),
@@ -61,6 +64,7 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
   param: InternalAddLiquidityQuoteParam
 ): AddLiquidityQuote {
   const {
+    address,
     whirlpool,
     tokenAMintInfo,
     tokenBMintInfo,
@@ -105,6 +109,7 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
+    address,
     maxTokenA: new u64(tokenAmountA),
     maxTokenB: new u64(tokenAmountB),
     liquidity: new u64(liquidityAfterSlippage),
@@ -115,6 +120,7 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
   param: InternalAddLiquidityQuoteParam
 ): AddLiquidityQuote {
   const {
+    address,
     whirlpool,
     tokenBMintInfo,
     tokenMint,
@@ -126,6 +132,7 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
 
   if (!whirlpool.tokenMintB.equals(tokenMint)) {
     return {
+      address,
       maxTokenA: new u64(0),
       maxTokenB: new u64(0),
       liquidity: new u64(0),
@@ -143,6 +150,7 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
+    address,
     maxTokenA: new u64(0),
     maxTokenB: new u64(tokenAmount),
     liquidity: new u64(liquidityAfterSlippage),
