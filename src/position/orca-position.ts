@@ -1,11 +1,7 @@
 import { NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
-import {
-  PositionData,
-  TickData,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { MintInfo } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
@@ -15,10 +11,6 @@ import {
   AddLiquidityQuoteParam,
   AddLiquidityTransactionParam,
   CollectFeesAndRewardsTransactionParam,
-  CollectFeesQuote,
-  CollectFeesQuoteParam,
-  CollectRewardsQuote,
-  CollectRewardsQuoteParam,
   RemoveLiquidityQuote,
   RemoveLiquidityQuoteParam,
   RemoveLiquidityTransactionParam,
@@ -35,8 +27,6 @@ import {
   getAddLiquidityQuoteWhenPositionIsInRange,
   InternalAddLiquidityQuoteParam,
 } from "./quotes/add-liquidity";
-import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
-import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
 import {
   getRemoveLiquidityQuoteWhenPositionIsAboveRange,
   getRemoveLiquidityQuoteWhenPositionIsBelowRange,
@@ -338,28 +328,6 @@ export class OrcaPosition {
     }
   }
 
-  public async getCollectFeesQuote(param: CollectFeesQuoteParam): Promise<CollectFeesQuote> {
-    const { address, refresh } = param;
-
-    const position = await this.getPosition(address, refresh);
-    const whirlpool = await this.getWhirlpool(position, refresh);
-    const [tickLower, tickUpper] = await this.getTickData(position, whirlpool, refresh);
-
-    return getCollectFeesQuoteInternal({ whirlpool, position, tickLower, tickUpper });
-  }
-
-  public async getCollectRewardsQuote(
-    param: CollectRewardsQuoteParam
-  ): Promise<CollectRewardsQuote> {
-    const { address, refresh } = param;
-
-    const position = await this.getPosition(address, refresh);
-    const whirlpool = await this.getWhirlpool(position, refresh);
-    const [tickLower, tickUpper] = await this.getTickData(position, whirlpool, refresh);
-
-    return getCollectRewardsQuoteInternal({ whirlpool, position, tickLower, tickUpper });
-  }
-
   /*** Helpers ***/
 
   private async getPosition(address: PublicKey, refresh = false): Promise<PositionData> {
@@ -384,46 +352,22 @@ export class OrcaPosition {
     return [mintInfos[0], mintInfos[1]];
   }
 
-  private async getTickData(
-    position: PositionData,
-    whirlpool: WhirlpoolData,
-    refresh = false
-  ): Promise<[TickData, TickData]> {
-    const { tickLowerIndex, tickUpperIndex } = position;
-    const [tickLowerAddress, tickUpperAddress] = this.getTickArrayAddress(position, whirlpool);
-
-    const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
-      [tickLowerAddress, tickUpperAddress],
-      refresh
-    );
-    invariant(!!tickArrayLower, "OrcaPosition - tickArrayLower does not exist");
-    invariant(!!tickArrayUpper, "OrcaPosition - tickArrayUpper does not exist");
-
-    return [
-      TickUtil.getTick(tickArrayLower, tickLowerIndex, whirlpool.tickSpacing),
-      TickUtil.getTick(tickArrayUpper, tickUpperIndex, whirlpool.tickSpacing),
-    ];
-  }
-
   private getTickArrayAddress(
     position: PositionData,
     whirlpool: WhirlpoolData
   ): [PublicKey, PublicKey] {
-    const { tickLowerIndex, tickUpperIndex, whirlpool: whirlpoolAddress } = position;
-
     const tickLowerAddress = TickUtil.getAddressContainingTickIndex(
-      tickLowerIndex,
+      position.tickLowerIndex,
       whirlpool.tickSpacing,
-      whirlpoolAddress,
+      position.whirlpool,
       this.dal.programId
     );
     const tickUpperAddress = TickUtil.getAddressContainingTickIndex(
-      tickUpperIndex,
+      position.tickUpperIndex,
       whirlpool.tickSpacing,
-      whirlpoolAddress,
+      position.whirlpool,
       this.dal.programId
     );
-
     return [tickLowerAddress, tickUpperAddress];
   }
 }

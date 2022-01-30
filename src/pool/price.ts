@@ -3,7 +3,7 @@ import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-t
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import Decimal from "decimal.js";
-import { toPubKey, toPubKeys } from "./address";
+import { toPubKey, toPubKeys } from "../utils/address";
 
 type TokenMint = string;
 type PoolData = Pick<WhirlpoolData, "tokenMintA" | "tokenMintB" | "sqrtPrice">;

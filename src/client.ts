@@ -14,8 +14,10 @@ import { OrcaDAL } from "./dal/orca-dal";
 import { OrcaWhirlpool } from "./pool/orca-whirlpool";
 import { OrcaPosition } from "./position/orca-position";
 import { toPubKey } from "./utils/address";
-import { getTokenUSDPrices, TokenUSDPrices } from "./utils/price";
-import { convertWhirlpoolDataToPoolData } from "./utils/pool-data";
+import { getTokenUSDPrices, TokenUSDPrices } from "./pool/price";
+import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
+import { UserPositionData } from ".";
+import { convertPositionDataToUserPositionData } from "./position/convert-data";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
@@ -85,35 +87,17 @@ export class OrcaWhirlpoolClient {
   }
 
   /**
-   * Fetch positions owned by the wallet address.
+   * Fetch position data owned by the wallet address.
    *
    * @param walletAddress wallet address
    * @param refresh defaults to refreshing the cache
    * @returns positions owned by the wallet address
    */
-  public async getUserPositions(
+  public async getUserPositionData(
     walletAddress: Address,
     refresh = true
-  ): Promise<Record<string, PositionData>> {
-    const potentialPositionAddresses: Address[] = [];
-    const userTokens = await this.dal.listUserTokens(walletAddress, refresh);
-    userTokens.forEach(({ amount, decimals, mint }) => {
-      if (amount === "1" && decimals === 0 && !!mint) {
-        potentialPositionAddresses.push(this.derivePositionAddress(mint));
-      }
-    });
-
-    const positions = await this.dal.listPositions(potentialPositionAddresses, refresh);
-    invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
-
-    const result: Record<string, PositionData> = {};
-    potentialPositionAddresses.map((address, index) => {
-      const position = positions[index];
-      if (position) {
-        result[toPubKey(address).toBase58()] = position;
-      }
-    });
-    return result;
+  ): Promise<Record<string, UserPositionData>> {
+    return await convertPositionDataToUserPositionData(this.dal, walletAddress, refresh);
   }
 
   /**

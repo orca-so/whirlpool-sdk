@@ -66,8 +66,4 @@ export type CollectRewardsQuoteParam = {
   refresh?: boolean;
 };
 
-export type CollectRewardsQuote = {
-  rewardOwedA?: u64;
-  rewardOwedB?: u64;
-  rewardOwedC?: u64;
-};
+export type CollectRewardsQuote = [u64 | undefined, u64 | undefined, u64 | undefined];

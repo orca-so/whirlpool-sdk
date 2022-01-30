@@ -104,9 +104,5 @@ export function getCollectRewardsQuoteInternal(
   const rewardOwedB = rewardExistsB ? updatedRewardInfosX64[1]?.shrn(64) : undefined;
   const rewardOwedC = rewardExistsC ? updatedRewardInfosX64[2]?.shrn(64) : undefined;
 
-  return {
-    rewardOwedA,
-    rewardOwedB,
-    rewardOwedC,
-  };
+  return [rewardOwedA, rewardOwedB, rewardOwedC];
 }

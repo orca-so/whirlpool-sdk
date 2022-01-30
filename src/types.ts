@@ -4,6 +4,8 @@ import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 
+/*** Pool ***/
+
 export type PoolData = {
   address: PublicKey;
   tokenMintA: PublicKey;
@@ -27,6 +29,29 @@ export type PoolRewardInfo = {
   vaultAmount: Decimal;
   emissionsPerSecond: Decimal;
 };
+
+/*** Position ***/
+
+export type UserPositionData = {
+  address: PublicKey;
+  whirlpool: PublicKey;
+  positionMint: PublicKey;
+  liquidity: u64;
+  tickLowerIndex: number;
+  tickUpperIndex: number;
+  priceLower: Decimal;
+  priceUpper: Decimal;
+  feeOwedA: Decimal;
+  feeOwedB: Decimal;
+  rewards: UserPositionRewardInfo[];
+};
+
+export type UserPositionRewardInfo = {
+  mint: PublicKey;
+  amountOwed?: Decimal;
+};
+
+/*** Misc ***/
 
 export type UserToken = {
   address: PublicKey;

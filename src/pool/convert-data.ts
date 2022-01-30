@@ -4,13 +4,13 @@ import Decimal from "decimal.js";
 import { PoolRewardInfo } from "..";
 import { OrcaDAL } from "../dal/orca-dal";
 import { PoolData } from "../types";
-import { toPubKey } from "./address";
-import { DecimalUtil } from "./public/decimal-utils";
+import { toPubKey } from "../utils/address";
+import { DecimalUtil } from "../utils/public/decimal-utils";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,
   poolAddresses: Address[],
-  refresh = false
+  refresh: boolean
 ): Promise<Record<string, PoolData>> {
   if (refresh) {
     const pools = await dal.listPools(poolAddresses, true);
@@ -40,6 +40,7 @@ export async function convertWhirlpoolDataToPoolData(
     const poolId = toPubKey(address).toBase58();
     const pool = await dal.getPool(address, false);
     if (!pool) {
+      console.error(`error - pool not found`);
       continue;
     }
 
@@ -48,6 +49,7 @@ export async function convertWhirlpoolDataToPoolData(
     const decimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
     const decimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
     if (!amountA || !amountB || decimalsA === undefined || decimalsB === undefined) {
+      console.error(`error - amount or decimals not found`);
       continue;
     }
 
