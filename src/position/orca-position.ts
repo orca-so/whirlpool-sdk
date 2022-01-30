@@ -72,21 +72,6 @@ export class OrcaPosition {
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    /*** Approve transfer of certain amounts of tokenA and tokenB to whirlpool vault ***/
-
-    // const transferApproveAIx = createApproveInstruction(
-    //   provider.wallet.publicKey,
-    //   quote.maxTokenA,
-    //   tokenOwnerAccountA
-    // );
-    // const transferApproveBIx = createApproveInstruction(
-    //   provider.wallet.publicKey,
-    //   quote.maxTokenB,
-    //   tokenOwnerAccountB
-    // );
-    // txBuilder.addInstruction(transferApproveAIx);
-    // txBuilder.addInstruction(transferApproveBIx);
-
     const addLiquidityIx = client
       .increaseLiquidityTx({
         liquidityAmount: quote.liquidity,

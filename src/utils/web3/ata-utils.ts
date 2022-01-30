@@ -29,11 +29,11 @@ export async function resolveOrCreateATA(
   wrappedSolAmountIn = new u64(0)
 ): Promise<ResolvedTokenAddressInstruction> {
   if (!tokenMint.equals(NATIVE_MINT)) {
-    const ataAddress = await deriveATA(tokenMint, ownerAddress);
+    const ataAddress = await deriveATA(ownerAddress, tokenMint);
 
     const tokenAccountInfo = await connection.getAccountInfo(ataAddress);
     const tokenAccount = deserializeTokenAccount(tokenAccountInfo?.data);
-    if (!tokenAccount) {
+    if (tokenAccount) {
       return { address: ataAddress, ...emptyInstruction };
     }
 

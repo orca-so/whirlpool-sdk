@@ -94,6 +94,18 @@ export class TickUtil {
     return Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) * tickSpacing * TICK_ARRAY_SIZE;
   }
 
+  public static getPrevStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+    return (
+      (Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) - 1) * tickSpacing * TICK_ARRAY_SIZE
+    );
+  }
+
+  public static getNextStartTickIndex(tickIndex: number, tickSpacing: TickSpacing): number {
+    return (
+      (Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE) + 1) * tickSpacing * TICK_ARRAY_SIZE
+    );
+  }
+
   public static getAddressContainingTickIndex(
     tickIndex: number,
     tickSpacing: TickSpacing,

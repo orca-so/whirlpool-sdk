@@ -39,8 +39,6 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
     };
   }
 
-  // TODO: Use slippage tolerance here
-
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
   const liquidity = tokenAmount
@@ -48,11 +46,14 @@ export function getAddLiquidityQuoteWhenPositionIsBelowRange(
     .mul(sqrtPriceUpperX64)
     .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
     .shrn(64 + tokenAMintInfo.decimals); // TODO
+  const liquidityAfterSlippage = liquidity
+    .mul(slippageTolerence.denominator)
+    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
-    maxTokenA: tokenAmount,
+    maxTokenA: new u64(tokenAmount),
     maxTokenB: new u64(0),
-    liquidity,
+    liquidity: new u64(liquidityAfterSlippage),
   };
 }
 
@@ -94,16 +95,19 @@ export function getAddLiquidityQuoteWhenPositionIsInRange(
       .mul(sqrtPriceUpperX64.sub(sqrtPriceX64))
       .div(sqrtPriceX64)
       .div(sqrtPriceUpperX64);
+  } else {
+    throw new Error("invariant violation");
   }
 
-  invariant(tokenAmountA !== undefined, "Token A amount is undefined");
-  invariant(tokenAmountB !== undefined, "Token B amount is undefined");
-  invariant(liquidityX64 !== undefined, "Liquidity is undefined");
+  const liquidityAfterSlippage = liquidityX64
+    .shrn(64)
+    .mul(slippageTolerence.denominator)
+    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
-    maxTokenA: tokenAmountA,
-    maxTokenB: tokenAmountB,
-    liquidity: liquidityX64.shrn(64),
+    maxTokenA: new u64(tokenAmountA),
+    maxTokenB: new u64(tokenAmountB),
+    liquidity: new u64(liquidityAfterSlippage),
   };
 }
 
@@ -134,10 +138,13 @@ export function getAddLiquidityQuoteWhenPositionIsAboveRange(
     .shln(64)
     .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
     .shrn(tokenBMintInfo.decimals); // TODO
+  const liquidityAfterSlippage = liquidity
+    .mul(slippageTolerence.denominator)
+    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
     maxTokenA: new u64(0),
-    maxTokenB: tokenAmount,
-    liquidity,
+    maxTokenB: new u64(tokenAmount),
+    liquidity: new u64(liquidityAfterSlippage),
   };
 }
