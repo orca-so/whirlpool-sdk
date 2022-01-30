@@ -17,6 +17,7 @@ import { getTokenUSDPrices, TokenUSDPrices } from "./pool/price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from ".";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
+import { getLiquidityDistribution, LiquidityDistribution } from "./pool/liquidity-distribution";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
@@ -104,12 +105,26 @@ export class OrcaWhirlpoolClient {
    *
    * @param poolAddresses list of pools to retrieve
    * @param refresh defaults to refreshing the cache
-   * @returns
+   * @returns pool data
    */
   public async getPoolData(
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
     return await convertWhirlpoolDataToPoolData(this.dal, poolAddresses, refresh);
+  }
+
+  /**
+   * Fetch a pool's liquidity distribution across three tick-arrays.
+   *
+   * @param poolAddress
+   * @param refresh
+   * @returns liquidity distribution
+   */
+  public async getLiquidityDistribution(
+    poolAddress: Address,
+    refresh = true
+  ): Promise<LiquidityDistribution | null> {
+    return await getLiquidityDistribution(this.dal, poolAddress, refresh);
   }
 }
