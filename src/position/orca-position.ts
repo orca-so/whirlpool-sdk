@@ -28,7 +28,7 @@ import { OrcaDAL } from "../dal/orca-dal";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TransactionExecutable } from "../utils/public/transaction-executable";
 import { TickUtil } from "../utils/whirlpool/tick-util";
-import { resolveOrCreateATA } from "../utils/web3/ata-utils";
+import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import {
   getAddLiquidityQuoteWhenPositionIsAboveRange,
   getAddLiquidityQuoteWhenPositionIsBelowRange,
@@ -52,7 +52,7 @@ export class OrcaPosition {
 
   public async getAddLiquidityTransaction(
     param: AddLiquidityTransactionParam
-  ): Promise<TransactionExecutable> {
+  ): Promise<TransactionBuilder> {
     const { provider, address, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -61,28 +61,41 @@ export class OrcaPosition {
     const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
 
-    // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserNFTAccount(
-      provider.wallet.publicKey,
-      position.positionMint
-    );
-    invariant(!!positionTokenAccount, "no position token account");
+    /* Get user's position nft */
+
+    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
+
+    /* Get user's associated token accounts for tokenA and tokenB */
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
-    txBuilder.addInstruction(tokenOwnerAccountAIx);
-
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
+
+    /*** Approve transfer of certain amounts of tokenA and tokenB to whirlpool vault ***/
+
+    // const transferApproveAIx = createApproveInstruction(
+    //   provider.wallet.publicKey,
+    //   quote.maxTokenA,
+    //   tokenOwnerAccountA
+    // );
+    // const transferApproveBIx = createApproveInstruction(
+    //   provider.wallet.publicKey,
+    //   quote.maxTokenB,
+    //   tokenOwnerAccountB
+    // );
+    // txBuilder.addInstruction(transferApproveAIx);
+    // txBuilder.addInstruction(transferApproveBIx);
 
     const addLiquidityIx = client
       .increaseLiquidityTx({
@@ -103,12 +116,12 @@ export class OrcaPosition {
       .compressIx(false);
     txBuilder.addInstruction(addLiquidityIx);
 
-    return new TransactionExecutable(provider, [txBuilder]);
+    return txBuilder;
   }
 
   public async getRemoveLiquidityTransaction(
     param: RemoveLiquidityTransactionParam
-  ): Promise<TransactionExecutable> {
+  ): Promise<TransactionBuilder> {
     const { provider, address, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -117,27 +130,25 @@ export class OrcaPosition {
     const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
 
-    // step 0. create transaction builders, and check if the wallet has the position mint
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserNFTAccount(
-      provider.wallet.publicKey,
-      position.positionMint
-    );
-    invariant(!!positionTokenAccount, "no position token account");
+    /* Get user's position nft */
+
+    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
+
+    /* Get user's associated token accounts for tokenA and tokenB */
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
-    txBuilder.addInstruction(tokenOwnerAccountAIx);
-
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
+    txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const removeLiquidityIx = client
@@ -159,7 +170,7 @@ export class OrcaPosition {
       .compressIx(false);
     txBuilder.addInstruction(removeLiquidityIx);
 
-    return new TransactionExecutable(provider, [txBuilder]);
+    return txBuilder;
   }
 
   public async getCollectFeesAndRewardsTransaction(
@@ -177,11 +188,7 @@ export class OrcaPosition {
     const ataTxBuilder = new TransactionBuilder(ctx.provider);
     const mainTxBuilder = new TransactionBuilder(ctx.provider);
 
-    const positionTokenAccount = await this.dal.getUserNFTAccount(
-      provider.wallet.publicKey,
-      position.positionMint
-    );
-    invariant(!!positionTokenAccount, "no position token account");
+    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     // step 1. update state of owed fees and rewards
     const updateIx = client
@@ -368,7 +375,10 @@ export class OrcaPosition {
   }
 
   private async getTokenMintInfos(whirlpool: WhirlpoolData): Promise<[MintInfo, MintInfo]> {
-    const mintInfos = await this.dal.listMintInfos([whirlpool.tokenMintA, whirlpool.tokenMintB]);
+    const mintInfos = await this.dal.listMintInfos(
+      [whirlpool.tokenMintA, whirlpool.tokenMintB],
+      false
+    );
     invariant(!!mintInfos && mintInfos.length === 2, "OrcaPosition - unable to get mint infos");
     invariant(!!mintInfos[0] && !!mintInfos[1], "OrcaPosition - mint infos do not exist");
     return [mintInfos[0], mintInfos[1]];

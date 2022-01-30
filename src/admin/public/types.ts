@@ -18,7 +18,6 @@ export type CollectProtocolFeesTransactionParam = {
   address: PublicKey;
   tokenDestinationA: PublicKey;
   tokenDestinationB: PublicKey;
-  refresh?: boolean;
 };
 
 export type SetFeeAuthorityParam = {

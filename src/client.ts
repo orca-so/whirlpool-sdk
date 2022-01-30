@@ -1,11 +1,12 @@
 import { getPositionPda, getWhirlpoolPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
-import { OrcaNetwork } from ".";
+import { OrcaNetwork } from "./constants/public/network";
+import { PoolData } from "./types";
 import { OrcaAdmin } from "./admin/orca-admin";
 import { defaultNetwork, getDefaultConnection } from "./constants/defaults";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
@@ -14,6 +15,7 @@ import { OrcaWhirlpool } from "./pool/orca-whirlpool";
 import { OrcaPosition } from "./position/orca-position";
 import { toPubKey } from "./utils/address";
 import { getTokenUSDPrices, TokenUSDPrices } from "./utils/price";
+import { convertWhirlpoolDataToPoolData } from "./utils/pool-data";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
@@ -68,14 +70,16 @@ export class OrcaWhirlpoolClient {
    * @param baseTokenMint a token mint with known stable usd price (e.g. USDC)
    * @param baseTokenUSDPrice baseTokenMint's usd price. defaults to 1, assuming `baseTokenMint` is a USD stable coin
    * @param otherBaseTokenMints optional list of token mints to prioritize as base
+   * @param refresh defaults to refreshing the cache
    */
   public async getTokenPrices(
     poolAddresses: Address[],
     baseTokenMint: Address,
     baseTokenUSDPrice = new Decimal(1),
-    otherBaseTokenMints: Address[] = [NATIVE_MINT]
+    otherBaseTokenMints: Address[] = [NATIVE_MINT],
+    refresh = true
   ): Promise<TokenUSDPrices> {
-    const allPools = await this.dal.listPools(poolAddresses, true);
+    const allPools = await this.dal.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
     return await getTokenUSDPrices(pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokenMints);
   }
@@ -84,45 +88,38 @@ export class OrcaWhirlpoolClient {
    * Fetch a list of positions owned by the wallet address.
    *
    * @param walletAddress wallet address
+   * @param refresh defaults to refreshing the cache
    * @returns a list of positions owned by the wallet address
    */
-  public async getUserPositions(walletAddress: Address): Promise<PublicKey[]> {
+  public async getUserPositions(
+    walletAddress: Address,
+    refresh = true
+  ): Promise<Record<string, PositionData>> {
     const potentialPositionAddresses: Address[] = [];
-    const userTokens = await this.dal.listUserTokens(walletAddress);
+    const userTokens = await this.dal.listUserTokens(walletAddress, refresh);
     userTokens.forEach(({ amount, decimals, mint }) => {
       if (amount === "1" && decimals === 0 && !!mint) {
         potentialPositionAddresses.push(this.derivePositionAddress(mint));
       }
     });
 
-    const positions = await this.dal.listPositions(potentialPositionAddresses, true);
+    const positions = await this.dal.listPositions(potentialPositionAddresses, refresh);
     invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
-  }
 
-  /**
-   * Populate the cache with whirlpool data, and all of its associated data, including:
-   *   tokenMintA, tokenMintB, tokenVaultA, tokenVaultB, rewardInfo.mint, rewardInfo.vault
-   */
-  public async hydrate(poolAddresses: Address[]): Promise<void> {
-    const pools = await this.dal.listPools(poolAddresses, true);
-
-    const allTokenAccounts: Set<string> = new Set();
-    const allMintInfos: Set<string> = new Set();
-    pools.forEach((pool) => {
-      if (pool) {
-        allTokenAccounts.add(pool.tokenVaultA.toBase58());
-        allTokenAccounts.add(pool.tokenVaultB.toBase58());
-        allMintInfos.add(pool.tokenMintA.toBase58());
-        allMintInfos.add(pool.tokenMintB.toBase58());
-
-        pool.rewardInfos.forEach(({ vault, mint }) => {
-          allTokenAccounts.add(vault.toBase58());
-          allMintInfos.add(mint.toBase58());
-        });
+    const result: Record<string, PositionData> = {};
+    potentialPositionAddresses.map((address, index) => {
+      const position = positions[index];
+      if (position) {
+        result[toPubKey(address).toBase58()] = position;
       }
     });
+    return result;
+  }
 
-    await this.dal.listTokenInfos(Array.from(allTokenAccounts), true);
-    await this.dal.listMintInfos(Array.from(allMintInfos), true);
+  public async getPoolData(
+    poolAddresses: Address[],
+    refresh = false
+  ): Promise<Record<string, PoolData>> {
+    return await convertWhirlpoolDataToPoolData(this.dal, poolAddresses, refresh);
   }
 }

@@ -59,12 +59,12 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTransaction(
     param: CollectProtocolFeesTransactionParam
   ): Promise<TransactionBuilder> {
-    const { provider, address, tokenDestinationA, tokenDestinationB, refresh } = param;
+    const { provider, address, tokenDestinationA, tokenDestinationB } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.dal.getPool(address, refresh);
+    const whirlpool = await this.dal.getPool(address, true);
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
     return client.collectProtocolFeesTx({

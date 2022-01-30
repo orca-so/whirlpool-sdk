@@ -18,6 +18,7 @@ import {
 import { WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { toPubKey, toPubKeys } from "../utils/address";
+import { UserToken } from "../types";
 
 /**
  * Supported accounts
@@ -49,6 +50,7 @@ export class OrcaDAL {
 
   private readonly connection: Connection;
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
+  private _userTokens: UserToken[] = [];
 
   constructor(whirlpoolsConfig: Address, programId: Address, connection: Connection) {
     this.whirlpoolsConfig = toPubKey(whirlpoolsConfig);
@@ -65,7 +67,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns whirlpool account
    */
-  public async getPool(address: Address, refresh = false): Promise<WhirlpoolData | null> {
+  public async getPool(address: Address, refresh: boolean): Promise<WhirlpoolData | null> {
     return this.get(toPubKey(address), ParsableWhirlpool, refresh);
   }
 
@@ -76,7 +78,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns position account
    */
-  public async getPosition(address: Address, refresh = false): Promise<PositionData | null> {
+  public async getPosition(address: Address, refresh: boolean): Promise<PositionData | null> {
     return this.get(toPubKey(address), ParsablePosition, refresh);
   }
 
@@ -87,7 +89,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns tick array account
    */
-  public async getTickArray(address: Address, refresh = false): Promise<TickArrayData | null> {
+  public async getTickArray(address: Address, refresh: boolean): Promise<TickArrayData | null> {
     return this.get(toPubKey(address), ParsableTickArray, refresh);
   }
 
@@ -98,7 +100,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns token info account
    */
-  public async getTokenInfo(address: Address, refresh = false): Promise<AccountInfo | null> {
+  public async getTokenInfo(address: Address, refresh: boolean): Promise<AccountInfo | null> {
     return this.get(toPubKey(address), ParsableTokenInfo, refresh);
   }
 
@@ -109,7 +111,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns mint info account
    */
-  public async getMintInfo(address: Address, refresh = false): Promise<MintInfo | null> {
+  public async getMintInfo(address: Address, refresh: boolean): Promise<MintInfo | null> {
     return this.get(toPubKey(address), ParsableMintInfo, refresh);
   }
 
@@ -122,7 +124,7 @@ export class OrcaDAL {
    */
   public async getConfig(
     address: Address,
-    refresh = false
+    refresh: boolean
   ): Promise<WhirlpoolConfigAccount | null> {
     return this.get(toPubKey(address), ParsableWhirlpoolsConfig, refresh);
   }
@@ -134,7 +136,10 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns whirlpool accounts
    */
-  public async listPools(addresses: Address[], refresh = false): Promise<(WhirlpoolData | null)[]> {
+  public async listPools(
+    addresses: Address[],
+    refresh: boolean
+  ): Promise<(WhirlpoolData | null)[]> {
     return this.list(toPubKeys(addresses), ParsableWhirlpool, refresh);
   }
 
@@ -147,7 +152,7 @@ export class OrcaDAL {
    */
   public async listPositions(
     addresses: Address[],
-    refresh = false
+    refresh: boolean
   ): Promise<(PositionData | null)[]> {
     return this.list(toPubKeys(addresses), ParsablePosition, refresh);
   }
@@ -161,7 +166,7 @@ export class OrcaDAL {
    */
   public async listTickArrays(
     addresses: Address[],
-    refresh = false
+    refresh: boolean
   ): Promise<(TickArrayData | null)[]> {
     return this.list(toPubKeys(addresses), ParsableTickArray, refresh);
   }
@@ -175,7 +180,7 @@ export class OrcaDAL {
    */
   public async listTokenInfos(
     addresses: Address[],
-    refresh = false
+    refresh: boolean
   ): Promise<(AccountInfo | null)[]> {
     return this.list(toPubKeys(addresses), ParsableTokenInfo, refresh);
   }
@@ -187,7 +192,7 @@ export class OrcaDAL {
    * @param refresh force cache refresh
    * @returns mint info accounts
    */
-  public async listMintInfos(addresses: Address[], refresh = false): Promise<(MintInfo | null)[]> {
+  public async listMintInfos(addresses: Address[], refresh: boolean): Promise<(MintInfo | null)[]> {
     return this.list(toPubKeys(addresses), ParsableMintInfo, refresh);
   }
 
@@ -195,25 +200,27 @@ export class OrcaDAL {
    * Retrieve a list of tokens owned by the user.
    *
    * @param walletAddress user wallet address
-   * @param mint optional mint address to filter by
+   * @param refresh foree cache refresh
    * @returns user tokens
    */
-  public async listUserTokens(walletAddress: Address, mint?: Address): Promise<UserToken[]> {
-    const filter = mint
-      ? { programId: TOKEN_PROGRAM_ID, mint: toPubKey(mint) }
-      : { programId: TOKEN_PROGRAM_ID };
+  public async listUserTokens(walletAddress: Address, refresh: boolean): Promise<UserToken[]> {
+    if (!this._userTokens || refresh) {
+      const filter = { programId: TOKEN_PROGRAM_ID };
+      const { value } = await this.connection.getParsedTokenAccountsByOwner(
+        toPubKey(walletAddress),
+        filter
+      );
+      const userTokens = value.map((accountInfo) => ({
+        address: accountInfo.pubkey,
+        amount: accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount,
+        decimals: accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals,
+        mint: accountInfo.account?.data?.parsed?.info?.mint,
+      }));
+      this._userTokens = userTokens;
+      return userTokens;
+    }
 
-    const { value } = await this.connection.getParsedTokenAccountsByOwner(
-      toPubKey(walletAddress),
-      filter
-    );
-
-    return value.map((accountInfo) => ({
-      address: accountInfo.pubkey,
-      amount: accountInfo.account?.data?.parsed?.info?.tokenAmount?.amount,
-      decimals: accountInfo.account?.data?.parsed?.info?.tokenAmount?.decimals,
-      mint: accountInfo.account?.data?.parsed?.info?.mint,
-    }));
+    return this._userTokens;
   }
 
   /**
@@ -331,12 +338,3 @@ export class OrcaDAL {
     return combinedResult;
   }
 }
-
-/*** Utility Types ***/
-
-type UserToken = {
-  address: PublicKey;
-  amount?: string;
-  decimals?: number;
-  mint?: string;
-};
