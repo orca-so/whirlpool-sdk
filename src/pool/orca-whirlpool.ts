@@ -321,11 +321,11 @@ export class OrcaWhirlpool {
 
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
 
-    const tickLowerIndex = TickUtil.floorToValid(
+    const tickLowerIndex = TickUtil.toValid(
       sqrtPriceX64ToTickIndex(toX64(priceLower.sqrt())),
       whirlpool.tickSpacing
     );
-    const tickUpperIndex = TickUtil.floorToValid(
+    const tickUpperIndex = TickUtil.toValid(
       sqrtPriceX64ToTickIndex(toX64(priceUpper.sqrt())),
       whirlpool.tickSpacing
     );

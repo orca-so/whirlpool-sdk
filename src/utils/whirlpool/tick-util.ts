@@ -13,23 +13,6 @@ enum TickSearchDirection {
   Right,
 }
 
-export const TickMin = 0;
-export const TickMax = TICK_ARRAY_SIZE - 1;
-
-/**
- * Tick is outside the given tick array's range (inclusive)
- */
-export class TickArrayOutOfBoundsError extends Error {
-  public readonly lowerBound: number;
-  public readonly upperBound: number;
-
-  constructor(tickArray: TickData[]) {
-    super("Tick is outside the given tick array's range (inclusive)");
-    this.lowerBound = 0;
-    this.upperBound = tickArray.length - 1;
-  }
-}
-
 export class TickUtil {
   private constructor() {}
 
@@ -37,53 +20,28 @@ export class TickUtil {
    * Get the nearest (rounding down) valid tick index from the tickIndex.
    * A valid tick index is a point on the tick spacing grid line.
    */
-  public static floorToValid(tickIndex: number, tickSpacing: TickSpacing): number {
+  public static toValid(tickIndex: number, tickSpacing: TickSpacing): number {
     return tickIndex - (tickIndex % tickSpacing);
   }
 
-  // NOTE: within this tick array
-  public static getPrevInitializedTickIndex(
-    account: TickArrayData,
-    currentTickIndex: number,
-    tickSpacing: TickSpacing
-  ): number {
-    return TickUtil.findInitializedTick(
-      account,
-      currentTickIndex,
-      tickSpacing,
-      TickSearchDirection.Left
-    );
-  }
-
-  // NOTE: within this tick array
-  public static getNextInitializedTickIndex(
-    account: TickArrayData,
-    currentTickIndex: number,
-    tickSpacing: TickSpacing
-  ): number {
-    return TickUtil.findInitializedTick(
-      account,
-      currentTickIndex,
-      tickSpacing,
-      TickSearchDirection.Right
-    );
-  }
-
-  // TODO account for negative
+  /**
+   * Get the tick from tickArray with a global tickIndex.
+   */
   public static getTick(
-    account: TickArrayData,
+    tickArray: TickArrayData,
     tickIndex: number,
     tickSpacing: TickSpacing
   ): TickData {
-    const index = Math.floor(tickIndex / tickSpacing) % TICK_ARRAY_SIZE;
-    invariant(index >= 0, "tick index out of range");
-    invariant(index < account.ticks.length, "tick index out of range");
-
-    const tick = account.ticks[index];
-    invariant(!!tick, "account");
+    const realIndex = TickUtil.tickIndexToTickArrayIndex(tickArray, tickIndex, tickSpacing);
+    const tick = tickArray.ticks[realIndex];
+    invariant(!!tick, "tick realIndex out of range");
     return tick;
   }
 
+  /**
+   * Get the PDA of the tick array containing tickIndex.
+   * tickArrayOffset can be used to get neighboring tick arrays.
+   */
   public static getPdaWithTickIndex(
     tickIndex: number,
     tickSpacing: TickSpacing,
@@ -92,36 +50,52 @@ export class TickUtil {
     tickArrayOffset = 0
   ): PDA {
     const startIndex = TickUtil.getStartTickIndex(tickIndex, tickSpacing, tickArrayOffset);
-    return TickUtil.getPda(startIndex, whirlpool, programId);
+    return getTickArrayPda(programId, whirlpool, startIndex);
   }
 
+  /**
+   * Get the startIndex of the tick array containing tickIndex.
+   *
+   * @param tickIndex
+   * @param tickSpacing
+   * @param offset can be used to get neighboring tick array startIndex.
+   * @returns
+   */
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
     const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
     return (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
   }
 
-  private static getPda(startIndex: number, whirlpool: PublicKey, programId: PublicKey): PDA {
-    return getTickArrayPda(programId, whirlpool, startIndex);
+  /**
+   * Get the previous initialized tick index within the same tick array.
+   */
+  public static getPrevInitializedTickIndex(
+    account: TickArrayData,
+    currentTickIndex: number,
+    tickSpacing: TickSpacing
+  ): number | null {
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Left
+    );
   }
 
-  private static tickIndexToTickArrayIndex(
+  /**
+   * Get the next initialized tick index within the same tick array.
+   */
+  public static getNextInitializedTickIndex(
     account: TickArrayData,
-    tickIndex: number,
+    currentTickIndex: number,
     tickSpacing: TickSpacing
-  ): number {
-    const tickArrayIndex = Math.floor((tickIndex - account.startTickIndex) / tickSpacing);
-
-    return tickArrayIndex;
-  }
-
-  private static tickArrayIndexToTickIndex(
-    account: TickArrayData,
-    tickArrayIndex: number,
-    tickSpacing: TickSpacing
-  ): number {
-    const tickIndex = account.startTickIndex + tickArrayIndex * tickSpacing;
-
-    return tickIndex;
+  ): number | null {
+    return TickUtil.findInitializedTick(
+      account,
+      currentTickIndex,
+      tickSpacing,
+      TickSearchDirection.Right
+    );
   }
 
   private static findInitializedTick(
@@ -129,7 +103,7 @@ export class TickUtil {
     currentTickIndex: number,
     tickSpacing: TickSpacing,
     searchDirection: TickSearchDirection
-  ): number {
+  ): number | null {
     const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(
       account,
       currentTickIndex,
@@ -138,22 +112,42 @@ export class TickUtil {
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
-    let nextInitializedTickArrayIndex = currentTickArrayIndex + increment;
+    let stepInitializedTickArrayIndex = currentTickArrayIndex + increment;
     while (
-      nextInitializedTickArrayIndex >= 0 &&
-      nextInitializedTickArrayIndex < account.ticks.length
+      stepInitializedTickArrayIndex >= 0 &&
+      stepInitializedTickArrayIndex < account.ticks.length
     ) {
-      if (account.ticks[nextInitializedTickArrayIndex]?.initialized) {
+      if (account.ticks[stepInitializedTickArrayIndex]?.initialized) {
         return TickUtil.tickArrayIndexToTickIndex(
           account,
-          nextInitializedTickArrayIndex,
+          stepInitializedTickArrayIndex,
           tickSpacing
         );
       }
 
-      nextInitializedTickArrayIndex += increment;
+      stepInitializedTickArrayIndex += increment;
     }
 
-    throw new TickArrayOutOfBoundsError(account.ticks);
+    return null;
+  }
+
+  private static tickIndexToTickArrayIndex(
+    { startTickIndex }: TickArrayData,
+    tickIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    return startTickIndex >= 0
+      ? Math.floor((tickIndex - startTickIndex) / tickSpacing)
+      : Math.floor((tickIndex + startTickIndex) / tickSpacing);
+  }
+
+  private static tickArrayIndexToTickIndex(
+    { startTickIndex }: TickArrayData,
+    tickArrayIndex: number,
+    tickSpacing: TickSpacing
+  ): number {
+    return startTickIndex >= 0
+      ? startTickIndex + tickArrayIndex * tickSpacing
+      : startTickIndex - tickArrayIndex * tickSpacing;
   }
 }

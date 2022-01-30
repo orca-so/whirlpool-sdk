@@ -36,7 +36,7 @@ export async function getLiquidityDistribution(
         const tickIndex = startIndex + index * pool.tickSpacing;
         const price = new Decimal(1.0001).pow(tickIndex);
         liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
-        result.push({ liquidity, price, tickIndex });
+        result.push({ liquidity: new Decimal(liquidity), price, tickIndex });
       });
     });
   }
