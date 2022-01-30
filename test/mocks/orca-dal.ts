@@ -7,8 +7,6 @@ import { MintInfo } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 
-// TODO: Add proper mocks
-
 export const getPoolMock = jest.fn(
   (address: PublicKey, refresh: boolean = false) => ({} as WhirlpoolData)
 );
