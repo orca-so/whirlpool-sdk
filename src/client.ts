@@ -85,11 +85,11 @@ export class OrcaWhirlpoolClient {
   }
 
   /**
-   * Fetch a list of positions owned by the wallet address.
+   * Fetch positions owned by the wallet address.
    *
    * @param walletAddress wallet address
    * @param refresh defaults to refreshing the cache
-   * @returns a list of positions owned by the wallet address
+   * @returns positions owned by the wallet address
    */
   public async getUserPositions(
     walletAddress: Address,
@@ -116,9 +116,16 @@ export class OrcaWhirlpoolClient {
     return result;
   }
 
+  /**
+   * Fetch pool data.
+   *
+   * @param poolAddresses list of pools to retrieve
+   * @param refresh defaults to refreshing the cache
+   * @returns
+   */
   public async getPoolData(
     poolAddresses: Address[],
-    refresh = false
+    refresh = true
   ): Promise<Record<string, PoolData>> {
     return await convertWhirlpoolDataToPoolData(this.dal, poolAddresses, refresh);
   }

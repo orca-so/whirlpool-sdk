@@ -33,6 +33,8 @@ export class OrcaAdmin {
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
+    // TODO reorder token mints
+
     const whirlpoolPda = getWhirlpoolPda(
       programId,
       whirlpoolConfigKey,
