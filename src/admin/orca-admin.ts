@@ -16,6 +16,7 @@ import {
   SetRewardEmissionsBySuperAuthorityTransactionParam,
 } from "..";
 import { OrcaDAL } from "../dal/orca-dal";
+import { toPubKey } from "../utils/address";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -29,16 +30,16 @@ export class OrcaAdmin {
     const whirlpoolPda = getWhirlpoolPda(
       programId,
       whirlpoolConfigKey,
-      tokenMintA,
-      tokenMintB,
+      toPubKey(tokenMintA),
+      toPubKey(tokenMintB),
       tickSpacing
     );
 
     return client.initPoolTx({
       initSqrtPrice: toX64(initialPrice.sqrt()),
       whirlpoolConfigKey,
-      tokenMintA,
-      tokenMintB,
+      tokenMintA: toPubKey(tokenMintA),
+      tokenMintB: toPubKey(tokenMintB),
       whirlpoolPda,
       tokenVaultAKeypair: Keypair.generate(),
       tokenVaultBKeypair: Keypair.generate(),
@@ -52,22 +53,22 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTransaction(
     param: CollectProtocolFeesTransactionParam
   ): Promise<TransactionBuilder> {
-    const { provider, address, tokenDestinationA, tokenDestinationB } = param;
+    const { provider, poolAddress, tokenDestinationA, tokenDestinationB } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.dal.getPool(address, true);
+    const whirlpool = await this.dal.getPool(poolAddress, true);
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
     return client.collectProtocolFeesTx({
       whirlpoolsConfig,
-      whirlpool: address,
+      whirlpool: toPubKey(poolAddress),
       collectProtocolFeesAuthority: provider.wallet.publicKey,
       tokenVaultA: whirlpool.tokenVaultA,
       tokenVaultB: whirlpool.tokenVaultB,
-      tokenDestinationA,
-      tokenDestinationB,
+      tokenDestinationA: toPubKey(tokenDestinationA),
+      tokenDestinationB: toPubKey(tokenDestinationB),
     });
   }
 
@@ -80,7 +81,7 @@ export class OrcaAdmin {
     return client.setFeeAuthorityTx({
       whirlpoolsConfig,
       feeAuthority: provider.wallet.publicKey,
-      newFeeAuthority,
+      newFeeAuthority: toPubKey(newFeeAuthority),
     });
   }
 
@@ -95,14 +96,14 @@ export class OrcaAdmin {
     return client.setCollectProtocolFeesAuthorityTx({
       whirlpoolsConfig,
       collectProtocolFeesAuthority: provider.wallet.publicKey,
-      newCollectProtocolFeesAuthority,
+      newCollectProtocolFeesAuthority: toPubKey(newCollectProtocolFeesAuthority),
     });
   }
 
   /*** Reward ***/
 
   public getInitRewardTransaction(param: InitRewardTransactionParam): TransactionBuilder {
-    const { provider, rewardAuthority, whirlpool, rewardMint, rewardVaultKeypair, rewardIndex } =
+    const { provider, rewardAuthority, poolAddress, rewardMint, rewardVaultKeypair, rewardIndex } =
       param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -110,10 +111,10 @@ export class OrcaAdmin {
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
     return client.initializeRewardTx({
-      rewardAuthority,
+      rewardAuthority: toPubKey(rewardAuthority),
       funder: provider.wallet.publicKey,
-      whirlpool,
-      rewardMint,
+      whirlpool: toPubKey(poolAddress),
+      rewardMint: toPubKey(rewardMint),
       rewardVaultKeypair,
       rewardIndex,
     });
@@ -122,16 +123,16 @@ export class OrcaAdmin {
   public getSetRewardAuthorityTransaction(
     param: SetRewardAuthorityTransactionParam
   ): TransactionBuilder {
-    const { provider, whirlpool, newRewardAuthority, rewardIndex } = param;
+    const { provider, poolAddress, newRewardAuthority, rewardIndex } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
     return client.setRewardAuthorityTx({
-      whirlpool,
+      whirlpool: toPubKey(poolAddress),
       rewardAuthority: provider.wallet.publicKey,
-      newRewardAuthority,
+      newRewardAuthority: toPubKey(newRewardAuthority),
       rewardIndex,
     });
   }
@@ -139,7 +140,7 @@ export class OrcaAdmin {
   public getSetRewardEmissionsTransaction(
     param: SetRewardEmissionsTransactionParam
   ): TransactionBuilder {
-    const { provider, whirlpool, rewardIndex, emissionsPerSecondX64, rewardVault } = param;
+    const { provider, poolAddress, rewardIndex, emissionsPerSecondX64, rewardVault } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
@@ -147,17 +148,17 @@ export class OrcaAdmin {
 
     return client.setRewardEmissionsTx({
       rewardAuthority: provider.wallet.publicKey,
-      whirlpool,
+      whirlpool: toPubKey(poolAddress),
       rewardIndex,
       emissionsPerSecondX64,
-      rewardVault,
+      rewardVault: toPubKey(rewardVault),
     });
   }
 
   public getSetRewardAuthorityBySuperAuthorityTransaction(
     param: SetRewardAuthorityBySuperAuthorityTransactionParam
   ): TransactionBuilder {
-    const { provider, whirlpool, newRewardAuthority, rewardIndex } = param;
+    const { provider, poolAddress, newRewardAuthority, rewardIndex } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -166,9 +167,9 @@ export class OrcaAdmin {
 
     return client.setRewardAuthorityBySuperAuthorityTx({
       whirlpoolsConfig,
-      whirlpool,
+      whirlpool: toPubKey(poolAddress),
       rewardEmissionsSuperAuthority: provider.wallet.publicKey,
-      newRewardAuthority,
+      newRewardAuthority: toPubKey(newRewardAuthority),
       rewardIndex,
     });
   }
@@ -183,8 +184,8 @@ export class OrcaAdmin {
 
     return client.setRewardEmissionsSuperAuthorityTx({
       whirlpoolsConfig,
-      rewardEmissionsSuperAuthority,
-      newRewardEmissionsSuperAuthority,
+      rewardEmissionsSuperAuthority: toPubKey(rewardEmissionsSuperAuthority),
+      newRewardEmissionsSuperAuthority: toPubKey(newRewardEmissionsSuperAuthority),
     });
   }
 }
