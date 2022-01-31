@@ -262,8 +262,6 @@ export class OrcaDAL {
     const key = address.toBase58();
     const cachedValue: CachedValue | null | undefined = this._cache[key]?.value;
 
-    // TODO - currently we store null in cache. is this the correct behavior?
-    //    Q - should we fetch if cached value is null? (i don't think we should)
     if (cachedValue !== undefined && !refresh) {
       return cachedValue as T | null;
     }
@@ -285,46 +283,44 @@ export class OrcaDAL {
     refresh: boolean
   ): Promise<(T | null)[]> {
     const keys = addresses.map((address) => address.toBase58());
-    const cachedValues: (CachedValue | null | undefined)[] = keys.map(
-      (key) => this._cache[key]?.value
-    );
+    const cachedValues: [string, CachedValue | null | undefined][] = keys.map((key) => [
+      key,
+      this._cache[key]?.value,
+    ]);
 
-    const undefinedAccounts: { cachedIdx: number; key: string }[] = [];
-    cachedValues.forEach((val, cachedIdx) => {
-      if (val === undefined || refresh) {
-        const key = keys[cachedIdx];
-        invariant(!!key, "key cannot be undefined");
-        undefinedAccounts.push({ cachedIdx, key });
+    /* Look for accounts not found in cache */
+    const undefinedAccounts: { cacheIndex: number; key: string }[] = [];
+    cachedValues.forEach(([key, value], cacheIndex) => {
+      if (value === undefined || refresh) {
+        undefinedAccounts.push({ cacheIndex, key });
       }
     });
 
-    // TODO - currently we store null in cache. is this the correct behavior?
-    //    Q - should we fetch if cached value is null? (i don't think we should)
-    if (undefinedAccounts.length === 0) {
-      return cachedValues.filter((value): value is T => value !== null);
+    /* Fetch accounts not found in cache */
+    if (undefinedAccounts.length > 0) {
+      const data = await this.bulkRequest(undefinedAccounts.map((account) => account.key));
+      undefinedAccounts.forEach(({ cacheIndex, key }, dataIndex) => {
+        const value = entity.parse(data[dataIndex]);
+        invariant(cachedValues[cacheIndex] === undefined, "unexpected non-undefined value");
+        cachedValues[cacheIndex] = [key, value];
+        this._cache[key] = { entity, value };
+      });
     }
 
-    const data = await this.bulkRequest(undefinedAccounts.map((account) => account.key));
-
-    for (const [dataIdx, { cachedIdx, key }] of undefinedAccounts.entries()) {
-      const value = entity.parse(data[dataIdx]);
-      this._cache[key] = { entity, value };
-      cachedValues[cachedIdx] = value;
-    }
-
-    const result = cachedValues.filter((value): value is T | null => value !== undefined);
-    invariant(result.length === addresses.length, "error while fetching accounts");
-
+    const result = cachedValues
+      .map(([_, value]) => value)
+      .filter((value): value is T | null => value !== undefined);
+    invariant(result.length === addresses.length, "not enough results fetched");
     return result;
   }
 
   /**
    * Make batch rpc request
-   * Note: getMultipleAccounts has limitation of 100 accounts per request
    */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
-    const chunk = 100;
     const responses: Promise<GetMultipleAccountsResponse>[] = [];
+    const chunk = 100; // getMultipleAccounts has limitation of 100 accounts per request
+
     for (let i = 0; i < addresses.length; i += chunk) {
       const addressesSubset = addresses.slice(i, i + chunk);
       const res = (this.connection as any)._rpcRequest("getMultipleAccounts", [
