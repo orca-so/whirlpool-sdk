@@ -26,33 +26,33 @@ export async function getLiquidityDistribution(
   const datapoints: LiquidityDataPoint[] = [];
 
   const pool = await dal.getPool(poolAddress, refresh);
-  if (pool) {
-    const tickArrayAddresses = getSurroundingTickArrayAddresses(pool, poolAddress, dal.programId);
-    const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
-
-    let liquidity = new Decimal(0);
-    tickArrays.forEach((tickArray) => {
-      if (!tickArray) {
-        return;
-      }
-
-      const startIndex = tickArray.startTickIndex;
-      tickArray.ticks.forEach((tick, index) => {
-        const tickIndex = startIndex + index * pool.tickSpacing;
-        const price = new Decimal(1.0001).pow(tickIndex);
-        liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
-        datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
-      });
-    });
-
-    return {
-      currentPrice: fromX64(pool.sqrtPrice).pow(2),
-      currentTickIndex: pool.tickCurrentIndex,
-      datapoints,
-    };
+  if (!pool) {
+    return null;
   }
 
-  return null;
+  const tickArrayAddresses = getSurroundingTickArrayAddresses(pool, poolAddress, dal.programId);
+  const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
+
+  let liquidity = new Decimal(0);
+  tickArrays.forEach((tickArray) => {
+    if (!tickArray) {
+      return;
+    }
+
+    const startIndex = tickArray.startTickIndex;
+    tickArray.ticks.forEach((tick, index) => {
+      const tickIndex = startIndex + index * pool.tickSpacing;
+      const price = new Decimal(1.0001).pow(tickIndex);
+      liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
+      datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
+    });
+  });
+
+  return {
+    currentPrice: fromX64(pool.sqrtPrice).pow(2),
+    currentTickIndex: pool.tickCurrentIndex,
+    datapoints,
+  };
 }
 
 // TODO min, max check for left edge and right edge

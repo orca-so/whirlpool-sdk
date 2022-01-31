@@ -48,8 +48,7 @@ export class OrcaWhirlpool {
   ): Promise<MultiTransactionBuilder> {
     const {
       provider,
-      whirlpool: address,
-      quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex },
+      quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, address },
     } = param;
     invariant(liquidity.gt(new u64(0)), "liquidity must be greater than zero");
 
@@ -168,11 +167,11 @@ export class OrcaWhirlpool {
   public async getClosePositionTransaction(
     param: ClosePositionTransactionParam
   ): Promise<MultiTransactionBuilder> {
-    const { provider, position: positionAddress, quote } = param;
+    const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(positionAddress, true);
+    const position = await this.getPosition(quote.address, true);
     const whirlpool = await this.getWhirlpool(position.whirlpool, false);
     const tickArrayLower = TickUtil.getPdaWithTickIndex(
       position.tickLowerIndex,
@@ -213,7 +212,7 @@ export class OrcaWhirlpool {
             tokenMaxB: quote.minTokenB,
             whirlpool: position.whirlpool,
             positionAuthority: provider.wallet.publicKey,
-            position: positionAddress,
+            position: quote.address,
             positionTokenAccount,
             tokenOwnerAccountA,
             tokenOwnerAccountB,
@@ -232,13 +231,11 @@ export class OrcaWhirlpool {
           positionAuthority: provider.wallet.publicKey,
           receiver: provider.wallet.publicKey,
           positionTokenAccount,
-          position: positionAddress,
+          position: quote.address,
           positionMint: position.positionMint,
         })
         .compressIx(false)
     );
-
-    // TODO close position token account
 
     return new MultiTransactionBuilder(provider, [txBuilder]);
   }
@@ -371,6 +368,7 @@ export class OrcaWhirlpool {
     }
 
     return {
+      address: whirlpoolAddress,
       maxTokenA: addLiquidityQuote.maxTokenA,
       maxTokenB: addLiquidityQuote.maxTokenB,
       liquidity: addLiquidityQuote.liquidity,
@@ -407,7 +405,6 @@ export class OrcaWhirlpool {
       refresh,
     } = param;
     const shouldRefresh = refresh === undefined ? true : refresh;
-
     const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
 
     const fetchTickArray = async (tickIndex: number) => {

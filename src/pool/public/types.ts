@@ -15,6 +15,7 @@ export type OpenPositionQuoteParam = {
 };
 
 export type OpenPositionQuote = {
+  address: PublicKey;
   maxTokenA: u64;
   maxTokenB: u64;
   liquidity: u64;
@@ -29,6 +30,7 @@ export type ClosePositionQuoteParam = {
 };
 
 export type ClosePositionQuote = {
+  address: PublicKey;
   minTokenA: u64;
   minTokenB: u64;
   liquidity: u64;
@@ -54,13 +56,11 @@ export type SwapQuote = {
 
 export type OpenPositionTransactionParam = {
   provider: Provider;
-  whirlpool: PublicKey;
   quote: OpenPositionQuote;
 };
 
 export type ClosePositionTransactionParam = {
   provider: Provider;
-  position: PublicKey;
   quote: ClosePositionQuote;
 };
 
