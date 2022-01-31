@@ -1,4 +1,3 @@
-import { Instruction } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { AccountLayout, NATIVE_MINT, Token, TOKEN_PROGRAM_ID, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { ResolvedTokenAddressInstruction } from "./helpers";
@@ -39,34 +38,5 @@ export function createWSOLAccountInstructions(
     instructions: [createAccountInstruction, initAccountInstruction],
     cleanupInstructions: [closeWSOLAccountInstruction],
     signers: [tempAccount],
-  };
-}
-
-export function createApproveInstruction(
-  walletAddress: PublicKey,
-  approveAmount: u64,
-  userTokenAddress: PublicKey,
-  transferAuthority: Keypair
-): Instruction {
-  const approveInstruction = Token.createApproveInstruction(
-    TOKEN_PROGRAM_ID,
-    userTokenAddress,
-    transferAuthority.publicKey,
-    walletAddress,
-    [],
-    new u64(approveAmount.toString())
-  );
-
-  const revokeInstruction = Token.createRevokeInstruction(
-    TOKEN_PROGRAM_ID,
-    userTokenAddress,
-    walletAddress,
-    []
-  );
-
-  return {
-    instructions: [approveInstruction],
-    cleanupInstructions: [revokeInstruction],
-    signers: [transferAuthority],
   };
 }

@@ -4,7 +4,6 @@ import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { OrcaDAL } from "../dal/orca-dal";
-import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 
 export type LiquidityDataPoint = {
@@ -63,21 +62,21 @@ function getSurroundingTickArrayAddresses(
   const tickAddress0 = TickUtil.getPdaWithTickIndex(
     pool.tickCurrentIndex,
     pool.tickSpacing,
-    toPubKey(poolAddress),
+    poolAddress,
     programId,
     -1
   ).publicKey;
   const tickAddress1 = TickUtil.getPdaWithTickIndex(
     pool.tickCurrentIndex,
     pool.tickSpacing,
-    toPubKey(poolAddress),
+    poolAddress,
     programId,
     0
   ).publicKey;
   const tickAddress2 = TickUtil.getPdaWithTickIndex(
     pool.tickCurrentIndex,
     pool.tickSpacing,
-    toPubKey(poolAddress),
+    poolAddress,
     programId,
     1
   ).publicKey;

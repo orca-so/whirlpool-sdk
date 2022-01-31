@@ -1,7 +1,7 @@
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
-import { Connection, PublicKey } from "@solana/web3.js";
+import { Connection } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { OrcaNetwork } from "./constants/public/network";
 import { PoolData } from "./types";
@@ -19,15 +19,15 @@ import { convertPositionDataToUserPositionData } from "./position/convert-data";
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
   connection?: Connection;
-  whirlpoolConfig?: PublicKey;
-  programId?: PublicKey;
+  whirlpoolConfig?: Address;
+  programId?: Address;
 };
 
 export class OrcaWhirlpoolClient {
   public readonly position: OrcaPosition;
   public readonly pool: OrcaPool;
   public readonly admin: OrcaAdmin;
-  public readonly dal: OrcaDAL;
+  public readonly data: OrcaDAL;
 
   constructor(config?: OrcaWhirlpoolClientConfig) {
     const network = config?.network || defaultNetwork;
@@ -35,10 +35,10 @@ export class OrcaWhirlpoolClient {
     const whirlpoolsConfig = config?.whirlpoolConfig || getWhirlpoolsConfig(network);
     const programId = config?.programId || getWhirlpoolProgramId(network);
 
-    this.dal = new OrcaDAL(whirlpoolsConfig, programId, connection);
-    this.position = new OrcaPosition(this.dal);
-    this.pool = new OrcaPool(this.dal);
-    this.admin = new OrcaAdmin(this.dal);
+    this.data = new OrcaDAL(whirlpoolsConfig, programId, connection);
+    this.admin = new OrcaAdmin(this.data);
+    this.pool = new OrcaPool(this.data);
+    this.position = new OrcaPosition(this.data);
   }
 
   /**
@@ -57,7 +57,7 @@ export class OrcaWhirlpoolClient {
     otherBaseTokenMints: Address[] = [NATIVE_MINT],
     refresh = true
   ): Promise<TokenUSDPrices> {
-    const allPools = await this.dal.listPools(poolAddresses, refresh);
+    const allPools = await this.data.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
     return await getTokenUSDPrices(pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokenMints);
   }
@@ -73,7 +73,7 @@ export class OrcaWhirlpoolClient {
     walletAddress: Address,
     refresh = true
   ): Promise<Record<string, UserPositionData>> {
-    return await convertPositionDataToUserPositionData(this.dal, walletAddress, refresh);
+    return await convertPositionDataToUserPositionData(this.data, walletAddress, refresh);
   }
 
   /**
@@ -87,6 +87,6 @@ export class OrcaWhirlpoolClient {
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
-    return await convertWhirlpoolDataToPoolData(this.dal, poolAddresses, refresh);
+    return await convertWhirlpoolDataToPoolData(this.data, poolAddresses, refresh);
   }
 }

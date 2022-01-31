@@ -1,5 +1,3 @@
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-
 export enum PositionStatus {
   BelowRange,
   InRange,
