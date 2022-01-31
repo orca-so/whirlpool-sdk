@@ -20,12 +20,9 @@ import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
+import { getAddLiquidityQuote, InternalAddLiquidityQuoteParam } from "./quotes/add-liquidity";
 import {
-  getInternalAddLiquidityQuote,
-  InternalAddLiquidityQuoteParam,
-} from "./quotes/add-liquidity";
-import {
-  getInternalRemoveLiquidityQuote,
+  getRemoveLiquidityQuote,
   InternalRemoveLiquidityQuoteParam,
 } from "./quotes/remove-liquidity";
 import { Address } from "@project-serum/anchor";
@@ -159,7 +156,7 @@ export class OrcaPosition {
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.getPosition(positionAddress, false);
-    const whirlpool = await this.getWhirlpool(position, true);
+    const whirlpool = await this.getWhirlpool(position, false);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
@@ -253,7 +250,10 @@ export class OrcaPosition {
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
 
     const internalParam: InternalAddLiquidityQuoteParam = {
-      whirlpool,
+      tokenMintA: whirlpool.tokenMintA,
+      tokenMintB: whirlpool.tokenMintB,
+      tickCurrentIndex: whirlpool.tickCurrentIndex,
+      sqrtPrice: whirlpool.sqrtPrice,
       inputTokenMint: toPubKey(tokenMint),
       inputTokenAmount: tokenAmount,
       tickLowerIndex: position.tickLowerIndex,
@@ -263,7 +263,7 @@ export class OrcaPosition {
 
     return {
       positionAddress,
-      ...getInternalAddLiquidityQuote(internalParam),
+      ...getAddLiquidityQuote(internalParam),
     };
   }
 
@@ -279,16 +279,15 @@ export class OrcaPosition {
     const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
 
-    const internalParam: InternalRemoveLiquidityQuoteParam = {
+    return getRemoveLiquidityQuote({
       positionAddress: toPubKey(positionAddress),
-      whirlpool,
+      tickCurrentIndex: whirlpool.tickCurrentIndex,
+      sqrtPrice: whirlpool.sqrtPrice,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
       liquidity,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
-    };
-
-    return getInternalRemoveLiquidityQuote(internalParam);
+    });
   }
 
   /*** Helpers ***/

@@ -34,10 +34,10 @@ import {
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import {
-  getInternalAddLiquidityQuote,
+  getAddLiquidityQuote,
   InternalAddLiquidityQuoteParam,
 } from "../position/quotes/add-liquidity";
-import { getInternalRemoveLiquidityQuote } from "../position/quotes/remove-liquidity";
+import { getRemoveLiquidityQuote } from "../position/quotes/remove-liquidity";
 import { toPubKey } from "../utils/address";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
@@ -212,7 +212,7 @@ export class OrcaPool {
   /**
    * Construct a transaction for closing an existing position
    */
-  public async getClosePositionTx(param: ClosePositionTxParam): Promise<MultiTransactionBuilder> {
+  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -283,7 +283,7 @@ export class OrcaPool {
         .compressIx(false)
     );
 
-    return new MultiTransactionBuilder(provider, [txBuilder]);
+    return txBuilder;
   }
 
   /**
@@ -390,7 +390,10 @@ export class OrcaPool {
     }
 
     const internalParam: InternalAddLiquidityQuoteParam = {
-      whirlpool,
+      tokenMintA: whirlpool.tokenMintA,
+      tokenMintB: whirlpool.tokenMintB,
+      tickCurrentIndex: whirlpool.tickCurrentIndex,
+      sqrtPrice: whirlpool.sqrtPrice,
       inputTokenMint: toPubKey(tokenMint),
       inputTokenAmount: tokenAmount,
       tickLowerIndex,
@@ -402,7 +405,7 @@ export class OrcaPool {
       poolAddress,
       tickLowerIndex,
       tickUpperIndex,
-      ...getInternalAddLiquidityQuote(internalParam),
+      ...getAddLiquidityQuote(internalParam),
     };
   }
 
@@ -411,13 +414,14 @@ export class OrcaPool {
    */
   public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
     const { positionAddress, refresh, slippageTolerence } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh;
+    const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position.whirlpool, shouldRefresh);
 
-    return getInternalRemoveLiquidityQuote({
+    return getRemoveLiquidityQuote({
       positionAddress: toPubKey(positionAddress),
-      whirlpool,
+      tickCurrentIndex: whirlpool.tickCurrentIndex,
+      sqrtPrice: whirlpool.sqrtPrice,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
       liquidity: position.liquidity,
@@ -437,7 +441,7 @@ export class OrcaPool {
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh;
+    const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
 
     const fetchTickArray = async (tickIndex: number) => {

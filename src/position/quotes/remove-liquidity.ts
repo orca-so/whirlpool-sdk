@@ -1,5 +1,5 @@
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
@@ -8,18 +8,19 @@ import { RemoveLiquidityQuote } from "../public";
 
 export type InternalRemoveLiquidityQuoteParam = {
   positionAddress: PublicKey;
-  whirlpool: WhirlpoolData;
+  tickCurrentIndex: number;
+  sqrtPrice: BN;
   tickLowerIndex: number;
   tickUpperIndex: number;
   liquidity: u64;
   slippageTolerence: Percentage;
 };
 
-export function getInternalRemoveLiquidityQuote(
+export function getRemoveLiquidityQuote(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
   const positionStatus = PositionUtil.getPositionStatus(
-    param.whirlpool.tickCurrentIndex,
+    param.tickCurrentIndex,
     param.tickLowerIndex,
     param.tickUpperIndex
   );
@@ -66,14 +67,14 @@ function getRemoveLiquidityQuoteWhenPositionIsInRange(
 ): RemoveLiquidityQuote {
   const {
     positionAddress,
-    whirlpool,
+    sqrtPrice,
     tickLowerIndex,
     tickUpperIndex,
     liquidity,
     slippageTolerence,
   } = param;
 
-  const sqrtPriceX64 = whirlpool.sqrtPrice;
+  const sqrtPriceX64 = sqrtPrice;
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
