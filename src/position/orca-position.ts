@@ -1,20 +1,19 @@
-import { NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, NUM_REWARDS, PDA } from "@orca-so/whirlpool-client-sdk";
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
-import { MintInfo } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
-  AddLiquidityTransactionParam,
-  CollectFeesAndRewardsTransactionParam,
+  AddLiquidityTxParam,
+  CollectFeesAndRewardsTxParam,
   RemoveLiquidityQuote,
   RemoveLiquidityQuoteParam,
-  RemoveLiquidityTransactionParam,
-} from "..";
+  RemoveLiquidityTxParam,
+} from "./public/types";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
@@ -22,34 +21,44 @@ import { MultiTransactionBuilder } from "../utils/public/multi-transaction-build
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import {
-  getAddLiquidityQuoteWhenPositionIsAboveRange,
-  getAddLiquidityQuoteWhenPositionIsBelowRange,
-  getAddLiquidityQuoteWhenPositionIsInRange,
+  getInternalAddLiquidityQuote,
   InternalAddLiquidityQuoteParam,
 } from "./quotes/add-liquidity";
 import {
-  getRemoveLiquidityQuoteWhenPositionIsAboveRange,
-  getRemoveLiquidityQuoteWhenPositionIsBelowRange,
-  getRemoveLiquidityQuoteWhenPositionIsInRange,
+  getInternalRemoveLiquidityQuote,
   InternalRemoveLiquidityQuoteParam,
 } from "./quotes/remove-liquidity";
-import { PositionStatus, PositionUtil } from "../utils/whirlpool/position-util";
+import { Address } from "@project-serum/anchor";
+import { toPubKey } from "../utils/address";
 
 export class OrcaPosition {
   constructor(private readonly dal: OrcaDAL) {}
 
+  /*** Utilities ***/
+
+  /**
+   * Derive the position pda given position mint
+   *
+   * @param positionMint
+   * @returns
+   */
+  public derivePDA(positionMint: Address): PDA {
+    return getPositionPda(this.dal.programId, toPubKey(positionMint));
+  }
+
   /*** Transactions ***/
 
-  public async getAddLiquidityTransaction(
-    param: AddLiquidityTransactionParam
-  ): Promise<TransactionBuilder> {
+  /**
+   * Construct a transaction for adding liquidity to an existing pool
+   */
+  public async getAddLiquidityTx(param: AddLiquidityTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(quote.address, false);
+    const position = await this.getPosition(quote.positionAddress, false);
     const whirlpool = await this.getWhirlpool(position, false);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -74,7 +83,7 @@ export class OrcaPosition {
         tokenMaxB: quote.maxTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: quote.address,
+        position: quote.positionAddress,
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -89,16 +98,17 @@ export class OrcaPosition {
     return txBuilder;
   }
 
-  public async getRemoveLiquidityTransaction(
-    param: RemoveLiquidityTransactionParam
-  ): Promise<TransactionBuilder> {
+  /**
+   * Construct a transaction for removing liquidity from an existing pool
+   */
+  public async getRemoveLiquidityTx(param: RemoveLiquidityTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(quote.address, false);
+    const position = await this.getPosition(quote.positionAddress, false);
     const whirlpool = await this.getWhirlpool(position, false);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -123,7 +133,7 @@ export class OrcaPosition {
         tokenMaxB: quote.minTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: quote.address,
+        position: quote.positionAddress,
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -138,8 +148,11 @@ export class OrcaPosition {
     return txBuilder;
   }
 
-  public async getCollectFeesAndRewardsTransaction(
-    param: CollectFeesAndRewardsTransactionParam
+  /**
+   * Construct a transaction for collecting fees and rewards from an existing pool
+   */
+  public async getCollectFeesAndRewardsTx(
+    param: CollectFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder> {
     const { provider, address } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
@@ -147,7 +160,7 @@ export class OrcaPosition {
 
     const position = await this.getPosition(address, false);
     const whirlpool = await this.getWhirlpool(position, true);
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddress(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
@@ -229,75 +242,53 @@ export class OrcaPosition {
 
   /*** Quotes ***/
 
+  /**
+   * Construct a quote for adding liquidity to an existing pool
+   */
   public async getAddLiquidityQuote(param: AddLiquidityQuoteParam): Promise<AddLiquidityQuote> {
-    const { address, tokenMint, tokenAmount, refresh, slippageTolerence } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh;
+    const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerence } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh; // default true
 
-    const position = await this.getPosition(address, shouldRefresh);
+    const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
-    const { tickLowerIndex, tickUpperIndex } = position;
 
-    const quoteParam: InternalAddLiquidityQuoteParam = {
-      address,
+    const internalParam: InternalAddLiquidityQuoteParam = {
       whirlpool,
-      tokenMint,
-      tokenAmount,
-      tickLowerIndex,
-      tickUpperIndex,
+      inputTokenMint: tokenMint,
+      inputTokenAmount: tokenAmount,
+      tickLowerIndex: position.tickLowerIndex,
+      tickUpperIndex: position.tickUpperIndex,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
     };
 
-    const positionStatus = PositionUtil.getPositionStatus(
-      whirlpool.tickCurrentIndex,
-      tickLowerIndex,
-      tickUpperIndex
-    );
-
-    switch (positionStatus) {
-      case PositionStatus.BelowRange:
-        return getAddLiquidityQuoteWhenPositionIsBelowRange(quoteParam);
-      case PositionStatus.InRange:
-        return getAddLiquidityQuoteWhenPositionIsInRange(quoteParam);
-      case PositionStatus.AboveRange:
-        return getAddLiquidityQuoteWhenPositionIsAboveRange(quoteParam);
-      default:
-        throw new Error(`type ${positionStatus} is an unknown PositionStatus`);
-    }
+    return {
+      positionAddress,
+      ...getInternalAddLiquidityQuote(internalParam),
+    };
   }
 
+  /**
+   * Construct a quote for removing liquidity from an existing pool
+   */
   public async getRemoveLiquidityQuote(
     param: RemoveLiquidityQuoteParam
   ): Promise<RemoveLiquidityQuote> {
-    const { address, liquidity, refresh, slippageTolerence } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh;
+    const { positionAddress, liquidity, refresh, slippageTolerence } = param;
+    const shouldRefresh = refresh === undefined ? true : refresh; // default true
 
-    const position = await this.getPosition(address, shouldRefresh);
+    const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
 
-    const quoteParam: InternalRemoveLiquidityQuoteParam = {
-      address,
+    const internalParam: InternalRemoveLiquidityQuoteParam = {
+      positionAddress,
       whirlpool,
-      position,
+      tickLowerIndex: position.tickLowerIndex,
+      tickUpperIndex: position.tickUpperIndex,
       liquidity,
       slippageTolerence: slippageTolerence || defaultSlippagePercentage,
     };
 
-    const positionStatus = PositionUtil.getPositionStatus(
-      whirlpool.tickCurrentIndex,
-      position.tickLowerIndex,
-      position.tickUpperIndex
-    );
-
-    switch (positionStatus) {
-      case PositionStatus.BelowRange:
-        return getRemoveLiquidityQuoteWhenPositionIsBelowRange(quoteParam);
-      case PositionStatus.InRange:
-        return getRemoveLiquidityQuoteWhenPositionIsInRange(quoteParam);
-      case PositionStatus.AboveRange:
-        return getRemoveLiquidityQuoteWhenPositionIsAboveRange(quoteParam);
-      default:
-        throw new Error(`type ${positionStatus} is an unknown PositionStatus`);
-    }
+    return getInternalRemoveLiquidityQuote(internalParam);
   }
 
   /*** Helpers ***/
@@ -314,7 +305,7 @@ export class OrcaPosition {
     return whirlpool;
   }
 
-  private getTickArrayAddress(
+  private getTickArrayAddresses(
     position: PositionData,
     whirlpool: WhirlpoolData
   ): [PublicKey, PublicKey] {

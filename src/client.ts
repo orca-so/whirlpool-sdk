@@ -1,4 +1,3 @@
-import { getPositionPda, getWhirlpoolPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
@@ -10,14 +9,12 @@ import { OrcaAdmin } from "./admin/orca-admin";
 import { defaultNetwork, getDefaultConnection } from "./constants/defaults";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
 import { OrcaDAL } from "./dal/orca-dal";
-import { OrcaWhirlpool } from "./pool/orca-whirlpool";
+import { OrcaPool } from "./pool/orca-pool";
 import { OrcaPosition } from "./position/orca-position";
-import { toPubKey } from "./utils/address";
-import { getTokenUSDPrices, TokenUSDPrices } from "./pool/token-price";
+import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from ".";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
-import { getLiquidityDistribution, LiquidityDistribution } from "./pool/liquidity-distribution";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
@@ -28,7 +25,7 @@ export type OrcaWhirlpoolClientConfig = {
 
 export class OrcaWhirlpoolClient {
   public readonly position: OrcaPosition;
-  public readonly pool: OrcaWhirlpool;
+  public readonly pool: OrcaPool;
   public readonly admin: OrcaAdmin;
   public readonly dal: OrcaDAL;
 
@@ -40,29 +37,8 @@ export class OrcaWhirlpoolClient {
 
     this.dal = new OrcaDAL(whirlpoolsConfig, programId, connection);
     this.position = new OrcaPosition(this.dal);
-    this.pool = new OrcaWhirlpool(this.dal);
+    this.pool = new OrcaPool(this.dal);
     this.admin = new OrcaAdmin(this.dal);
-  }
-
-  public derivePoolAddress(
-    tokenMintA: Address,
-    tokenMintB: Address,
-    tickSpacing: TickSpacing
-  ): PublicKey {
-    // TODO tokenMintA and tokenMintB ordering
-    const pda = getWhirlpoolPda(
-      this.dal.programId,
-      this.dal.whirlpoolsConfig,
-      toPubKey(tokenMintA),
-      toPubKey(tokenMintB),
-      tickSpacing
-    );
-    return pda.publicKey;
-  }
-
-  public derivePositionAddress(positionMint: Address): PublicKey {
-    const pda = getPositionPda(this.dal.programId, toPubKey(positionMint));
-    return pda.publicKey;
   }
 
   /**
@@ -93,7 +69,7 @@ export class OrcaWhirlpoolClient {
    * @param refresh defaults to refreshing the cache
    * @returns positions owned by the wallet address
    */
-  public async getUserPositionData(
+  public async getUserPositions(
     walletAddress: Address,
     refresh = true
   ): Promise<Record<string, UserPositionData>> {
@@ -107,24 +83,10 @@ export class OrcaWhirlpoolClient {
    * @param refresh defaults to refreshing the cache
    * @returns pool data
    */
-  public async getPoolData(
+  public async getPools(
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
     return await convertWhirlpoolDataToPoolData(this.dal, poolAddresses, refresh);
-  }
-
-  /**
-   * Fetch a pool's liquidity distribution across three tick-arrays.
-   *
-   * @param poolAddress
-   * @param refresh
-   * @returns liquidity distribution
-   */
-  public async getLiquidityDistribution(
-    poolAddress: Address,
-    refresh = true
-  ): Promise<LiquidityDistribution | null> {
-    return await getLiquidityDistribution(this.dal, poolAddress, refresh);
   }
 }

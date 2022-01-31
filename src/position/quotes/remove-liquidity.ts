@@ -1,25 +1,48 @@
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
+import { PositionStatus, PositionUtil } from "../../utils/whirlpool/position-util";
 import { RemoveLiquidityQuote } from "../public";
 
 export type InternalRemoveLiquidityQuoteParam = {
-  address: PublicKey;
+  positionAddress: PublicKey;
   whirlpool: WhirlpoolData;
-  position: PositionData;
+  tickLowerIndex: number;
+  tickUpperIndex: number;
   liquidity: u64;
   slippageTolerence: Percentage;
 };
 
-export function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
+export function getInternalRemoveLiquidityQuote(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
-  const { address, position, liquidity, slippageTolerence } = param;
+  const positionStatus = PositionUtil.getPositionStatus(
+    param.whirlpool.tickCurrentIndex,
+    param.tickLowerIndex,
+    param.tickUpperIndex
+  );
 
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
+  switch (positionStatus) {
+    case PositionStatus.BelowRange:
+      return getRemoveLiquidityQuoteWhenPositionIsBelowRange(param);
+    case PositionStatus.InRange:
+      return getRemoveLiquidityQuoteWhenPositionIsInRange(param);
+    case PositionStatus.AboveRange:
+      return getRemoveLiquidityQuoteWhenPositionIsAboveRange(param);
+    default:
+      throw new Error(`type ${positionStatus} is an unknown PositionStatus`);
+  }
+}
+
+function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
+  param: InternalRemoveLiquidityQuoteParam
+): RemoveLiquidityQuote {
+  const { positionAddress, tickLowerIndex, tickUpperIndex, liquidity, slippageTolerence } = param;
+
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
   const tokenAmountA = liquidity
     .shln(64)
@@ -31,21 +54,28 @@ export function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
-    address,
+    positionAddress,
     minTokenA: new u64(tokenAmountAAfterSlippage),
     minTokenB: new u64(0),
     liquidity,
   };
 }
 
-export function getRemoveLiquidityQuoteWhenPositionIsInRange(
+function getRemoveLiquidityQuoteWhenPositionIsInRange(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
-  const { address, whirlpool, position, liquidity, slippageTolerence } = param;
+  const {
+    positionAddress,
+    whirlpool,
+    tickLowerIndex,
+    tickUpperIndex,
+    liquidity,
+    slippageTolerence,
+  } = param;
 
   const sqrtPriceX64 = whirlpool.sqrtPrice;
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
   const tokenAmountA = liquidity
     .shln(64)
@@ -62,20 +92,20 @@ export function getRemoveLiquidityQuoteWhenPositionIsInRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
-    address,
+    positionAddress,
     minTokenA: new u64(tokenAmountAAfterSlippage),
     minTokenB: new u64(tokenAmountBAfterSlippage),
     liquidity,
   };
 }
 
-export function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
+function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
-  const { address, position, liquidity, slippageTolerence } = param;
+  const { positionAddress, tickLowerIndex, tickUpperIndex, liquidity, slippageTolerence } = param;
 
-  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(position.tickLowerIndex);
-  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(position.tickUpperIndex);
+  const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
+  const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
   const tokenAmountB = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64)).shrn(64);
   const tokenAmountBAfterSlippage = tokenAmountB
@@ -83,7 +113,7 @@ export function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
     .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
 
   return {
-    address,
+    positionAddress,
     minTokenA: new u64(0),
     minTokenB: new u64(tokenAmountBAfterSlippage),
     liquidity,

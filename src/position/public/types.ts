@@ -5,17 +5,17 @@ import { Percentage } from "../../utils/public/percentage";
 
 /*** Transactions ***/
 
-export type AddLiquidityTransactionParam = {
+export type AddLiquidityTxParam = {
   provider: Provider;
   quote: AddLiquidityQuote;
 };
 
-export type RemoveLiquidityTransactionParam = {
+export type RemoveLiquidityTxParam = {
   provider: Provider;
   quote: RemoveLiquidityQuote;
 };
 
-export type CollectFeesAndRewardsTransactionParam = {
+export type CollectFeesAndRewardsTxParam = {
   provider: Provider;
   address: PublicKey;
 };
@@ -23,7 +23,7 @@ export type CollectFeesAndRewardsTransactionParam = {
 /*** Quotes ***/
 
 export type AddLiquidityQuoteParam = {
-  address: PublicKey;
+  positionAddress: PublicKey;
   tokenMint: PublicKey;
   tokenAmount: u64;
   refresh?: boolean;
@@ -31,21 +31,21 @@ export type AddLiquidityQuoteParam = {
 };
 
 export type AddLiquidityQuote = {
-  address: PublicKey;
+  positionAddress: PublicKey;
   maxTokenA: u64;
   maxTokenB: u64;
   liquidity: u64;
 };
 
 export type RemoveLiquidityQuoteParam = {
-  address: PublicKey;
+  positionAddress: PublicKey;
   liquidity: u64;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
 
 export type RemoveLiquidityQuote = {
-  address: PublicKey;
+  positionAddress: PublicKey;
   minTokenA: u64;
   minTokenB: u64;
   liquidity: u64;
