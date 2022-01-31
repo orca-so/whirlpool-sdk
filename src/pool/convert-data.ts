@@ -33,9 +33,10 @@ export async function convertWhirlpoolDataToPoolData(
         });
       }
     });
-
-    await dal.listTokenInfos(Array.from(allTokenAccounts), true);
-    await dal.listMintInfos(Array.from(allMintInfos), false);
+    await Promise.all([
+      dal.listTokenInfos(Array.from(allTokenAccounts), true),
+      dal.listMintInfos(Array.from(allMintInfos), false),
+    ]);
   }
 
   const result: Record<string, PoolData> = {};

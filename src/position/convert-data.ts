@@ -111,7 +111,7 @@ async function getUserPositions(
     }
   });
 
-  const positions = await dal.listPositions(potentialPositionAddresses, refresh);
+  const positions = await dal.listPositions(potentialPositionAddresses, false);
   invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
 
   if (refresh) {
@@ -122,7 +122,7 @@ async function getUserPositions(
         whirlpoolAddresses.add(position.whirlpool.toBase58());
       }
     });
-    const pools = await dal.listPools(Array.from(whirlpoolAddresses), true);
+    const pools = await dal.listPools(Array.from(whirlpoolAddresses), false);
 
     /*** Refresh mint infos ***/
     const allMintInfos: Set<string> = new Set();
@@ -137,7 +137,6 @@ async function getUserPositions(
         });
       }
     });
-    const x = await dal.listMintInfos(Array.from(allMintInfos), false);
 
     /*** Refresh tick arrays ***/
     const tickArrayAddresses: Set<string> = new Set();
@@ -155,7 +154,11 @@ async function getUserPositions(
         }
       }
     }
-    await dal.listTickArrays(Array.from(tickArrayAddresses), true);
+
+    await Promise.all([
+      dal.listMintInfos(Array.from(allMintInfos), false),
+      dal.listTickArrays(Array.from(tickArrayAddresses), true),
+    ]);
   }
 
   return potentialPositionAddresses.filter((_, index) => {

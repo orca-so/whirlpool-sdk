@@ -5,7 +5,12 @@ import {
   TickData,
   TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { getTickArrayPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
+import {
+  getTickArrayPda,
+  MAX_TICK_INDEX,
+  MIN_TICK_INDEX,
+  TickSpacing,
+} from "@orca-so/whirlpool-client-sdk";
 import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
 
 enum TickSearchDirection {
@@ -63,7 +68,10 @@ export class TickUtil {
    */
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
     const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
-    return (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
+    const startTickIndex = (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
+    invariant(startTickIndex >= MIN_TICK_INDEX, "startTickIndex is too small");
+    invariant(startTickIndex <= MAX_TICK_INDEX, "startTickIndex is too large");
+    return startTickIndex;
   }
 
   /**

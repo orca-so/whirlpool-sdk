@@ -40,6 +40,16 @@ interface CachedContent<T extends CachedValue> {
 }
 
 /**
+ * Type for rpc batch request response
+ */
+type GetMultipleAccountsResponse = {
+  error?: string;
+  result?: {
+    value?: ({ data: [string, string] } | null)[];
+  };
+};
+
+/**
  * Data access layer for accounts used by OrcaWhirlpool and OrcaPosition.
  * The types of accounts that are being used are defined by CachedAccount.
  * Includes internal cache that can be refreshed by the client.
@@ -314,27 +324,32 @@ export class OrcaDAL {
    */
   private async bulkRequest(addresses: string[]): Promise<(Buffer | null)[]> {
     const chunk = 100;
-    const combinedResult: (Buffer | null)[] = [];
-
+    const responses: Promise<GetMultipleAccountsResponse>[] = [];
     for (let i = 0; i < addresses.length; i += chunk) {
-      const subsetAddresses = addresses.slice(i, i + chunk);
-      const res = await (this.connection as any)._rpcRequest("getMultipleAccounts", [
-        subsetAddresses,
+      const addressesSubset = addresses.slice(i, i + chunk);
+      const res = (this.connection as any)._rpcRequest("getMultipleAccounts", [
+        addressesSubset,
         { commitment: this.connection.commitment },
       ]);
+      responses.push(res);
+    }
+
+    const combinedResult: (Buffer | null)[] = [];
+
+    (await Promise.all(responses)).forEach((res) => {
       invariant(!res.error, `bulkRequest result error: ${res.error}`);
       invariant(!!res.result?.value, "bulkRequest no value");
-      invariant(res.result.value.length === addresses.length, "bulkRequest not enough results");
 
-      res.result.value.forEach((account: { data: [string, string] } | null) => {
+      res.result.value.forEach((account) => {
         if (!account || account.data[1] !== "base64") {
           combinedResult.push(null);
         } else {
           combinedResult.push(Buffer.from(account.data[0], account.data[1]));
         }
       });
-    }
+    });
 
+    invariant(combinedResult.length === addresses.length, "bulkRequest not enough results");
     return combinedResult;
   }
 }

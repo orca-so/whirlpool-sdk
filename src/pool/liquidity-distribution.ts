@@ -55,7 +55,6 @@ export async function getLiquidityDistribution(
   };
 }
 
-// TODO min, max check for left edge and right edge
 function getSurroundingTickArrayAddresses(
   pool: WhirlpoolData,
   poolAddress: Address,
