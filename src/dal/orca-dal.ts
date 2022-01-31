@@ -301,7 +301,7 @@ export class OrcaDAL {
       const data = await this.bulkRequest(undefinedAccounts.map((account) => account.key));
       undefinedAccounts.forEach(({ cacheIndex, key }, dataIndex) => {
         const value = entity.parse(data[dataIndex]);
-        invariant(cachedValues[cacheIndex] === undefined, "unexpected non-undefined value");
+        invariant(cachedValues[cacheIndex]?.[1] === undefined, "unexpected non-undefined value");
         cachedValues[cacheIndex] = [key, value];
         this._cache[key] = { entity, value };
       });

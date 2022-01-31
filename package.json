@@ -6,10 +6,9 @@
   "types": "dist/index.d.ts",
   "license": "MIT",
   "dependencies": {
+    "@project-serum/anchor": "^0.20.1",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.31.0",
-    "@project-serum/anchor": "^0.20.1",
-    "@orca-so/whirlpool-client-sdk": "file:../whirlpool/sdk",
     "decimal.js": "^10.3.1",
     "tiny-invariant": "^1.2.0"
   },

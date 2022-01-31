@@ -149,14 +149,14 @@ export class OrcaWhirlpool {
           tokenMaxB: maxTokenB,
           whirlpool: address,
           positionAuthority: provider.wallet.publicKey,
-          position: address,
+          position: positionPda.publicKey,
           positionTokenAccount: positionTokenAccountAddress,
           tokenOwnerAccountA,
           tokenOwnerAccountB,
           tokenVaultA: whirlpool.tokenVaultA,
           tokenVaultB: whirlpool.tokenVaultB,
           tickArrayLower: tickArrayLowerPda.publicKey,
-          tickArrayUpper: tickArrayLowerPda.publicKey,
+          tickArrayUpper: tickArrayUpperPda.publicKey,
         })
         .compressIx(false)
     );

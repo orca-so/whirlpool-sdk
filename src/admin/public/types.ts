@@ -8,8 +8,6 @@ export type InitPoolTransactionParam = {
   initialPrice: Decimal;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
-  tokenVaultAKeypair: Keypair;
-  tokenVaultBKeypair: Keypair;
   tickSpacing: TickSpacing;
 };
 

@@ -2,6 +2,7 @@ import { getWhirlpoolPda, NUM_REWARDS, toX64 } from "@orca-so/whirlpool-client-s
 import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
 import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
+import { Keypair } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   InitPoolTransactionParam,
@@ -20,15 +21,7 @@ export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
 
   public getInitPoolTransaction(param: InitPoolTransactionParam): TransactionBuilder {
-    const {
-      provider,
-      initialPrice,
-      tokenMintA,
-      tokenMintB,
-      tokenVaultAKeypair,
-      tokenVaultBKeypair,
-      tickSpacing,
-    } = param;
+    const { provider, initialPrice, tokenMintA, tokenMintB, tickSpacing } = param;
     const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -47,8 +40,8 @@ export class OrcaAdmin {
       tokenMintA,
       tokenMintB,
       whirlpoolPda,
-      tokenVaultAKeypair,
-      tokenVaultBKeypair,
+      tokenVaultAKeypair: Keypair.generate(),
+      tokenVaultBKeypair: Keypair.generate(),
       tickSpacing,
       funder: provider.wallet.publicKey,
     });
