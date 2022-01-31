@@ -1,7 +1,7 @@
 import { u64 } from "@solana/spl-token";
 import { Address, BN, Provider } from "@project-serum/anchor";
 import Decimal from "decimal.js";
-import { Percentage } from "../..";
+import { Percentage } from "../../utils/public/percentage";
 
 /*** Transactions ***/
 

@@ -14,7 +14,7 @@ import {
   SetRewardEmissionsTransactionParam,
   SetRewardAuthorityBySuperAuthorityTransactionParam,
   SetRewardEmissionsBySuperAuthorityTransactionParam,
-} from "..";
+} from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
 

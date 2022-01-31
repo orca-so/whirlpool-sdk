@@ -3,7 +3,7 @@ import { TickArrayData, TickData } from "@orca-so/whirlpool-client-sdk/dist/type
 import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { Percentage } from "../..";
+import { Percentage } from "../../utils/public/percentage";
 
 const MAX_TICK_ARRAY_CROSSINGS = 2;
 

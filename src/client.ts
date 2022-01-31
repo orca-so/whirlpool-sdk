@@ -13,7 +13,7 @@ import { OrcaPool } from "./pool/orca-pool";
 import { OrcaPosition } from "./position/orca-position";
 import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
-import { UserPositionData } from ".";
+import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
 
 export type OrcaWhirlpoolClientConfig = {

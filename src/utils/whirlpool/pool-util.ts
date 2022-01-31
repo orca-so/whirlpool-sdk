@@ -3,7 +3,7 @@ import {
   WhirlpoolRewardInfoData,
 } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { PublicKey } from "@solana/web3.js";
-import { Percentage } from "../..";
+import { Percentage } from "../../utils/public/percentage";
 
 export class PoolUtil {
   private constructor() {}
