@@ -18,8 +18,7 @@
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.31.0",
     "decimal.js": "^10.3.1",
-    "tiny-invariant": "^1.2.0",
-    "tsup": "^5.11.13"
+    "tiny-invariant": "^1.2.0"
   },
   "devDependencies": {
     "@types/bn.js": "^4.11.6",
@@ -36,6 +35,7 @@
     "lint-staged": ">=10",
     "prettier": "^2.3.2",
     "ts-jest": "^27.0.3",
+    "tsup": "^5.11.13",
     "typescript": "^4.3.2"
   },
   "scripts": {
