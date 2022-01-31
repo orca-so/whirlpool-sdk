@@ -1,4 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   TickArrayData,
@@ -12,6 +11,8 @@ import {
   TickSpacing,
 } from "@orca-so/whirlpool-client-sdk";
 import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
+import { Address } from "@project-serum/anchor";
+import { toPubKey } from "../address";
 
 enum TickSearchDirection {
   Left,
@@ -50,12 +51,12 @@ export class TickUtil {
   public static getPdaWithTickIndex(
     tickIndex: number,
     tickSpacing: TickSpacing,
-    whirlpool: PublicKey,
-    programId: PublicKey,
+    whirlpool: Address,
+    programId: Address,
     tickArrayOffset = 0
   ): PDA {
     const startIndex = TickUtil.getStartTickIndex(tickIndex, tickSpacing, tickArrayOffset);
-    return getTickArrayPda(programId, whirlpool, startIndex);
+    return getTickArrayPda(toPubKey(programId), toPubKey(whirlpool), startIndex);
   }
 
   /**

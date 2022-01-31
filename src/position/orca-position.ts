@@ -83,7 +83,7 @@ export class OrcaPosition {
         tokenMaxB: quote.maxTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: quote.positionAddress,
+        position: toPubKey(quote.positionAddress),
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -133,7 +133,7 @@ export class OrcaPosition {
         tokenMaxB: quote.minTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: quote.positionAddress,
+        position: toPubKey(quote.positionAddress),
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -154,11 +154,11 @@ export class OrcaPosition {
   public async getCollectFeesAndRewardsTx(
     param: CollectFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder> {
-    const { provider, address } = param;
+    const { provider, positionAddress } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(address, false);
+    const position = await this.getPosition(positionAddress, false);
     const whirlpool = await this.getWhirlpool(position, true);
     const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
@@ -171,7 +171,7 @@ export class OrcaPosition {
     const updateIx = client
       .updateFeesAndRewards({
         whirlpool: position.whirlpool,
-        position: address,
+        position: toPubKey(positionAddress),
         tickArrayLower,
         tickArrayUpper,
       })
@@ -197,7 +197,7 @@ export class OrcaPosition {
       .collectFeesTx({
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
-        position: address,
+        position: toPubKey(positionAddress),
         positionTokenAccount,
         tokenOwnerAccountA,
         tokenOwnerAccountB,
@@ -225,7 +225,7 @@ export class OrcaPosition {
         const rewardTx = client.collectRewardTx({
           whirlpool: position.whirlpool,
           positionAuthority: provider.wallet.publicKey,
-          position: address,
+          position: toPubKey(positionAddress),
           positionTokenAccount,
           rewardOwnerAccount,
           rewardVault: rewardInfo.vault,
@@ -254,7 +254,7 @@ export class OrcaPosition {
 
     const internalParam: InternalAddLiquidityQuoteParam = {
       whirlpool,
-      inputTokenMint: tokenMint,
+      inputTokenMint: toPubKey(tokenMint),
       inputTokenAmount: tokenAmount,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
@@ -280,7 +280,7 @@ export class OrcaPosition {
     const whirlpool = await this.getWhirlpool(position, shouldRefresh);
 
     const internalParam: InternalRemoveLiquidityQuoteParam = {
-      positionAddress,
+      positionAddress: toPubKey(positionAddress),
       whirlpool,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
@@ -293,7 +293,7 @@ export class OrcaPosition {
 
   /*** Helpers ***/
 
-  private async getPosition(address: PublicKey, refresh: boolean): Promise<PositionData> {
+  private async getPosition(address: Address, refresh: boolean): Promise<PositionData> {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaPosition - position does not exist");
     return position;

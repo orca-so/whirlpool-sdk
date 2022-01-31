@@ -1,6 +1,5 @@
 import { u64 } from "@solana/spl-token";
-import { BN, Provider } from "@project-serum/anchor";
-import { PublicKey } from "@solana/web3.js";
+import { Address, BN, Provider } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { Percentage } from "../..";
 
@@ -18,7 +17,6 @@ export type ClosePositionTxParam = {
 
 export type SwapTxParam = {
   provider: Provider;
-  whirlpool: PublicKey;
   quote: SwapQuote;
 };
 
@@ -37,15 +35,15 @@ export type OpenPositionQuoteByTickIndex = BaseOpenPositionQuoteParam & {
 };
 
 type BaseOpenPositionQuoteParam = {
-  poolAddress: PublicKey;
-  tokenMint: PublicKey;
+  poolAddress: Address;
+  tokenMint: Address;
   tokenAmount: u64;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
 
 export type OpenPositionQuote = {
-  poolAddress: PublicKey;
+  poolAddress: Address;
   tickLowerIndex: number;
   tickUpperIndex: number;
   maxTokenA: u64;
@@ -54,13 +52,13 @@ export type OpenPositionQuote = {
 };
 
 export type ClosePositionQuoteParam = {
-  positionAddress: PublicKey;
+  positionAddress: Address;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
 
 export type ClosePositionQuote = {
-  positionAddress: PublicKey;
+  positionAddress: Address;
   minTokenA: u64;
   minTokenB: u64;
   liquidity: u64;
@@ -68,8 +66,8 @@ export type ClosePositionQuote = {
 
 export type SwapQuoteParam = {
   // TODO(atamari)
-  whirlpoolAddress: PublicKey;
-  tokenMint: PublicKey;
+  poolAddress: Address;
+  tokenMint: Address;
   tokenAmount: u64;
   isOutput?: boolean;
   slippageTolerance?: Percentage;
@@ -77,6 +75,7 @@ export type SwapQuoteParam = {
 };
 
 export type SwapQuote = {
+  poolAddress: Address;
   sqrtPriceLimitX64: BN;
   amountIn: u64;
   amountOut: u64;

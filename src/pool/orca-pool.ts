@@ -16,7 +16,7 @@ import {
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { Address } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
@@ -119,7 +119,7 @@ export class OrcaPool {
             positionPda,
             positionMintAddress: positionMintKeypair.publicKey,
             positionTokenAccountAddress,
-            whirlpoolKey: poolAddress,
+            whirlpoolKey: toPubKey(poolAddress),
             tickLowerIndex,
             tickUpperIndex,
           })
@@ -161,7 +161,7 @@ export class OrcaPool {
       txBuilder.addInstruction(
         client
           .initTickArrayTx({
-            whirlpool: poolAddress,
+            whirlpool: toPubKey(poolAddress),
             tickArrayPda: tickArrayLowerPda,
             startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
             funder: provider.wallet.publicKey,
@@ -177,7 +177,7 @@ export class OrcaPool {
       txBuilder.addInstruction(
         client
           .initTickArrayTx({
-            whirlpool: poolAddress,
+            whirlpool: toPubKey(poolAddress),
             tickArrayPda: tickArrayUpperPda,
             startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
             funder: provider.wallet.publicKey,
@@ -192,7 +192,7 @@ export class OrcaPool {
           liquidityAmount: liquidity,
           tokenMaxA: maxTokenA,
           tokenMaxB: maxTokenB,
-          whirlpool: poolAddress,
+          whirlpool: toPubKey(poolAddress),
           positionAuthority: provider.wallet.publicKey,
           position: positionPda.publicKey,
           positionTokenAccount: positionTokenAccountAddress,
@@ -258,7 +258,7 @@ export class OrcaPool {
             tokenMaxB: quote.minTokenB,
             whirlpool: position.whirlpool,
             positionAuthority: provider.wallet.publicKey,
-            position: quote.positionAddress,
+            position: toPubKey(quote.positionAddress),
             positionTokenAccount,
             tokenOwnerAccountA,
             tokenOwnerAccountB,
@@ -277,7 +277,7 @@ export class OrcaPool {
           positionAuthority: provider.wallet.publicKey,
           receiver: provider.wallet.publicKey,
           positionTokenAccount,
-          position: quote.positionAddress,
+          position: toPubKey(quote.positionAddress),
           positionMint: position.positionMint,
         })
         .compressIx(false)
@@ -292,13 +292,12 @@ export class OrcaPool {
   public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder> {
     const {
       provider,
-      whirlpool: whirlpoolAddress,
-      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput },
+      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput, poolAddress },
     } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, true);
+    const whirlpool = await this.getWhirlpool(poolAddress, true);
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
@@ -320,21 +319,21 @@ export class OrcaPool {
     const tickArray0 = TickUtil.getPdaWithTickIndex(
       whirlpool.tickCurrentIndex,
       whirlpool.tickSpacing,
-      whirlpoolAddress,
+      poolAddress,
       this.dal.programId,
       0
     ).publicKey;
     const tickArray1 = TickUtil.getPdaWithTickIndex(
       whirlpool.tickCurrentIndex,
       whirlpool.tickSpacing,
-      whirlpoolAddress,
+      poolAddress,
       this.dal.programId,
       tickArrayOffsetDirection
     ).publicKey;
     const tickArray2 = TickUtil.getPdaWithTickIndex(
       whirlpool.tickCurrentIndex,
       whirlpool.tickSpacing,
-      whirlpoolAddress,
+      poolAddress,
       this.dal.programId,
       tickArrayOffsetDirection * 2
     ).publicKey;
@@ -346,7 +345,7 @@ export class OrcaPool {
           sqrtPriceLimit: sqrtPriceLimitX64,
           amountSpecifiedIsInput: !fixedOutput,
           aToB,
-          whirlpool: whirlpoolAddress,
+          whirlpool: toPubKey(poolAddress),
           tokenAuthority: provider.wallet.publicKey,
           tokenOwnerAccountA,
           tokenVaultA: whirlpool.tokenVaultA,
@@ -392,7 +391,7 @@ export class OrcaPool {
 
     const internalParam: InternalAddLiquidityQuoteParam = {
       whirlpool,
-      inputTokenMint: tokenMint,
+      inputTokenMint: toPubKey(tokenMint),
       inputTokenAmount: tokenAmount,
       tickLowerIndex,
       tickUpperIndex,
@@ -417,7 +416,7 @@ export class OrcaPool {
     const whirlpool = await this.getWhirlpool(position.whirlpool, shouldRefresh);
 
     return getInternalRemoveLiquidityQuote({
-      positionAddress,
+      positionAddress: toPubKey(positionAddress),
       whirlpool,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
@@ -431,7 +430,7 @@ export class OrcaPool {
    */
   public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
     const {
-      whirlpoolAddress: whirlpoolAddress,
+      poolAddress,
       tokenMint,
       tokenAmount,
       isOutput = false,
@@ -439,14 +438,14 @@ export class OrcaPool {
       refresh,
     } = param;
     const shouldRefresh = refresh === undefined ? true : refresh;
-    const whirlpool = await this.getWhirlpool(whirlpoolAddress, shouldRefresh);
+    const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
         TickUtil.getPdaWithTickIndex(
           tickIndex,
           whirlpool.tickSpacing,
-          whirlpoolAddress,
+          poolAddress,
           this.dal.programId
         ).publicKey,
         refresh || false
@@ -526,6 +525,7 @@ export class OrcaPool {
     });
 
     return {
+      poolAddress,
       sqrtPriceLimitX64,
       amountIn,
       amountOut,
@@ -535,13 +535,13 @@ export class OrcaPool {
   }
 
   /*** Helpers (private) ***/
-  private async getWhirlpool(address: PublicKey, refresh: boolean): Promise<WhirlpoolData> {
+  private async getWhirlpool(address: Address, refresh: boolean): Promise<WhirlpoolData> {
     const whirlpool = await this.dal.getPool(address, refresh);
     invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
     return whirlpool;
   }
 
-  private async getPosition(address: PublicKey, refresh: boolean): Promise<PositionData> {
+  private async getPosition(address: Address, refresh: boolean): Promise<PositionData> {
     const position = await this.dal.getPosition(address, refresh);
     invariant(!!position, "OrcaWhirlpool - position does not exist");
     return position;

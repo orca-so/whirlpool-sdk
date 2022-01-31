@@ -1,6 +1,5 @@
-import { Provider } from "@project-serum/anchor";
+import { Address, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
 
 /*** Transactions ***/
@@ -17,53 +16,43 @@ export type RemoveLiquidityTxParam = {
 
 export type CollectFeesAndRewardsTxParam = {
   provider: Provider;
-  address: PublicKey;
+  positionAddress: Address;
 };
 
 /*** Quotes ***/
 
 export type AddLiquidityQuoteParam = {
-  positionAddress: PublicKey;
-  tokenMint: PublicKey;
+  positionAddress: Address;
+  tokenMint: Address;
   tokenAmount: u64;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
 
 export type AddLiquidityQuote = {
-  positionAddress: PublicKey;
+  positionAddress: Address;
   maxTokenA: u64;
   maxTokenB: u64;
   liquidity: u64;
 };
 
 export type RemoveLiquidityQuoteParam = {
-  positionAddress: PublicKey;
+  positionAddress: Address;
   liquidity: u64;
   refresh?: boolean;
   slippageTolerence?: Percentage;
 };
 
 export type RemoveLiquidityQuote = {
-  positionAddress: PublicKey;
+  positionAddress: Address;
   minTokenA: u64;
   minTokenB: u64;
   liquidity: u64;
 };
 
-export type CollectFeesQuoteParam = {
-  address: PublicKey;
-  refresh?: boolean;
-};
-
 export type CollectFeesQuote = {
   feeOwedA: u64;
   feeOwedB: u64;
-};
-
-export type CollectRewardsQuoteParam = {
-  address: PublicKey;
-  refresh?: boolean;
 };
 
 export type CollectRewardsQuote = [u64 | undefined, u64 | undefined, u64 | undefined];
