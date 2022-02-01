@@ -1,6 +1,11 @@
 {
   "extends": "../tsconfig-base.json",
   "compilerOptions": {
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
   "include": [
