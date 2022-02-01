@@ -35,15 +35,14 @@
     "lint-staged": ">=10",
     "prettier": "^2.3.2",
     "ts-jest": "^27.0.3",
-    "tsup": "^5.11.13",
     "typescript": "^4.3.2"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm,cjs --dts",
-    "watch": "tsup src/index.ts --watch --format esm,cjs --dts",
+    "build": "tsc -p src",
+    "watch": "tsc -w -p src",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "prepare": "husky install",
-    "prepublishOnly": "tsup src/index.ts --format esm,cjs --dts",
+    "prepublishOnly": "tsc -p src",
     "test": "jest"
   },
   "lint-staged": {
