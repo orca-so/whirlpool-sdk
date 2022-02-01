@@ -1,4 +1,4 @@
-import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
+import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk";
 import { Provider } from "@project-serum/anchor";
 
 /**

@@ -1,8 +1,4 @@
-import {
-  PositionData,
-  TickData,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolData, PositionData, TickData } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import { CollectFeesQuote } from "../public";
 

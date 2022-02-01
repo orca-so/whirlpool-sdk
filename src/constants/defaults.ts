@@ -9,9 +9,9 @@ export const defaultNetwork: OrcaNetwork = OrcaNetwork.MAINNET;
 export function getDefaultConnection(network: OrcaNetwork): Connection {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      return new Connection("https://api.mainnet-beta.solana.com", "recent");
+      return new Connection("https://api.mainnet-beta.solana.com", "processed");
     case OrcaNetwork.DEVNET:
-      return new Connection("https://api.devnet.solana.com", "recent");
+      return new Connection("https://api.devnet.solana.com", "processed");
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }

@@ -1,8 +1,3 @@
-import { getPositionPda, NUM_REWARDS, PDA } from "@orca-so/whirlpool-client-sdk";
-import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
-import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -21,12 +16,19 @@ import { MultiTransactionBuilder } from "../utils/public/multi-transaction-build
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { getAddLiquidityQuote, InternalAddLiquidityQuoteParam } from "./quotes/add-liquidity";
-import {
-  getRemoveLiquidityQuote,
-  InternalRemoveLiquidityQuoteParam,
-} from "./quotes/remove-liquidity";
+import { getRemoveLiquidityQuote } from "./quotes/remove-liquidity";
 import { Address } from "@project-serum/anchor";
 import { toPubKey } from "../utils/address";
+import {
+  PDA,
+  getPositionPda,
+  TransactionBuilder,
+  WhirlpoolContext,
+  WhirlpoolClient,
+  NUM_REWARDS,
+  PositionData,
+  WhirlpoolData,
+} from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaPosition {
   constructor(private readonly dal: OrcaDAL) {}

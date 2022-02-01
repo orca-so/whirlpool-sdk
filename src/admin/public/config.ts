@@ -1,6 +1,8 @@
-import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
-import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
-import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
+import {
+  TransactionBuilder,
+  WhirlpoolContext,
+  WhirlpoolClient,
+} from "@orca-so/whirlpool-client-sdk";
 import { Address, Provider } from "@project-serum/anchor";
 import { Keypair } from "@solana/web3.js";
 import { toPubKey } from "../../utils/address";

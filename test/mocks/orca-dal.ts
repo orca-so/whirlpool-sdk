@@ -1,11 +1,6 @@
-import {
-  PositionData,
-  TickArrayData,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolData, PositionData, TickArrayData } from "@orca-so/whirlpool-client-sdk";
 import { MintInfo } from "@solana/spl-token";
-import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaDAL } from "../../src/dal/orca-dal";
+import { PublicKey } from "@solana/web3.js";
 
 export const getPoolMock = jest.fn(
   (address: PublicKey, refresh: boolean = false) => ({} as WhirlpoolData)

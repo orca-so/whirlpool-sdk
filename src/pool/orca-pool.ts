@@ -1,19 +1,3 @@
-import {
-  getPositionPda,
-  getWhirlpoolPda,
-  PDA,
-  sqrtPriceX64ToTickIndex,
-  TickSpacing,
-  toX64,
-} from "@orca-so/whirlpool-client-sdk";
-import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
-import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
-import {
-  PositionData,
-  TICK_ARRAY_SIZE,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { Address } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair } from "@solana/web3.js";
@@ -45,6 +29,20 @@ import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./liquidity-distribution";
 import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
+import {
+  TickSpacing,
+  PDA,
+  getWhirlpoolPda,
+  getPositionPda,
+  TransactionBuilder,
+  sqrtPriceX64ToTickIndex,
+  toX64,
+  TICK_ARRAY_SIZE,
+  WhirlpoolData,
+  PositionData,
+  WhirlpoolClient,
+  WhirlpoolContext,
+} from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}

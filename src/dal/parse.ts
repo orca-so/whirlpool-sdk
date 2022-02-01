@@ -3,13 +3,11 @@ import {
   parseTickArray,
   parseWhirlpool,
   parseWhirlpoolsConfig,
-  WhirlpoolConfigAccount,
-} from "@orca-so/whirlpool-client-sdk";
-import {
   PositionData,
   TickArrayData,
+  WhirlpoolConfigAccount,
   WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+} from "@orca-so/whirlpool-client-sdk";
 import { AccountInfo, MintInfo, MintLayout, u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { deserializeTokenAccount } from "../utils/web3/deserialize-token-account";

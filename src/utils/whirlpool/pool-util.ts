@@ -1,7 +1,4 @@
-import {
-  WhirlpoolData,
-  WhirlpoolRewardInfoData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { WhirlpoolRewardInfoData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
 

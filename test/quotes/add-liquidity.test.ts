@@ -4,20 +4,20 @@ import {
   listMintInfosMock,
   OrcaDALFileMock,
 } from "../mocks/orca-dal";
-import {
-  PositionData,
-  PositionRewardInfoData,
-  TickArrayData,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { u64 } from "@solana/spl-token";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { OrcaPosition } from "../../src/position/orca-position";
-import { AddLiquidityQuote, AddLiquidityQuoteParam, Percentage } from "../../src";
+import { AddLiquidityQuote, AddLiquidityQuoteParam } from "../../src";
 import { defaultSlippagePercentage } from "../../src/constants/defaults";
+import {
+  PositionData,
+  PositionRewardInfoData,
+  TickArrayData,
+  WhirlpoolData,
+} from "@orca-so/whirlpool-client-sdk";
 const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
 const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");

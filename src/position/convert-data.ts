@@ -1,5 +1,3 @@
-import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
-import { PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
@@ -11,6 +9,7 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
+import { getPositionPda, PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,

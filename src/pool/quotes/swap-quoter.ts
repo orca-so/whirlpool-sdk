@@ -1,5 +1,11 @@
-import { sqrtPriceX64ToTickIndex, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { TickArrayData, TickData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import {
+  TickArrayData,
+  TickData,
+  MIN_SQRT_PRICE,
+  MAX_SQRT_PRICE,
+  tickIndexToSqrtPriceX64,
+  sqrtPriceX64ToTickIndex,
+} from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
@@ -73,8 +79,8 @@ type SwapStepSimulationOutput = {
   output: u64;
 };
 
-const MIN_SQRT_PRICE_X64 = new BN("4295048016");
-const MAX_SQRT_PRICE_X64 = new BN("79226673515401819039153162598");
+const MIN_SQRT_PRICE_X64 = new BN(MIN_SQRT_PRICE);
+const MAX_SQRT_PRICE_X64 = new BN(MAX_SQRT_PRICE);
 
 export class SwapSimulator {
   public constructor(private readonly config: SwapSimulatorConfig) {}
@@ -97,7 +103,6 @@ export class SwapSimulator {
       currentSqrtPriceX64,
     } = input;
 
-    // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(new Decimal(currentTickIndex));
     const sqrtPriceLimitX64 = calculateSqrtPriceLimit(currentSqrtPriceX64, slippageTolerance);
 
     invariant(
@@ -116,18 +121,10 @@ export class SwapSimulator {
 
     let tickArraysCrossed = 0;
 
-    let i = 0;
-
-    let loopCount = 0;
-
     while (
-      // state.specifiedAmountLeft.gt(new BN("2529369")) &&
       state.specifiedAmountLeft.gt(new BN(0)) &&
-      // loopCount < 3 &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
     ) {
-      console.log("ITERATION " + loopCount);
-      loopCount += 1;
       console.log("SWAP STATE", {
         sqrtPriceX64: state.sqrtPriceX64.toString(),
         tickIndex: state.tickIndex,
@@ -179,8 +176,6 @@ export class SwapSimulator {
           nextTick.liquidityNet
         );
 
-        i += 1;
-
         if (currentTickArray.startTickIndex !== nextTickArray.startTickIndex) {
           tickArraysCrossed += 1;
         }
@@ -189,14 +184,14 @@ export class SwapSimulator {
           break;
         }
       }
-      console.log("SWAP STATE", {
-        sqrtPriceX64: state.sqrtPriceX64.toString(),
-        tickIndex: state.tickIndex,
-        tickArray: state.tickArray.startTickIndex,
-        liquidity: state.liquidity.toString(),
-        specifiedAmountLeft: state.specifiedAmountLeft.toString(),
-        otherAmountCalculated: state.otherAmountCalculated.toString(),
-      });
+      // console.log("SWAP STATE", {
+      //   sqrtPriceX64: state.sqrtPriceX64.toString(),
+      //   tickIndex: state.tickIndex,
+      //   tickArray: state.tickArray.startTickIndex,
+      //   liquidity: state.liquidity.toString(),
+      //   specifiedAmountLeft: state.specifiedAmountLeft.toString(),
+      //   otherAmountCalculated: state.otherAmountCalculated.toString(),
+      // });
     }
 
     const [inputAmount, outputAmount] = resolveInputAndOutputAmounts(

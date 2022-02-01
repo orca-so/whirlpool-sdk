@@ -1,4 +1,3 @@
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import { Connection } from "@solana/web3.js";
@@ -15,6 +14,7 @@ import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;

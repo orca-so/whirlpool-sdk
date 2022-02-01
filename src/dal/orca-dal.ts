@@ -2,11 +2,6 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { AccountInfo, MintInfo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
-  PositionData,
-  TickArrayData,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import {
   ParsableEntity,
   ParsableMintInfo,
   ParsablePosition,
@@ -15,10 +10,15 @@ import {
   ParsableWhirlpool,
   ParsableWhirlpoolsConfig,
 } from "./parse";
-import { WhirlpoolConfigAccount } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { toPubKey, toPubKeys } from "../utils/address";
 import { UserToken } from "../types";
+import {
+  PositionData,
+  TickArrayData,
+  WhirlpoolConfigAccount,
+  WhirlpoolData,
+} from "@orca-so/whirlpool-client-sdk";
 
 /**
  * Supported accounts

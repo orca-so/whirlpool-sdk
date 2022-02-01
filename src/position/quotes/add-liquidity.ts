@@ -1,10 +1,10 @@
-import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { AddLiquidityQuote } from "../public/types";
 import { Percentage } from "../../utils/public/percentage";
 import { PositionStatus, PositionUtil } from "../../utils/whirlpool/position-util";
+import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
 
 /*** Public ***/
 

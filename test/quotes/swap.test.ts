@@ -1,9 +1,9 @@
 import {
+  WhirlpoolData,
   TickArrayData,
   TickData,
   TICK_ARRAY_SIZE,
-  WhirlpoolData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+} from "@orca-so/whirlpool-client-sdk";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
@@ -15,7 +15,7 @@ import {
   SwapSimulatorConfig,
 } from "../../src/pool/quotes/swap-quoter";
 import { PoolUtil } from "../../src/utils/whirlpool/pool-util";
-import { TickArrayOutOfBoundsError, TickUtil } from "../../src/utils/whirlpool/tick-util";
+import { TickUtil } from "../../src/utils/whirlpool/tick-util";
 const WhirlpoolsJSON = require("./fixtures/swap/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/swap/TickArrays.json");
 

@@ -1,9 +1,4 @@
-import { NUM_REWARDS } from "@orca-so/whirlpool-client-sdk";
-import {
-  WhirlpoolData,
-  PositionData,
-  TickData,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
+import { NUM_REWARDS, PositionData, TickData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import invariant from "tiny-invariant";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";

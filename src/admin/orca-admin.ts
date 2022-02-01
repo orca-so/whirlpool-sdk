@@ -1,7 +1,3 @@
-import { getWhirlpoolPda, NUM_REWARDS, toX64 } from "@orca-so/whirlpool-client-sdk";
-import WhirlpoolClient from "@orca-so/whirlpool-client-sdk/dist/client";
-import WhirlpoolContext from "@orca-so/whirlpool-client-sdk/dist/context";
-import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk/dist/utils/transactions/transactions-builder";
 import { Keypair } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -17,6 +13,14 @@ import {
 } from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
+import {
+  TransactionBuilder,
+  WhirlpoolContext,
+  WhirlpoolClient,
+  getWhirlpoolPda,
+  toX64,
+  NUM_REWARDS,
+} from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}

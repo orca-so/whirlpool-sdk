@@ -1,4 +1,3 @@
-import { fromX64 } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
@@ -7,6 +6,7 @@ import { OrcaDAL } from "../dal/orca-dal";
 import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
+import { fromX64 } from "@orca-so/whirlpool-client-sdk";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,

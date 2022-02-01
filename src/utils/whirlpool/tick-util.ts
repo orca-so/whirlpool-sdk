@@ -1,18 +1,16 @@
 import invariant from "tiny-invariant";
-import {
-  TickArrayData,
-  TickData,
-  TICK_ARRAY_SIZE,
-} from "@orca-so/whirlpool-client-sdk/dist/types/anchor-types";
-import {
-  getTickArrayPda,
-  MAX_TICK_INDEX,
-  MIN_TICK_INDEX,
-  TickSpacing,
-} from "@orca-so/whirlpool-client-sdk";
-import { PDA } from "@orca-so/whirlpool-client-sdk/dist/types/public/helper-types";
 import { Address } from "@project-serum/anchor";
 import { toPubKey } from "../address";
+import {
+  TickSpacing,
+  TickArrayData,
+  TickData,
+  PDA,
+  getTickArrayPda,
+  TICK_ARRAY_SIZE,
+  MIN_TICK_INDEX,
+  MAX_TICK_INDEX,
+} from "@orca-so/whirlpool-client-sdk";
 
 enum TickSearchDirection {
   Left,
