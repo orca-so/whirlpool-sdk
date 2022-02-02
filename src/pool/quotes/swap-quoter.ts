@@ -125,14 +125,6 @@ export class SwapSimulator {
       state.specifiedAmountLeft.gt(new BN(0)) &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
     ) {
-      console.log("SWAP STATE", {
-        sqrtPriceX64: state.sqrtPriceX64.toString(),
-        tickIndex: state.tickIndex,
-        tickArray: state.tickArray.startTickIndex,
-        liquidity: state.liquidity.toString(),
-        specifiedAmountLeft: state.specifiedAmountLeft.toString(),
-        otherAmountCalculated: state.otherAmountCalculated.toString(),
-      });
       const swapStepSimulationInput: SwapStepSimulationInput = {
         sqrtPriceLimitX64,
         sqrtPriceX64: state.sqrtPriceX64,
@@ -184,14 +176,6 @@ export class SwapSimulator {
           break;
         }
       }
-      // console.log("SWAP STATE", {
-      //   sqrtPriceX64: state.sqrtPriceX64.toString(),
-      //   tickIndex: state.tickIndex,
-      //   tickArray: state.tickArray.startTickIndex,
-      //   liquidity: state.liquidity.toString(),
-      //   specifiedAmountLeft: state.specifiedAmountLeft.toString(),
-      //   otherAmountCalculated: state.otherAmountCalculated.toString(),
-      // });
     }
 
     const [inputAmount, outputAmount] = resolveInputAndOutputAmounts(
@@ -250,14 +234,6 @@ export class SwapSimulator {
       nextInitializedTickIndex
     );
 
-    console.log("SQRT PRICE LIMIT", {
-      targetSqrtPriceX64: sqrtPriceLimitX64.toString(),
-    });
-
-    console.log("NEXT INITIALIZED TICK", {
-      nextInitializedTickIndex: nextInitializedTickIndex,
-    });
-
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
       BN.min(currentSqrtPriceX64, targetSqrtPriceX64),
@@ -269,9 +245,6 @@ export class SwapSimulator {
       feeRate
     );
 
-    console.log("TARGET SQRT PRICE", {
-      targetSqrtPriceX64: targetSqrtPriceX64.toString(),
-    });
     const nextSqrtPriceX64 = specifiedTokenGivenDelta.gte(specifiedTokenMaxDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
       : calculateNextSqrtPriceGivenTokenDelta(
@@ -280,23 +253,11 @@ export class SwapSimulator {
           currentSqrtPriceX64
         );
 
-    console.log("SWAP TYPE", {
-      swapDirection: swapDirection,
-      amountSpecified: amountSpecified,
-    });
-
     const otherTokenDelta = calculateOtherTokenDelta(
       currentLiquidity,
       BN.min(currentSqrtPriceX64, nextSqrtPriceX64),
       BN.max(currentSqrtPriceX64, nextSqrtPriceX64)
     );
-
-    console.log("OTHER TOKEN DELTA", {
-      otherTokenDelta: otherTokenDelta.toString(),
-      currentLiquidity: currentLiquidity.toString(),
-      currentSqrtPriceX64: currentSqrtPriceX64.toString(),
-      nextSqrtPriceX64: nextSqrtPriceX64.toString(),
-    });
 
     const specifiedTokenActualDelta = nextSqrtPriceX64.eq(targetSqrtPriceX64)
       ? specifiedTokenMaxDelta
@@ -312,8 +273,6 @@ export class SwapSimulator {
     );
     invariant(!!inputDelta, "inputDelta cannot be undefined");
     invariant(!!outputDelta, "outputDelta cannot be undefined");
-
-    console.log("FINISHING SWAP STEP");
 
     return {
       currentTickIndex: sqrtPriceX64ToTickIndex(nextSqrtPriceX64),
