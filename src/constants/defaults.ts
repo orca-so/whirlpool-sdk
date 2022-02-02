@@ -16,3 +16,14 @@ export function getDefaultConnection(network: OrcaNetwork): Connection {
       throw new Error(`type ${network} is an Unknown network`);
   }
 }
+
+export function getDefaultOffchainDataURI(network: OrcaNetwork): string {
+  switch (network) {
+    case OrcaNetwork.MAINNET:
+      throw new Error("http://18.139.223.71:8080");
+    case OrcaNetwork.DEVNET:
+      return "http://";
+    default:
+      throw new Error(`type ${network} is an Unknown network`);
+  }
+}

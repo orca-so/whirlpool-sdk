@@ -5,7 +5,11 @@ import Decimal from "decimal.js";
 import { OrcaNetwork } from "./constants/public/network";
 import { PoolData } from "./types";
 import { OrcaAdmin } from "./admin/orca-admin";
-import { defaultNetwork, getDefaultConnection } from "./constants/defaults";
+import {
+  defaultNetwork,
+  getDefaultConnection,
+  getDefaultOffchainDataURI,
+} from "./constants/defaults";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
 import { OrcaDAL } from "./dal/orca-dal";
 import { OrcaPool } from "./pool/orca-pool";
@@ -15,30 +19,35 @@ import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
+import { OrcaZooplankton } from "./offchain/orca-zp";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
   connection?: Connection;
   whirlpoolConfig?: Address;
   programId?: Address;
+  offchainDataURI?: string;
 };
 
 export class OrcaWhirlpoolClient {
-  public readonly position: OrcaPosition;
-  public readonly pool: OrcaPool;
-  public readonly admin: OrcaAdmin;
   public readonly data: OrcaDAL;
+  public readonly admin: OrcaAdmin;
+  public readonly pool: OrcaPool;
+  public readonly position: OrcaPosition;
+  public readonly offchain: OrcaZooplankton;
 
   constructor(config?: OrcaWhirlpoolClientConfig) {
     const network = config?.network || defaultNetwork;
     const connection = config?.connection || getDefaultConnection(network);
     const whirlpoolsConfig = config?.whirlpoolConfig || getWhirlpoolsConfig(network);
     const programId = config?.programId || getWhirlpoolProgramId(network);
+    const offchainDataURI = config?.offchainDataURI || getDefaultOffchainDataURI(network);
 
     this.data = new OrcaDAL(whirlpoolsConfig, programId, connection);
     this.admin = new OrcaAdmin(this.data);
     this.pool = new OrcaPool(this.data);
     this.position = new OrcaPosition(this.data);
+    this.offchain = new OrcaZooplankton(offchainDataURI);
   }
 
   /**
