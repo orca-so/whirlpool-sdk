@@ -20,9 +20,9 @@ export function getDefaultConnection(network: OrcaNetwork): Connection {
 export function getDefaultOffchainDataURI(network: OrcaNetwork): string {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      throw new Error("http://18.139.223.71:8080");
+      throw new Error("TODO");
     case OrcaNetwork.DEVNET:
-      return "http://";
+      return "http://18.139.223.71:8080";
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }
