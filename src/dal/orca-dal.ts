@@ -285,13 +285,13 @@ export class OrcaDAL {
     const keys = addresses.map((address) => address.toBase58());
     const cachedValues: [string, CachedValue | null | undefined][] = keys.map((key) => [
       key,
-      this._cache[key]?.value,
+      refresh ? undefined : this._cache[key]?.value,
     ]);
 
     /* Look for accounts not found in cache */
     const undefinedAccounts: { cacheIndex: number; key: string }[] = [];
     cachedValues.forEach(([key, value], cacheIndex) => {
-      if (value === undefined || refresh) {
+      if (value === undefined) {
         undefinedAccounts.push({ cacheIndex, key });
       }
     });
