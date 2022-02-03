@@ -72,7 +72,7 @@ export class OrcaPool {
    * @param stable
    * @returns
    */
-  public deriveAddress(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
+  public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
     // TODO tokenMintA and tokenMintB ordering
     return getWhirlpoolPda(
       this.dal.programId,
