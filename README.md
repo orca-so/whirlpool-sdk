@@ -51,36 +51,49 @@ npm install @orca-so/sdk @solana/web3.js decimal.js
 # Usage
 
 ```typescript
-import { readFile } from "mz/fs";
-import { Connection, Keypair } from "@solana/web3.js";
-import { getOrca } from "@orca-so/sdk";
+// Get pool address from token mints
+const orca = new OrcaWhirlpoolClient({ network: OrcaNetwork.MAINNET });
+const poolAddress = await orca.pool.deriveAddress(ORCA_MINT, USDC_MINT);
 
-const main = async () => {
-  /*** Setup ***/
-  // 1. Read secret key file to get owner keypair
-  const secretKeyString = await readFile("/Users/scuba/my-wallet/my-keypair.json", {
-    encoding: "utf8",
-  });
-  const secretKey = Uint8Array.from(JSON.parse(secretKeyString));
-  const owner = Keypair.fromSecretKey(secretKey);
+// Get pool data
+const poolData = await orca.getPool(poolAddress);
+console.log(poolData.liquidity);
+console.log(poolData.price);
+console.log(poolData.tokenVaultAmountA);
+console.log(poolData.tokenVaultAmountB);
 
-  // 2. Initialzie Orca object with mainnet connection
-  const connection = new Connection("https://api.mainnet-beta.solana.com", "singleGossip");
-  const orca = getOrca(connection);
+// Open a position
+const openPositionQuote = await orca.pool.getOpenPositionQuote({
+  poolAddress,
+  tokenMint: ORCA_MINT,
+  tokenAmount: new u64(1_000_000_000),
+});
+const openPositionTx = await orca.pool.getOpenPositionTx({
+  provider,
+  quote: openPositionQuote,
+});
+const openPositionTxId = await openPositionTx.buildAndExecute();
+console.log("opened new position", openPositionTxId);
 
-  try {
-  } catch (err) {
-    console.warn(err);
-  }
-};
+// Swap
+const swapQuote = await orca.pool.getSwapQuote({
+  poolAddress,
+  tokenMint: ORCA_MINT,
+  tokenAmount: new u64(1_000_000),
+});
+const swapTx = await orca.pool.getSwapTx({
+  provider,
+  quote: swapQuote,
+});
+console.log("swapped", swapTx);
 
-main()
-  .then(() => {
-    console.log("Done");
-  })
-  .catch((e) => {
-    console.error(e);
-  });
+// Some additional functions:
+//   orca.admin.getInitRewardTx
+//   orca.admin.getSetRewardEmissionsTx
+//   orca.pool.getLiquidityDistribution
+//   orca.position.getAddLiquidityTx
+//   orca.position.getCollectFeesAndRewardsTx
+//   orca.position.getRemoveLiquidityTx
 ```
 
 # Technical Notes
