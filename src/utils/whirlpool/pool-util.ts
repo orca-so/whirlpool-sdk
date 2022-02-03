@@ -1,5 +1,6 @@
 import { WhirlpoolRewardInfoData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 import { Percentage } from "../../utils/public/percentage";
 
 export class PoolUtil {
@@ -27,6 +28,6 @@ export class PoolUtil {
      * // Denominator for portion of fee rate taken (1/x)%
      * pub protocol_fee_rate: u16,
      */
-    return Percentage.fromFraction(1, account.protocolFeeRate.toNumber() * 100); // TODO
+    return Percentage.fromFraction(1, new BN(account.protocolFeeRate.toString()).mul(new BN(100))); // TODO
   }
 }
