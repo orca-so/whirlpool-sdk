@@ -240,10 +240,10 @@ export class SwapSimulator {
       BN.max(currentSqrtPriceX64, targetSqrtPriceX64)
     );
 
-    const specifiedTokenGivenDelta = SwapSimulator.calculateAmountAfterFees(
-      specifiedTokenAmount,
-      feeRate
-    );
+    const specifiedTokenGivenDelta =
+      amountSpecified === AmountSpecified.Input
+        ? SwapSimulator.calculateAmountAfterFees(specifiedTokenAmount, feeRate)
+        : specifiedTokenAmount;
 
     const nextSqrtPriceX64 = specifiedTokenGivenDelta.gte(specifiedTokenMaxDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
@@ -368,7 +368,7 @@ export class SwapSimulator {
       .add(currentLiquidityX0.shln(64));
     const lowerSqrtPriceX0 = numeratorX64.div(denominatorX64);
 
-    return lowerSqrtPriceX0;
+    return lowerSqrtPriceX0.shln(64);
   }
 
   // TODO: Account for rounding
@@ -389,7 +389,7 @@ export class SwapSimulator {
       .sub(currentSqrtPriceX64.mul(remainingTokenAAmountX0));
     const upperSqrtPriceX0 = numeratorX64.div(denominatorX64);
 
-    return upperSqrtPriceX0;
+    return upperSqrtPriceX0.shln(64);
   }
 
   // TODO: Account for rounding
