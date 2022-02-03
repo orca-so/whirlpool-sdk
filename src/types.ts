@@ -21,6 +21,8 @@ export type PoolData = {
   tokenVaultAmountA: Decimal;
   tokenVaultAmountB: Decimal;
   rewards: PoolRewardInfo[];
+  tokenDecimalsA: number;
+  tokenDecimalsB: number;
 };
 
 export type PoolRewardInfo = {

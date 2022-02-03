@@ -92,6 +92,8 @@ export async function convertWhirlpoolDataToPoolData(
       tokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),
       tokenVaultAmountB: DecimalUtil.fromU64(amountB, decimalsB),
       rewards,
+      tokenDecimalsA: decimalsA,
+      tokenDecimalsB: decimalsB,
     };
   }
 
