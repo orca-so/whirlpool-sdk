@@ -1,4 +1,3 @@
-import { TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
@@ -10,7 +9,7 @@ export type PoolData = {
   address: PublicKey;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
-  tickSpacing: TickSpacing;
+  stable: boolean;
   feeRate: Decimal;
   protocolFeeRate: Decimal;
   liquidity: u64;

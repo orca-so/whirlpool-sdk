@@ -69,17 +69,17 @@ export class OrcaPool {
    *
    * @param tokenMintA
    * @param tokenMintB
-   * @param tickSpacing
+   * @param stable
    * @returns
    */
-  public deriveAddress(tokenMintA: Address, tokenMintB: Address, tickSpacing: TickSpacing): PDA {
+  public deriveAddress(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
     // TODO tokenMintA and tokenMintB ordering
     return getWhirlpoolPda(
       this.dal.programId,
       this.dal.whirlpoolsConfig,
       toPubKey(tokenMintA),
       toPubKey(tokenMintB),
-      tickSpacing
+      stable ? TickSpacing.Stable : TickSpacing.Standard
     );
   }
 

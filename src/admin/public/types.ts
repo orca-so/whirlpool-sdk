@@ -1,4 +1,3 @@
-import { TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { Address, BN, Provider } from "@project-serum/anchor";
 import { Keypair } from "@solana/web3.js";
 import Decimal from "decimal.js";
@@ -8,7 +7,7 @@ export type InitPoolTransactionParam = {
   initialPrice: Decimal;
   tokenMintA: Address;
   tokenMintB: Address;
-  tickSpacing: TickSpacing;
+  stable: boolean;
 };
 
 export type CollectProtocolFeesTransactionParam = {

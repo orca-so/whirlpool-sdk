@@ -111,7 +111,7 @@ class InternalZPCache<T> {
   }
 
   /**
-   * Stores the response in cache
+   * Stores the response in cache with time-to-live default to 15 seconds.
    */
   public set(key: string, value: T, ttl = 15_000): void {
     this._cache[key] = { value, eol: Date.now() + ttl };
