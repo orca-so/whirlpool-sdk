@@ -20,6 +20,7 @@ import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { OrcaZooplankton } from "./offchain/orca-zp";
+import { toPubKey } from "./utils/address";
 
 export type OrcaWhirlpoolClientConfig = {
   network?: OrcaNetwork;
@@ -86,16 +87,28 @@ export class OrcaWhirlpoolClient {
   }
 
   /**
-   * Fetch pool data.
+   * Fetch list of pool data.
    *
    * @param poolAddresses list of pools to retrieve
    * @param refresh defaults to refreshing the cache
-   * @returns pool data
+   * @returns list of pool data
    */
   public async getPools(
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
     return await convertWhirlpoolDataToPoolData(this.data, poolAddresses, refresh);
+  }
+
+  /**
+   * Fetch pool data.
+   *
+   * @param poolAddress pool address
+   * @param refresh defaults to refreshing the cache
+   * @returns pool data
+   */
+  public async getPool(poolAddress: Address, refresh = true): Promise<PoolData | null> {
+    const pool = (await this.getPools([poolAddress], refresh))[toPubKey(poolAddress).toBase58()];
+    return pool || null;
   }
 }
