@@ -102,23 +102,19 @@ describe("swap", () => {
     }
 
     async function getPrevInitializedTickIndex(currentTickIndex: number): Promise<number> {
-      let prevInitializedTickIndex: number | undefined = undefined;
+      let prevInitializedTickIndex: number | null = null;
 
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        try {
-          prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
-        } catch (err) {
-          if (err instanceof TickArrayOutOfBoundsError) {
-            currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
-          } else {
-            throw err;
-          }
+        prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
+          currentTickArray,
+          currentTickIndex,
+          whirlpool.tickSpacing
+        );
+
+        if (prevInitializedTickIndex === null) {
+          currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
         }
       }
 
@@ -126,28 +122,24 @@ describe("swap", () => {
     }
 
     async function getNextInitializedTickIndex(currentTickIndex: number): Promise<number> {
-      let prevInitializedTickIndex: number | undefined = undefined;
+      let nextInitializedTickIndex: number | null = null;
 
-      while (!prevInitializedTickIndex) {
+      while (!nextInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        try {
-          prevInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
-        } catch (err) {
-          if (err instanceof TickArrayOutOfBoundsError) {
-            currentTickIndex =
-              currentTickArray.startTickIndex + whirlpool.tickSpacing * TICK_ARRAY_SIZE;
-          } else {
-            throw err;
-          }
+        nextInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
+          currentTickArray,
+          currentTickIndex,
+          whirlpool.tickSpacing
+        );
+
+        if (nextInitializedTickIndex === null) {
+          currentTickIndex =
+            currentTickArray.startTickIndex + whirlpool.tickSpacing * TICK_ARRAY_SIZE;
         }
       }
 
-      return prevInitializedTickIndex;
+      return nextInitializedTickIndex;
     }
 
     const swapSimulatorConfig: SwapSimulatorConfig = {
@@ -171,13 +163,7 @@ describe("swap", () => {
       currentLiquidity: whirlpool.liquidity,
     });
 
-    console.log("SWAP SIM OUTPUT", {
-      sqrtPriceLimitX64: swapSimulationOutput.sqrtPriceLimitX64.toString(),
-      amountIn: swapSimulationOutput.amountIn.toString(),
-      amountOut: swapSimulationOutput.amountOut.toString(),
-      sqrtPriceAfterSwapX64: swapSimulationOutput.sqrtPriceAfterSwapX64.toString(),
-    });
-
-    expect(1).toEqual(1);
+    expect(swapSimulationOutput.amountIn.toString()).toEqual("7051000");
+    expect(swapSimulationOutput.amountOut.toString()).toEqual("435058");
   });
 });
