@@ -71,6 +71,7 @@ export class OrcaZooplankton {
           whitelisted: pool.whitelisted,
           tokenMintA: pool.tokenMintA,
           tokenMintB: pool.tokenMintB,
+          stable: pool.stable,
           price: pool.price,
           lpsFeeRate: pool.lpsFeeRate,
           protocolFeeRate: pool.protocolFeeRate,

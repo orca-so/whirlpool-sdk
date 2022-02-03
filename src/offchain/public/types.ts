@@ -17,6 +17,7 @@ export type OffchainPoolData = {
   whitelisted: boolean;
   tokenMintA: string;
   tokenMintB: string;
+  stable: boolean;
   price: number;
   lpsFeeRate: number;
   protocolFeeRate: number;
