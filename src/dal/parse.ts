@@ -21,7 +21,12 @@ export class ParsableWhirlpoolsConfig {
       return null;
     }
 
-    return parseWhirlpoolsConfig(data);
+    try {
+      return parseWhirlpoolsConfig(data);
+    } catch (e) {
+      console.error(`error while parsing WhirlpoolsConfig: ${e}`);
+      return null;
+    }
   }
 }
 
@@ -34,7 +39,12 @@ export class ParsableWhirlpool {
       return null;
     }
 
-    return parseWhirlpool(data);
+    try {
+      return parseWhirlpool(data);
+    } catch (e) {
+      console.error(`error while parsing Whirlpool: ${e}`);
+      return null;
+    }
   }
 }
 
@@ -47,7 +57,12 @@ export class ParsablePosition {
       return null;
     }
 
-    return parsePosition(data);
+    try {
+      return parsePosition(data);
+    } catch (e) {
+      console.error(`error while parsing Position: ${e}`);
+      return null;
+    }
   }
 }
 
@@ -60,7 +75,12 @@ export class ParsableTickArray {
       return null;
     }
 
-    return parseTickArray(data);
+    try {
+      return parseTickArray(data);
+    } catch (e) {
+      console.error(`error while parsing TickArray: ${e}`);
+      return null;
+    }
   }
 }
 
@@ -73,7 +93,12 @@ export class ParsableTokenInfo {
       return null;
     }
 
-    return deserializeTokenAccount(data);
+    try {
+      return deserializeTokenAccount(data);
+    } catch (e) {
+      console.error(`error while parsing TokenAccount: ${e}`);
+      return null;
+    }
   }
 }
 
@@ -86,16 +111,23 @@ export class ParsableMintInfo {
       return null;
     }
 
-    const buffer = MintLayout.decode(data);
-    const mintInfo: MintInfo = {
-      mintAuthority: buffer.mintAuthorityOption === 0 ? null : new PublicKey(buffer.mintAuthority),
-      supply: u64.fromBuffer(buffer.supply),
-      decimals: buffer.decimals,
-      isInitialized: buffer.isInitialized !== 0,
-      freezeAuthority: buffer.freezeAuthority === 0 ? null : new PublicKey(buffer.freezeAuthority),
-    };
+    try {
+      const buffer = MintLayout.decode(data);
+      const mintInfo: MintInfo = {
+        mintAuthority:
+          buffer.mintAuthorityOption === 0 ? null : new PublicKey(buffer.mintAuthority),
+        supply: u64.fromBuffer(buffer.supply),
+        decimals: buffer.decimals,
+        isInitialized: buffer.isInitialized !== 0,
+        freezeAuthority:
+          buffer.freezeAuthority === 0 ? null : new PublicKey(buffer.freezeAuthority),
+      };
 
-    return mintInfo;
+      return mintInfo;
+    } catch (e) {
+      console.error(`error while parsing MintInfo: ${e}`);
+      return null;
+    }
   }
 }
 
