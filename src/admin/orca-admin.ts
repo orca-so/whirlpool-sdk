@@ -109,8 +109,7 @@ export class OrcaAdmin {
   /*** Reward ***/
 
   public getInitRewardTx(param: InitRewardTxParam): TransactionBuilder {
-    const { provider, rewardAuthority, poolAddress, rewardMint, rewardVaultKeypair, rewardIndex } =
-      param;
+    const { provider, rewardAuthority, poolAddress, rewardMint, rewardIndex } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
@@ -121,7 +120,7 @@ export class OrcaAdmin {
       funder: provider.wallet.publicKey,
       whirlpool: toPubKey(poolAddress),
       rewardMint: toPubKey(rewardMint),
-      rewardVaultKeypair,
+      rewardVaultKeypair: Keypair.generate(),
       rewardIndex,
     });
   }

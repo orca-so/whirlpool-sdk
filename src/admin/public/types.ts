@@ -32,7 +32,6 @@ export type InitRewardTxParam = {
   rewardAuthority: Address;
   poolAddress: Address;
   rewardMint: Address;
-  rewardVaultKeypair: Keypair;
   rewardIndex: number;
 };
 
