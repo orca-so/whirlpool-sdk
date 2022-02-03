@@ -7,7 +7,7 @@ import { Address, Provider } from "@project-serum/anchor";
 import { Keypair } from "@solana/web3.js";
 import { toPubKey } from "../../utils/address";
 
-export type InitWhirlpoolConfigsTransactionParam = {
+export type InitWhirlpoolConfigsTxParam = {
   programId: Address;
   provider: Provider;
   whirlpoolConfigKeypair: Keypair;
@@ -18,7 +18,7 @@ export type InitWhirlpoolConfigsTransactionParam = {
   defaultProtocolFeeRate: number;
 };
 
-export function getInitWhirlpoolConfigsTransaction({
+export function getInitWhirlpoolConfigsTx({
   programId,
   provider,
   whirlpoolConfigKeypair,
@@ -27,7 +27,7 @@ export function getInitWhirlpoolConfigsTransaction({
   rewardEmissionsSuperAuthority,
   defaultFeeRate,
   defaultProtocolFeeRate,
-}: InitWhirlpoolConfigsTransactionParam): TransactionBuilder {
+}: InitWhirlpoolConfigsTxParam): TransactionBuilder {
   const ctx = WhirlpoolContext.withProvider(provider, toPubKey(programId));
   const client = new WhirlpoolClient(ctx);
 

@@ -1,15 +1,15 @@
 import { Keypair } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
-  InitPoolTransactionParam,
-  CollectProtocolFeesTransactionParam,
-  SetFeeAuthorityParam,
-  SetCollectProtocolFeesAuthorityParam,
-  InitRewardTransactionParam,
-  SetRewardAuthorityTransactionParam,
-  SetRewardEmissionsTransactionParam,
-  SetRewardAuthorityBySuperAuthorityTransactionParam,
-  SetRewardEmissionsBySuperAuthorityTransactionParam,
+  InitPoolTxParam,
+  CollectProtocolFeesTxParam,
+  SetFeeAuthorityTxParam,
+  SetCollectProtocolFeesAuthorityTxParam,
+  InitRewardTxParam,
+  SetRewardAuthorityTxParam,
+  SetRewardEmissionsTxParam,
+  SetRewardAuthorityBySuperAuthorityTxParam,
+  SetRewardEmissionsBySuperAuthorityTxParam,
 } from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
@@ -26,7 +26,7 @@ import {
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
 
-  public getInitPoolTransaction(param: InitPoolTransactionParam): TransactionBuilder {
+  public getInitPoolTx(param: InitPoolTxParam): TransactionBuilder {
     const { provider, initialPrice, tokenMintA, tokenMintB, stable } = param;
     const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
@@ -56,8 +56,8 @@ export class OrcaAdmin {
 
   /*** Fee ***/
 
-  public async getCollectProtocolFeesTransaction(
-    param: CollectProtocolFeesTransactionParam
+  public async getCollectProtocolFeesTx(
+    param: CollectProtocolFeesTxParam
   ): Promise<TransactionBuilder> {
     const { provider, poolAddress, tokenDestinationA, tokenDestinationB } = param;
     const { programId, whirlpoolsConfig } = this.dal;
@@ -78,7 +78,7 @@ export class OrcaAdmin {
     });
   }
 
-  public getSetFeeAuthority(param: SetFeeAuthorityParam): TransactionBuilder {
+  public getSetFeeAuthorityTx(param: SetFeeAuthorityTxParam): TransactionBuilder {
     const { provider, newFeeAuthority } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
@@ -91,8 +91,8 @@ export class OrcaAdmin {
     });
   }
 
-  public getSetCollectProtocolFeesAuthority(
-    param: SetCollectProtocolFeesAuthorityParam
+  public getSetCollectProtocolFeesAuthorityTx(
+    param: SetCollectProtocolFeesAuthorityTxParam
   ): TransactionBuilder {
     const { provider, newCollectProtocolFeesAuthority } = param;
     const { programId, whirlpoolsConfig } = this.dal;
@@ -108,7 +108,7 @@ export class OrcaAdmin {
 
   /*** Reward ***/
 
-  public getInitRewardTransaction(param: InitRewardTransactionParam): TransactionBuilder {
+  public getInitRewardTx(param: InitRewardTxParam): TransactionBuilder {
     const { provider, rewardAuthority, poolAddress, rewardMint, rewardVaultKeypair, rewardIndex } =
       param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
@@ -126,9 +126,7 @@ export class OrcaAdmin {
     });
   }
 
-  public getSetRewardAuthorityTransaction(
-    param: SetRewardAuthorityTransactionParam
-  ): TransactionBuilder {
+  public getSetRewardAuthorityTx(param: SetRewardAuthorityTxParam): TransactionBuilder {
     const { provider, poolAddress, newRewardAuthority, rewardIndex } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -143,26 +141,31 @@ export class OrcaAdmin {
     });
   }
 
-  public getSetRewardEmissionsTransaction(
-    param: SetRewardEmissionsTransactionParam
-  ): TransactionBuilder {
-    const { provider, poolAddress, rewardIndex, emissionsPerSecondX64, rewardVault } = param;
+  public async getSetRewardEmissionsTx(
+    param: SetRewardEmissionsTxParam
+  ): Promise<TransactionBuilder> {
+    const { provider, poolAddress, rewardIndex, emissionsPerSecondX64 } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
+
+    const whirlpool = await this.dal.getPool(poolAddress, true);
+    const rewardVault = whirlpool?.rewardInfos[rewardIndex]?.vault;
+
+    invariant(!!rewardVault, "reward vault doeos not exist");
 
     return client.setRewardEmissionsTx({
       rewardAuthority: provider.wallet.publicKey,
       whirlpool: toPubKey(poolAddress),
       rewardIndex,
       emissionsPerSecondX64,
-      rewardVault: toPubKey(rewardVault),
+      rewardVault,
     });
   }
 
-  public getSetRewardAuthorityBySuperAuthorityTransaction(
-    param: SetRewardAuthorityBySuperAuthorityTransactionParam
+  public getSetRewardAuthorityBySuperAuthorityTx(
+    param: SetRewardAuthorityBySuperAuthorityTxParam
   ): TransactionBuilder {
     const { provider, poolAddress, newRewardAuthority, rewardIndex } = param;
     const { programId, whirlpoolsConfig } = this.dal;
@@ -180,8 +183,8 @@ export class OrcaAdmin {
     });
   }
 
-  public getSetRewardEmissionsBySuperAuthorityTransaction(
-    param: SetRewardEmissionsBySuperAuthorityTransactionParam
+  public getSetRewardEmissionsBySuperAuthorityTx(
+    param: SetRewardEmissionsBySuperAuthorityTxParam
   ): TransactionBuilder {
     const { provider, rewardEmissionsSuperAuthority, newRewardEmissionsSuperAuthority } = param;
     const { programId, whirlpoolsConfig } = this.dal;
