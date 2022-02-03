@@ -26,7 +26,7 @@ export async function convertWhirlpoolDataToPoolData(
         allMintInfos.add(pool.tokenMintB.toBase58());
 
         pool.rewardInfos.forEach(({ vault, mint }) => {
-          if (!mint.equals(PublicKey.default)) {
+          if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
             allTokenAccounts.add(vault.toBase58());
             allMintInfos.add(mint.toBase58());
           }
@@ -64,7 +64,7 @@ export async function convertWhirlpoolDataToPoolData(
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
       let amount = undefined;
       let decimals = undefined;
-      if (!mint.equals(PublicKey.default)) {
+      if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
         amount = (await dal.getTokenInfo(vault, false))?.amount;
         decimals = (await dal.getMintInfo(mint, false))?.decimals;
       }

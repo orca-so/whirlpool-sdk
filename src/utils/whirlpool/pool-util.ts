@@ -6,7 +6,9 @@ export class PoolUtil {
   private constructor() {}
 
   public static isRewardInitialized(rewardInfo: WhirlpoolRewardInfoData): boolean {
-    return !PublicKey.default.equals(rewardInfo.mint);
+    return (
+      !PublicKey.default.equals(rewardInfo.mint) && !PublicKey.default.equals(rewardInfo.vault)
+    );
   }
 
   public static getFeeRate(account: WhirlpoolData): Percentage {

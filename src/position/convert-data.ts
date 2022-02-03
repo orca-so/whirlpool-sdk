@@ -69,10 +69,10 @@ export async function convertPositionDataToUserPositionData(
 
     const rewardsQuote = getCollectRewardsQuoteInternal(quoteParam);
     const rewards: UserPositionRewardInfo[] = [];
-    for (const [index, { mint }] of whirlpool.rewardInfos.entries()) {
+    for (const [index, { mint, vault }] of whirlpool.rewardInfos.entries()) {
       const quote = rewardsQuote[index];
       let decimals = undefined;
-      if (!mint.equals(PublicKey.default)) {
+      if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
         decimals = (await dal.getMintInfo(mint, false))?.decimals;
       }
       const amountOwed =
@@ -130,8 +130,8 @@ async function getUserPositions(
       if (pool) {
         allMintInfos.add(pool.tokenMintA.toBase58());
         allMintInfos.add(pool.tokenMintB.toBase58());
-        pool.rewardInfos.forEach(({ mint }) => {
-          if (!mint.equals(PublicKey.default)) {
+        pool.rewardInfos.forEach(({ mint, vault }) => {
+          if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
             allMintInfos.add(mint.toBase58());
           }
         });
