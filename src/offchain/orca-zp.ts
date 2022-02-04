@@ -105,7 +105,7 @@ class InternalZPCache<T> {
    */
   public get(key: string): T | null {
     const content = this._cache[key];
-    if (!content || content.eol >= Date.now()) {
+    if (!content || Date.now() >= content.eol) {
       return null;
     }
     return content.value;
