@@ -148,7 +148,7 @@ describe.only("Add Liquidity", () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("6wADQSNfubas7sExoKhoFo4vXM72RaYqin3mk7ce3tf7");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()];
-    const expectedLiquidityAmount = new BN("1250000");
+    const expectedLiquidityAmount = new BN("1302559");
     const tokenAAmount = new BN(0);
     const tokenBAmount = new BN("167000");
 
@@ -161,11 +161,11 @@ describe.only("Add Liquidity", () => {
     const orcaPosition = new OrcaPosition(mockDal);
 
     const params: AddLiquidityQuoteParam = {
-      address: new PublicKey("5GhgBXfuKuFvqhz7h8LAQabEievmWgiXiiVwYHQFejLw"),
+      positionAddress: new PublicKey("5GhgBXfuKuFvqhz7h8LAQabEievmWgiXiiVwYHQFejLw"),
       tokenMint: whirlpool.tokenMintB,
       tokenAmount: tokenBAmount,
       refresh: true,
-      slippageTolerence: defaultSlippagePercentage,
+      slippageTolerance: defaultSlippagePercentage,
     };
 
     const addLiquidityQuote = await orcaPosition.getAddLiquidityQuote(params);

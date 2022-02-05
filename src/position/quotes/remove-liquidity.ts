@@ -3,7 +3,14 @@ import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
-import { PositionStatus, PositionUtil } from "../../utils/whirlpool/position-util";
+import { ZERO } from "../../utils/web3/math-utils";
+import {
+  adjustForSlippage,
+  getTokenAFromLiquidity,
+  getTokenBFromLiquidity,
+  PositionStatus,
+  PositionUtil,
+} from "../../utils/whirlpool/position-util";
 import { RemoveLiquidityQuote } from "../public";
 
 export type InternalRemoveLiquidityQuoteParam = {
@@ -13,7 +20,7 @@ export type InternalRemoveLiquidityQuoteParam = {
   tickLowerIndex: number;
   tickUpperIndex: number;
   liquidity: u64;
-  slippageTolerence: Percentage;
+  slippageTolerance: Percentage;
 };
 
 export function getRemoveLiquidityQuote(
@@ -40,24 +47,21 @@ export function getRemoveLiquidityQuote(
 function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
-  const { positionAddress, tickLowerIndex, tickUpperIndex, liquidity, slippageTolerence } = param;
+  const { positionAddress, tickLowerIndex, tickUpperIndex, liquidity, slippageTolerance } = param;
 
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const tokenAmountA = liquidity
-    .shln(64)
-    .mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
-    .div(sqrtPriceLowerX64)
-    .div(sqrtPriceUpperX64);
-  const tokenAmountAAfterSlippage = tokenAmountA
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+  const minTokenA = adjustForSlippage(
+    getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false),
+    slippageTolerance,
+    false
+  );
 
   return {
     positionAddress,
-    minTokenA: new u64(tokenAmountAAfterSlippage),
-    minTokenB: new u64(0),
+    minTokenA,
+    minTokenB: ZERO,
     liquidity,
   };
 }
@@ -71,31 +75,28 @@ function getRemoveLiquidityQuoteWhenPositionIsInRange(
     tickLowerIndex,
     tickUpperIndex,
     liquidity,
-    slippageTolerence,
+    slippageTolerance,
   } = param;
 
   const sqrtPriceX64 = sqrtPrice;
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const tokenAmountA = liquidity
-    .shln(64)
-    .mul(sqrtPriceUpperX64.sub(sqrtPriceX64))
-    .div(sqrtPriceX64)
-    .div(sqrtPriceUpperX64);
-  const tokenAmountB = liquidity.mul(sqrtPriceX64.sub(sqrtPriceLowerX64)).shrn(64);
-
-  const tokenAmountAAfterSlippage = tokenAmountA
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
-  const tokenAmountBAfterSlippage = tokenAmountB
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+  const minTokenA = adjustForSlippage(
+    getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, false),
+    slippageTolerance,
+    false
+  );
+  const minTokenB = adjustForSlippage(
+    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, false),
+    slippageTolerance,
+    false
+  );
 
   return {
     positionAddress,
-    minTokenA: new u64(tokenAmountAAfterSlippage),
-    minTokenB: new u64(tokenAmountBAfterSlippage),
+    minTokenA,
+    minTokenB,
     liquidity,
   };
 }
@@ -103,20 +104,27 @@ function getRemoveLiquidityQuoteWhenPositionIsInRange(
 function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
   param: InternalRemoveLiquidityQuoteParam
 ): RemoveLiquidityQuote {
-  const { positionAddress, tickLowerIndex, tickUpperIndex, liquidity, slippageTolerence } = param;
+  const {
+    positionAddress,
+    tickLowerIndex,
+    tickUpperIndex,
+    liquidity,
+    slippageTolerance: slippageTolerance,
+  } = param;
 
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const tokenAmountB = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64)).shrn(64);
-  const tokenAmountBAfterSlippage = tokenAmountB
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+  const minTokenB = adjustForSlippage(
+    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false),
+    slippageTolerance,
+    false
+  );
 
   return {
     positionAddress,
-    minTokenA: new u64(0),
-    minTokenB: new u64(tokenAmountBAfterSlippage),
+    minTokenA: ZERO,
+    minTokenB,
     liquidity,
   };
 }

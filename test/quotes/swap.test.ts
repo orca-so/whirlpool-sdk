@@ -2,7 +2,7 @@ import {
   WhirlpoolData,
   TickArrayData,
   TickData,
-  TICK_ARRAY_SIZE,
+  NUM_TICKS_IN_TICK_ARRAY,
 } from "@orca-so/whirlpool-client-sdk";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
@@ -135,7 +135,7 @@ describe("swap", () => {
 
         if (nextInitializedTickIndex === null) {
           currentTickIndex =
-            currentTickArray.startTickIndex + whirlpool.tickSpacing * TICK_ARRAY_SIZE;
+            currentTickArray.startTickIndex + whirlpool.tickSpacing * NUM_TICKS_IN_TICK_ARRAY;
         }
       }
 
@@ -164,6 +164,6 @@ describe("swap", () => {
     });
 
     expect(swapSimulationOutput.amountIn.toString()).toEqual("7051000");
-    expect(swapSimulationOutput.amountOut.toString()).toEqual("435058");
+    expect(swapSimulationOutput.amountOut.toString()).toEqual("437271");
   });
 });

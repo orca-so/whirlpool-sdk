@@ -37,7 +37,7 @@ import {
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
   toX64,
-  TICK_ARRAY_SIZE,
+  NUM_TICKS_IN_TICK_ARRAY,
   WhirlpoolData,
   PositionData,
   WhirlpoolClient,
@@ -252,8 +252,8 @@ export class OrcaPool {
         client
           .decreaseLiquidityTx({
             liquidityAmount: position.liquidity,
-            tokenMaxA: quote.minTokenA,
-            tokenMaxB: quote.minTokenB,
+            tokenMinA: quote.minTokenA,
+            tokenMinB: quote.minTokenB,
             whirlpool: position.whirlpool,
             positionAuthority: provider.wallet.publicKey,
             position: toPubKey(quote.positionAddress),
@@ -365,7 +365,7 @@ export class OrcaPool {
    * Construct a quote for opening a new position
    */
   public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
-    const { poolAddress, tokenMint, tokenAmount, slippageTolerence, refresh } = param;
+    const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
 
@@ -396,7 +396,7 @@ export class OrcaPool {
       inputTokenAmount: tokenAmount,
       tickLowerIndex,
       tickUpperIndex,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     };
 
     return {
@@ -411,7 +411,7 @@ export class OrcaPool {
    * Construct a quote for closing an existing position
    */
   public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
-    const { positionAddress, refresh, slippageTolerence } = param;
+    const { positionAddress, refresh, slippageTolerance } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position.whirlpool, shouldRefresh);
@@ -423,7 +423,7 @@ export class OrcaPool {
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
       liquidity: position.liquidity,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     });
   }
 
@@ -510,7 +510,7 @@ export class OrcaPool {
             prevInitializedTickIndex = temp;
           } else {
             currentTickIndex =
-              currentTickArray.startTickIndex + TICK_ARRAY_SIZE * whirlpool.tickSpacing;
+              currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing;
           }
         }
 

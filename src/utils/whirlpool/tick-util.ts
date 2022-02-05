@@ -7,7 +7,7 @@ import {
   TickData,
   PDA,
   getTickArrayPda,
-  TICK_ARRAY_SIZE,
+  NUM_TICKS_IN_TICK_ARRAY,
   MIN_TICK_INDEX,
   MAX_TICK_INDEX,
 } from "@orca-so/whirlpool-client-sdk";
@@ -66,8 +66,8 @@ export class TickUtil {
    * @returns
    */
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
-    const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
-    const startTickIndex = (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
+    const realIndex = Math.floor(tickIndex / tickSpacing / NUM_TICKS_IN_TICK_ARRAY);
+    const startTickIndex = (realIndex + offset) * tickSpacing * NUM_TICKS_IN_TICK_ARRAY;
     invariant(startTickIndex >= MIN_TICK_INDEX, "startTickIndex is too small");
     invariant(startTickIndex <= MAX_TICK_INDEX, "startTickIndex is too large");
     return startTickIndex;
