@@ -471,8 +471,7 @@ export class OrcaPool {
       slippageTolerance,
       fetchTickArray,
       fetchTick,
-      getPrevInitializedTickIndex: async () => {
-        let currentTickIndex = whirlpool.tickCurrentIndex;
+      getPrevInitializedTickIndex: async (currentTickIndex: number, maxCrossed: boolean) => {
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
@@ -486,15 +485,16 @@ export class OrcaPool {
 
           if (temp) {
             prevInitializedTickIndex = temp;
+          } else if (maxCrossed) {
+            prevInitializedTickIndex = currentTickArray.startTickIndex - 1;
           } else {
-            currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
+            currentTickIndex = currentTickArray.startTickIndex - 1;
           }
         }
 
         return prevInitializedTickIndex;
       },
-      getNextInitializedTickIndex: async () => {
-        let currentTickIndex = whirlpool.tickCurrentIndex;
+      getNextInitializedTickIndex: async (currentTickIndex: number, maxCrossed: boolean) => {
         let prevInitializedTickIndex: number | undefined = undefined;
 
         while (!prevInitializedTickIndex) {
@@ -509,8 +509,13 @@ export class OrcaPool {
           if (temp) {
             prevInitializedTickIndex = temp;
           } else {
-            currentTickIndex =
-              currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing;
+            const lastTickInArray =
+              currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing - 1;
+            if (maxCrossed) {
+              prevInitializedTickIndex = lastTickInArray;
+            } else {
+              currentTickIndex = lastTickInArray;
+            }
           }
         }
 

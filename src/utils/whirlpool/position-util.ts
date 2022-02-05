@@ -76,7 +76,7 @@ export function getTokenAFromLiquidity(
   sqrtPriceUpperX64: BN,
   roundUp: boolean
 ) {
-  const numerator = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
+  const numerator = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64)).shln(64);
   const denominator = sqrtPriceUpperX64.mul(sqrtPriceLowerX64);
   if (roundUp) {
     return numerator.divRound(denominator);

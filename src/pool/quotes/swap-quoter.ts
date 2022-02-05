@@ -10,6 +10,17 @@ import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
 import { Percentage } from "../../utils/public/percentage";
+import { ZERO } from "../../utils/web3/math-utils";
+import {
+  getTokenAFromLiquidity,
+  getTokenBFromLiquidity,
+} from "../../utils/whirlpool/position-util";
+import {
+  getLowerSqrtPriceFromTokenA,
+  getLowerSqrtPriceFromTokenB,
+  getUpperSqrtPriceFromTokenA,
+  getUpperSqrtPriceFromTokenB,
+} from "../../utils/whirlpool/swap-util";
 
 const MAX_TICK_ARRAY_CROSSINGS = 2;
 
@@ -36,8 +47,8 @@ export type SwapSimulatorConfig = {
   slippageTolerance: Percentage;
   fetchTickArray: (tickIndex: number) => Promise<TickArrayData>;
   fetchTick: (tickIndex: number) => Promise<TickData>;
-  getPrevInitializedTickIndex: (currentTickIndex: number) => Promise<number>;
-  getNextInitializedTickIndex: (currentTickIndex: number) => Promise<number>;
+  getPrevInitializedTickIndex: (currentTickIndex: number, maxCrossed: boolean) => Promise<number>;
+  getNextInitializedTickIndex: (currentTickIndex: number, maxCrossed: boolean) => Promise<number>;
 };
 
 type SwapState = {
@@ -71,6 +82,7 @@ type SwapStepSimulationInput = {
   tickIndex: number;
   liquidity: u64;
   amount: u64;
+  maxCrossed: boolean;
 };
 
 type SwapStepSimulationOutput = {
@@ -122,21 +134,18 @@ export class SwapSimulator {
     let tickArraysCrossed = 0;
 
     while (
-      state.specifiedAmountLeft.gt(new BN(0)) &&
+      state.specifiedAmountLeft.gt(ZERO) &&
       sqrtPriceWithinLimit(currentSqrtPriceX64, sqrtPriceLimitX64)
     ) {
-      const swapStepSimulationInput: SwapStepSimulationInput = {
+      const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep({
         sqrtPriceLimitX64,
         sqrtPriceX64: state.sqrtPriceX64,
         amount: state.specifiedAmountLeft,
         tickArray: state.tickArray,
         tickIndex: state.tickIndex,
         liquidity: state.liquidity,
-      };
-
-      const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
-        swapStepSimulationInput
-      );
+        maxCrossed: tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS,
+      });
 
       const { input, output } = swapStepSimulationOutput;
       const [specifiedAmountUsed, otherAmountCalculated] = resolveSpecifiedAndOtherAmounts(
@@ -160,7 +169,6 @@ export class SwapSimulator {
           fetchTick(nextTickIndex),
         ]);
 
-        state.tickIndex = nextTickIndex;
         state.sqrtPriceX64 = tickIndexToSqrtPriceX64(nextTickIndex);
         state.liquidity = calculateNewLiquidity(
           state.liquidity,
@@ -168,12 +176,10 @@ export class SwapSimulator {
           nextTick.liquidityNet
         );
 
+        state.tickIndex =
+          this.config.swapDirection == SwapDirection.AtoB ? nextTickIndex - 1 : nextTickIndex;
         if (currentTickArray.startTickIndex !== nextTickArray.startTickIndex) {
           tickArraysCrossed += 1;
-        }
-
-        if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
-          break;
         }
       }
     }
@@ -213,10 +219,11 @@ export class SwapSimulator {
     const {
       amount: specifiedTokenAmount,
       liquidity: currentLiquidity,
-      tickIndex: currentTickIndex,
       sqrtPriceX64: currentSqrtPriceX64,
       tickArray: currentTickArrayAccount,
+      tickIndex,
       sqrtPriceLimitX64,
+      maxCrossed,
     } = input;
 
     // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
@@ -224,8 +231,8 @@ export class SwapSimulator {
     // TODO(atamari): What do we do if next/prev initialized tick is more than one tick array account apart
     // Currently, if we're moving between ticks, we stop at the last tick on the adjacent tick array account (due to the whirlpool program limitation)
     const [prevInitializedTickIndex, nextInitializedTickIndex] = await Promise.all([
-      getPrevInitializedTickIndex(input.tickIndex),
-      getNextInitializedTickIndex(input.tickIndex),
+      getPrevInitializedTickIndex(tickIndex, maxCrossed),
+      getNextInitializedTickIndex(tickIndex, maxCrossed),
     ]);
 
     const targetSqrtPriceX64 = calculateTargetSqrtPrice(
@@ -234,6 +241,7 @@ export class SwapSimulator {
       nextInitializedTickIndex
     );
 
+    // TODO: Use getTokenAFromLiquidity and getTokenBFromLiquidity
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
       BN.min(currentSqrtPriceX64, targetSqrtPriceX64),
@@ -302,35 +310,21 @@ export class SwapSimulator {
   private static calculateTokenADelta =
     (rounding: Rounding) =>
     (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
-      // Use eq 6.16 from univ3 whitepaper to find deltaA
-      // ΔX = Δ(1/√P)·L => deltaA = (1/sqrt(lower) - 1/sqrt(upper)) * state.currLiquidity
-      // => deltaA = ((sqrt(upper) - sqrt(lower)) / (sqrt(lower) * sqrt(upper))) * state.currLiquidity
-      // => deltaA = (state.currLiquidity * (sqrt(upper) - sqrt(lower))) / (sqrt(upper) * sqrt(lower))
-      // Precision analysis: (x0 * (x64 - x64)) / (x64 * x64)
-      const numeratorX64 = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
-      const denominatorX64 = sqrtPriceUpperX64.mul(sqrtPriceLowerX64).shrn(64);
-      const tokenADelta = numeratorX64.div(denominatorX64);
-
-      if (rounding === Rounding.Up) {
-        return new u64(tokenADelta.add(new BN(1)));
+      if (rounding == Rounding.Up) {
+        return getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
+      } else {
+        return getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
       }
-
-      return new u64(tokenADelta);
     };
 
   private static calculateTokenBDelta =
     (rounding: Rounding) =>
     (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
-      // Use eq 6.14 from univ3 whitepaper: ΔY = ΔP·L => deltaB = (sqrt(upper) - sqrt(lower)) * liquidity
-      // Analyzing the precisions here: (X64 - X64) * X0 => X64
-      // We need to shave off decimal part since we need to return an X0 for token amount
-      const tokenBDeltaX64 = sqrtPriceUpperX64.sub(sqrtPriceLowerX64).mul(liquidity);
-
-      if (rounding === Rounding.Up) {
-        return new u64(tokenBDeltaX64.shrn(64).add(new BN(1)));
+      if (rounding == Rounding.Up) {
+        return getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
+      } else {
+        return getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
       }
-
-      return new u64(tokenBDeltaX64.shrn(64));
     };
 
   private static calculateSqrtPriceAtPrevInitializedTick(
@@ -349,26 +343,17 @@ export class SwapSimulator {
     return BN.min(sqrtPriceLimitX64, tickIndexToSqrtPriceX64(nextInitializedTickIndex));
   }
 
-  // TODO: Account for rounding
   private static calculateLowerSqrtPriceGivenTokenADelta(
-    remainingTokenAAmountX0: u64,
-    currentLiquidityX0: u64,
+    remainingTokenAAmountX0: BN,
+    currentLiquidityX0: BN,
     currentSqrtPriceX64: BN
-  ): u64 {
-    // To compute this, we use eq 6.15 from univ3 whitepaper:
-    // Δ(1/√P) = ΔX/L => 1/sqrt(lower) - 1/sqrt(upper) = tokenAToSwap/state.currLiquidity
-    // What we're trying to find here is actually sqrt(lower) , so let's solve for that:
-    //  => 1/sqrt(lower) = tokenAToSwap/state.currLiquidity + 1/sqrt(upper)
-    //  => 1/sqrt(lower) = (tokenAToSwap*sqrt(upper) + state.currLiquidity) / (state.currLiquidity * sqrt(upper))
-    //  => sqrt(lower) = (state.currLiquidity * sqrt(upper)) / (tokenAToSwap*sqrt(upper) + state.currLiquidity)
-    // Precision analysis: (u64 * q64.64) / (u64 * q64.64 + u64)
-    const numeratorX64 = currentLiquidityX0.mul(currentSqrtPriceX64);
-    const denominatorX64 = remainingTokenAAmountX0
-      .mul(currentSqrtPriceX64)
-      .add(currentLiquidityX0.shln(64));
-    const lowerSqrtPriceX0 = numeratorX64.div(denominatorX64);
-
-    return lowerSqrtPriceX0.shln(64);
+  ): BN {
+    return getLowerSqrtPriceFromTokenA(
+      remainingTokenAAmountX0,
+      currentLiquidityX0,
+      currentSqrtPriceX64,
+      true
+    );
   }
 
   // TODO: Account for rounding
@@ -377,47 +362,36 @@ export class SwapSimulator {
     currentLiquidityX0: u64,
     currentSqrtPriceX64: BN
   ): BN {
-    // To compute this, we use eq 6.15 from univ3 whitepaper:
-    // Δ(1/√P) = ΔX/L => 1/sqrt(lower) - 1/sqrt(upper) = remainingAToWithdraw/state.currLiquidity
-    // What we're trying to find here is actually sqrt(upper) , so let's solve for that:
-    //  => 1/sqrt(upper) =  1/sqrt(lower) - remainingAToWithdraw/state.currLiquidity
-    //  => sqrt(upper) =  (state.currLiquidity * sqrt(lower)) / (state.currLiquidity - sqrt(lower)*remainingAToWithdraw)
-    // Precision analysis raw: (u64 * q64.64) / (u64 - q64.64 * u64)
-    const numeratorX64 = currentLiquidityX0.mul(currentSqrtPriceX64);
-    const denominatorX64 = currentLiquidityX0
-      .shln(64)
-      .sub(currentSqrtPriceX64.mul(remainingTokenAAmountX0));
-    const upperSqrtPriceX0 = numeratorX64.div(denominatorX64);
-
-    return upperSqrtPriceX0.shln(64);
+    return getUpperSqrtPriceFromTokenA(
+      remainingTokenAAmountX0,
+      currentLiquidityX0,
+      currentSqrtPriceX64,
+      true
+    );
   }
 
-  // TODO: Account for rounding
   private static calculateUpperSqrtPriceGivenTokenBDelta(
     remainingTokenBAmountX0: u64,
     currentLiquidityX0: u64,
     currentSqrtPriceX64: BN
   ): BN {
-    // To compute this, we use eq 6.13 from univ3 whitepaper:
-    // Δ√P = ΔY/L => sqrt(upper) - sqrt(lower) = remainingBToSwap / state.currLiquidity
-    // What we're trying to find here is actually sqrt(upper) , so let's solve for that:
-    //  => sqrt(upper) = (remainingBToSwap / state.currLiquidity) + sqrt(lower)
-    // Precision analysis: (q64.0 / q64.0) + q64.64
-    return remainingTokenBAmountX0.shln(64).div(currentLiquidityX0).add(currentSqrtPriceX64);
+    return getLowerSqrtPriceFromTokenB(
+      remainingTokenBAmountX0,
+      currentLiquidityX0,
+      currentSqrtPriceX64
+    );
   }
 
-  // TODO: Account for rounding
   private static calculateLowerSqrtPriceGivenTokenBDelta(
     remainingTokenBAmountX0: u64,
     currentLiquidityX0: u64,
     currentSqrtPriceX64: BN
   ): BN {
-    // To compute this, we use eq 6.13 from univ3 whitepaper:
-    // Δ√P = ΔY/L => sqrt(upper) - sqrt(lower) = remainingBToWithdraw / state.currLiquidity
-    // What we're trying to find here is actually sqrt(lower) since we're removing B from the pool, so let's solve for that:
-    //  => sqrt(lower) = sqrt(upper) - (remainingBToWitdhraw / state.currLiquidity)
-    // Precision analysis: q64.64 - (q64.0 / q64.0)
-    return currentSqrtPriceX64.sub(remainingTokenBAmountX0.div(currentLiquidityX0).shln(64));
+    return getUpperSqrtPriceFromTokenB(
+      remainingTokenBAmountX0,
+      currentLiquidityX0,
+      currentSqrtPriceX64
+    );
   }
 
   private static calculateLowerSqrtPriceAfterSlippage(
