@@ -34,7 +34,7 @@ export function adjustForSlippage(
   if (adjustUp) {
     return n.mul(denominator.add(numerator)).div(denominator);
   } else {
-    return n.mul(denominator).div(numerator.add(denominator));
+    return n.mul(denominator).div(denominator.add(numerator));
   }
 }
 

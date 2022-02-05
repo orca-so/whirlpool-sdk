@@ -245,13 +245,7 @@ export class OrcaPosition {
    * Construct a quote for adding liquidity to an existing pool
    */
   public async getAddLiquidityQuote(param: AddLiquidityQuoteParam): Promise<AddLiquidityQuote> {
-    const {
-      positionAddress,
-      tokenMint,
-      tokenAmount,
-      refresh,
-      slippageTolerance: slippageTolerance,
-    } = param;
+    const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerance } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
 
     const position = await this.getPosition(positionAddress, shouldRefresh);
