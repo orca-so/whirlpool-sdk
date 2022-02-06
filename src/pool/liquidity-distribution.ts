@@ -19,6 +19,7 @@ export type LiquidityDistribution = {
 export async function getLiquidityDistribution(
   dal: OrcaDAL,
   poolAddress: Address,
+  width: number,
   refresh: boolean
 ): Promise<LiquidityDistribution | null> {
   const datapoints: LiquidityDataPoint[] = [];
@@ -28,7 +29,12 @@ export async function getLiquidityDistribution(
     return null;
   }
 
-  const tickArrayAddresses = getSurroundingTickArrayAddresses(pool, poolAddress, dal.programId);
+  const tickArrayAddresses = getSurroundingTickArrayAddresses(
+    pool,
+    poolAddress,
+    width,
+    dal.programId
+  );
   const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
 
   let liquidity = new Decimal(0);
@@ -56,28 +62,21 @@ export async function getLiquidityDistribution(
 function getSurroundingTickArrayAddresses(
   pool: WhirlpoolData,
   poolAddress: Address,
+  width: number,
   programId: PublicKey
-): [PublicKey, PublicKey, PublicKey] {
-  const tickAddress0 = TickUtil.getPdaWithTickIndex(
-    pool.tickCurrentIndex,
-    pool.tickSpacing,
-    poolAddress,
-    programId,
-    -1
-  ).publicKey;
-  const tickAddress1 = TickUtil.getPdaWithTickIndex(
-    pool.tickCurrentIndex,
-    pool.tickSpacing,
-    poolAddress,
-    programId,
-    0
-  ).publicKey;
-  const tickAddress2 = TickUtil.getPdaWithTickIndex(
-    pool.tickCurrentIndex,
-    pool.tickSpacing,
-    poolAddress,
-    programId,
-    1
-  ).publicKey;
-  return [tickAddress0, tickAddress1, tickAddress2];
+): PublicKey[] {
+  const tickArrayAddresses: PublicKey[] = [];
+
+  for (let i = -width; i < width + 1; i++) {
+    const address = TickUtil.getPdaWithTickIndex(
+      pool.tickCurrentIndex,
+      pool.tickSpacing,
+      poolAddress,
+      programId,
+      i
+    ).publicKey;
+    tickArrayAddresses.push(address);
+  }
+
+  return tickArrayAddresses;
 }

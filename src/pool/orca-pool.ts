@@ -54,14 +54,16 @@ export class OrcaPool {
    * Useful for visualizing the liquidity in the pool.
    *
    * @param poolAddress
+   * @param width
    * @param refresh
    * @returns liquidity distribution
    */
   public async getLiquidityDistribution(
     poolAddress: Address,
+    width: number,
     refresh = true
   ): Promise<LiquidityDistribution | null> {
-    return await getLiquidityDistribution(this.dal, poolAddress, refresh);
+    return await getLiquidityDistribution(this.dal, poolAddress, width, refresh);
   }
 
   /**
