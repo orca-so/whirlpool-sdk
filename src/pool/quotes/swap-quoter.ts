@@ -226,10 +226,6 @@ export class SwapSimulator {
       maxCrossed,
     } = input;
 
-    // const currentSqrtPriceX64 = tickIndexToSqrtPriceX64(currentTickIndex);
-
-    // TODO(atamari): What do we do if next/prev initialized tick is more than one tick array account apart
-    // Currently, if we're moving between ticks, we stop at the last tick on the adjacent tick array account (due to the whirlpool program limitation)
     const [prevInitializedTickIndex, nextInitializedTickIndex] = await Promise.all([
       getPrevInitializedTickIndex(tickIndex, maxCrossed),
       getNextInitializedTickIndex(tickIndex, maxCrossed),
@@ -241,7 +237,6 @@ export class SwapSimulator {
       nextInitializedTickIndex
     );
 
-    // TODO: Use getTokenAFromLiquidity and getTokenBFromLiquidity
     const specifiedTokenMaxDelta = calculateSpecifiedTokenDelta(
       currentLiquidity,
       BN.min(currentSqrtPriceX64, targetSqrtPriceX64),
