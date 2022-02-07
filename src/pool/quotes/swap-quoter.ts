@@ -310,21 +310,23 @@ export class SwapSimulator {
   private static calculateTokenADelta =
     (rounding: Rounding) =>
     (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
-      if (rounding == Rounding.Up) {
-        return getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
-      } else {
-        return getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
-      }
+      return getTokenAFromLiquidity(
+        liquidity,
+        sqrtPriceLowerX64,
+        sqrtPriceUpperX64,
+        rounding == Rounding.Up ? true : false
+      );
     };
 
   private static calculateTokenBDelta =
     (rounding: Rounding) =>
     (liquidity: u64, sqrtPriceLowerX64: BN, sqrtPriceUpperX64: BN): u64 => {
-      if (rounding == Rounding.Up) {
-        return getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
-      } else {
-        return getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
-      }
+      return getTokenBFromLiquidity(
+        liquidity,
+        sqrtPriceLowerX64,
+        sqrtPriceUpperX64,
+        rounding == Rounding.Up ? true : false
+      );
     };
 
   private static calculateSqrtPriceAtPrevInitializedTick(
@@ -351,12 +353,10 @@ export class SwapSimulator {
     return getLowerSqrtPriceFromTokenA(
       remainingTokenAAmountX0,
       currentLiquidityX0,
-      currentSqrtPriceX64,
-      true
+      currentSqrtPriceX64
     );
   }
 
-  // TODO: Account for rounding
   private static calculateUpperSqrtPriceGivenTokenADelta(
     remainingTokenAAmountX0: u64,
     currentLiquidityX0: u64,
@@ -365,8 +365,7 @@ export class SwapSimulator {
     return getUpperSqrtPriceFromTokenA(
       remainingTokenAAmountX0,
       currentLiquidityX0,
-      currentSqrtPriceX64,
-      true
+      currentSqrtPriceX64
     );
   }
 
@@ -476,13 +475,13 @@ export class SwapSimulator {
     [SwapDirection.AtoB]: {
       [AmountSpecified.Input]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Up),
-        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Down), // Is the rounding correct?
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Down),
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateLowerSqrtPriceGivenTokenADelta,
       },
       [AmountSpecified.Output]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Down),
-        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Up), // Is the rounding correct?
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Up),
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateLowerSqrtPriceGivenTokenBDelta,
       },
@@ -490,13 +489,13 @@ export class SwapSimulator {
     [SwapDirection.BtoA]: {
       [AmountSpecified.Input]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Up),
-        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Down), // Is the rounding correct?
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Down),
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateUpperSqrtPriceGivenTokenBDelta,
       },
       [AmountSpecified.Output]: {
         calculateSpecifiedTokenDelta: SwapSimulator.calculateTokenADelta(Rounding.Down),
-        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Up), // Is the rounding correct?
+        calculateOtherTokenDelta: SwapSimulator.calculateTokenBDelta(Rounding.Up),
         calculateNextSqrtPriceGivenTokenDelta:
           SwapSimulator.calculateUpperSqrtPriceGivenTokenADelta,
       },

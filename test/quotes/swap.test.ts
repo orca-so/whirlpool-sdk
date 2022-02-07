@@ -82,7 +82,7 @@ describe("swap", () => {
     {}
   );
 
-  test.only("base case", async () => {
+  test("base case", async () => {
     const whirlpoolProgramId = new PublicKey("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
     const whirlpoolAddress = new PublicKey("FwfmTvRho5L8ATYssQtXoDrqJRi3AhJrdzf3eCwaL2T6");
     const whirlpool = whirlpoolsMap[whirlpoolAddress.toBase58()] as WhirlpoolData;
@@ -101,45 +101,62 @@ describe("swap", () => {
       return TickUtil.getTick(await fetchTickArray(tickIndex), tickIndex, whirlpool.tickSpacing);
     }
 
-    async function getPrevInitializedTickIndex(currentTickIndex: number): Promise<number> {
-      let prevInitializedTickIndex: number | null = null;
+    async function getPrevInitializedTickIndex(
+      currentTickIndex: number,
+      maxCrossed: boolean
+    ): Promise<number> {
+      let prevInitializedTickIndex: number | undefined = undefined;
 
       while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        prevInitializedTickIndex = TickUtil.getPrevInitializedTickIndex(
+        const temp = TickUtil.getPrevInitializedTickIndex(
           currentTickArray,
           currentTickIndex,
           whirlpool.tickSpacing
         );
 
-        if (prevInitializedTickIndex === null) {
-          currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
+        if (temp) {
+          prevInitializedTickIndex = temp;
+        } else if (maxCrossed) {
+          prevInitializedTickIndex = currentTickArray.startTickIndex - 1;
+        } else {
+          currentTickIndex = currentTickArray.startTickIndex - 1;
         }
       }
 
       return prevInitializedTickIndex;
     }
 
-    async function getNextInitializedTickIndex(currentTickIndex: number): Promise<number> {
-      let nextInitializedTickIndex: number | null = null;
+    async function getNextInitializedTickIndex(
+      currentTickIndex: number,
+      maxCrossed: boolean
+    ): Promise<number> {
+      let prevInitializedTickIndex: number | undefined = undefined;
 
-      while (!nextInitializedTickIndex) {
+      while (!prevInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        nextInitializedTickIndex = TickUtil.getNextInitializedTickIndex(
+        const temp = TickUtil.getNextInitializedTickIndex(
           currentTickArray,
           currentTickIndex,
           whirlpool.tickSpacing
         );
 
-        if (nextInitializedTickIndex === null) {
-          currentTickIndex =
-            currentTickArray.startTickIndex + whirlpool.tickSpacing * NUM_TICKS_IN_TICK_ARRAY;
+        if (temp) {
+          prevInitializedTickIndex = temp;
+        } else {
+          const lastTickInArray =
+            currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing - 1;
+          if (maxCrossed) {
+            prevInitializedTickIndex = lastTickInArray;
+          } else {
+            currentTickIndex = lastTickInArray;
+          }
         }
       }
 
-      return nextInitializedTickIndex;
+      return prevInitializedTickIndex;
     }
 
     const swapSimulatorConfig: SwapSimulatorConfig = {
