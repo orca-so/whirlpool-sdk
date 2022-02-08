@@ -30,4 +30,17 @@ export class PoolUtil {
      */
     return Percentage.fromFraction(account.protocolFeeRate, 1e4); // TODO
   }
+
+  public static orderMints(mintX: PublicKey, mintY: PublicKey): [PublicKey, PublicKey] {
+    let mintA, mintB;
+    if (Buffer.compare(mintX.toBuffer(), mintY.toBuffer()) < 0) {
+      mintA = mintX;
+      mintB = mintY;
+    } else {
+      mintA = mintY;
+      mintB = mintX;
+    }
+
+    return [mintA, mintB];
+  }
 }

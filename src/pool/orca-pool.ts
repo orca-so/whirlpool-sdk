@@ -28,7 +28,12 @@ import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./liquidity-distribution";
-import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
+import {
+  AmountSpecified,
+  MAX_TICK_ARRAY_CROSSINGS,
+  SwapDirection,
+  SwapSimulator,
+} from "./quotes/swap-quoter";
 import {
   TickSpacing,
   PDA,
@@ -73,7 +78,7 @@ export class OrcaPool {
    * @returns
    */
   public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
-    // TODO tokenMintA and tokenMintB ordering
+    // TODO: Ensure that mints are ordered before call. use PoolUtil.orderMints
     return getWhirlpoolPda(
       this.dal.programId,
       this.dal.whirlpoolsConfig,
@@ -435,12 +440,12 @@ export class OrcaPool {
       poolAddress,
       tokenMint,
       tokenAmount,
-      isOutput = false,
+      isOutput,
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh; // default true
-    const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
+
+    const whirlpool = await this.getWhirlpool(poolAddress, refresh);
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
@@ -467,59 +472,60 @@ export class OrcaPool {
       swapDirection,
       amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
-      protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
       slippageTolerance,
       fetchTickArray,
       fetchTick,
-      getPrevInitializedTickIndex: async (currentTickIndex: number, maxCrossed: boolean) => {
-        let prevInitializedTickIndex: number | undefined = undefined;
+      getNextInitializedTickIndex: async (
+        currentTickIndex: number,
+        tickArraysCrossed: number,
+        swapDirection: SwapDirection
+      ) => {
+        let nextInitializedTickIndex: number | undefined = undefined;
 
-        while (!prevInitializedTickIndex) {
+        while (!nextInitializedTickIndex) {
           const currentTickArray = await fetchTickArray(currentTickIndex);
 
-          const temp = TickUtil.getPrevInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
-
-          if (temp) {
-            prevInitializedTickIndex = temp;
-          } else if (maxCrossed) {
-            prevInitializedTickIndex = currentTickArray.startTickIndex - 1;
+          let temp;
+          if (swapDirection == SwapDirection.AtoB) {
+            temp = TickUtil.getPrevInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex,
+              whirlpool.tickSpacing
+            );
           } else {
-            currentTickIndex = currentTickArray.startTickIndex - 1;
+            temp = TickUtil.getNextInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex,
+              whirlpool.tickSpacing
+            );
           }
-        }
-
-        return prevInitializedTickIndex;
-      },
-      getNextInitializedTickIndex: async (currentTickIndex: number, maxCrossed: boolean) => {
-        let prevInitializedTickIndex: number | undefined = undefined;
-
-        while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(currentTickIndex);
-
-          const temp = TickUtil.getNextInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
 
           if (temp) {
-            prevInitializedTickIndex = temp;
+            nextInitializedTickIndex = temp;
           } else {
-            const lastTickInArray =
-              currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing - 1;
-            if (maxCrossed) {
-              prevInitializedTickIndex = lastTickInArray;
+            let nextTick;
+            if (swapDirection == SwapDirection.AtoB) {
+              nextTick = currentTickArray.startTickIndex - 1;
             } else {
-              currentTickIndex = lastTickInArray;
+              nextTick =
+                currentTickArray.startTickIndex +
+                NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing -
+                1;
+            }
+
+            if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
+              nextInitializedTickIndex = nextTick;
+            } else {
+              currentTickIndex = nextTick;
+              tickArraysCrossed++;
             }
           }
         }
 
-        return prevInitializedTickIndex;
+        return {
+          tickIndex: nextInitializedTickIndex,
+          tickArraysCrossed,
+        };
       },
     });
 
