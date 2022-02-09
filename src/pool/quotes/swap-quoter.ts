@@ -88,10 +88,13 @@ export class SwapSimulator {
     let {
       currentTickIndex,
       currentLiquidity,
-      amount: specifiedAmount,
+      amount: specifiedAmountLeft,
       currentSqrtPriceX64,
-      tickSpacing,
     } = input;
+
+    invariant(specifiedAmountLeft.eq(ZERO), "amount must be nonzero");
+
+    const { tickSpacing } = input;
 
     const sqrtPriceLimitX64 = adjustForSlippage(
       currentSqrtPriceX64,
@@ -99,14 +102,6 @@ export class SwapSimulator {
       swapDirection
     );
 
-    invariant(
-      sqrtPriceLimitX64.gte(MIN_SQRT_PRICE_X64) && sqrtPriceLimitX64.lte(MAX_SQRT_PRICE_X64),
-      "sqrtPriceLimitX64 out of bounds"
-    );
-
-    invariant(specifiedAmount.eq(ZERO), "amount must be nonzero");
-
-    let specifiedAmountLeft = specifiedAmount;
     let otherAmountCalculated = ZERO;
 
     let tickArraysCrossed = 0;
@@ -129,8 +124,6 @@ export class SwapSimulator {
         output,
         amountSpecified
       );
-      invariant(!!specifiedAmountUsed, "specifiedAmountUsed cannot be undefined");
-      invariant(!!otherAmountCalculated, "otherAmountCalculated cannot be undefined");
 
       specifiedAmountLeft = specifiedAmountLeft.sub(specifiedAmountUsed);
       otherAmountCalculated = otherAmountCalculated.add(otherAmount);
@@ -143,8 +136,7 @@ export class SwapSimulator {
           nextTick.liquidityNet,
           swapDirection
         );
-        currentTickIndex =
-          this.config.swapDirection == SwapDirection.AtoB ? nextTickIndex - 1 : nextTickIndex;
+        currentTickIndex = swapDirection == SwapDirection.AtoB ? nextTickIndex - 1 : nextTickIndex;
       }
 
       currentSqrtPriceX64 = nextSqrtPriceX64;
@@ -152,7 +144,7 @@ export class SwapSimulator {
     }
 
     const [inputAmount, outputAmount] = resolveTokenAmounts(
-      specifiedAmount.sub(specifiedAmountLeft),
+      specifiedAmountLeft.sub(specifiedAmountLeft),
       otherAmountCalculated,
       amountSpecified
     );
@@ -225,8 +217,6 @@ export class SwapSimulator {
     }
 
     let [inputDelta, outputDelta] = resolveTokenAmounts(fixedDelta, unfixedDelta, amountSpecified);
-    invariant(!!inputDelta, "inputDelta cannot be undefined");
-    invariant(!!outputDelta, "outputDelta cannot be undefined");
 
     if (amountSpecified == AmountSpecified.Output && outputDelta.gt(amountRemaining)) {
       outputDelta = amountRemaining;
@@ -236,7 +226,7 @@ export class SwapSimulator {
       nextTickIndex,
       nextTickSqrtPriceX64,
       nextSqrtPriceX64,
-      input: calculateAmountWithFees(inputDelta, feeRate),
+      input: inputDelta,
       output: outputDelta,
       tickArraysCrossed: tickArraysCrossedUpdate,
     };
@@ -244,13 +234,7 @@ export class SwapSimulator {
 }
 
 function calculateAmountAfterFees(amount: u64, feeRate: Percentage): BN {
-  const fees = amount.mul(feeRate.denominator.sub(feeRate.numerator)).div(feeRate.denominator);
-  return amount.sub(fees);
-}
-
-function calculateAmountWithFees(amount: u64, feeRate: Percentage): BN {
-  const fees = amount.mul(feeRate.numerator).div(feeRate.denominator);
-  return amount.add(fees);
+  return amount.mul(feeRate.denominator.sub(feeRate.numerator)).div(feeRate.denominator);
 }
 
 function adjustForSlippage(
@@ -260,13 +244,19 @@ function adjustForSlippage(
 ) {
   const numeratorSquared = slippageTolerance.numerator.pow(new BN(2));
   if (swapDirection == SwapDirection.AtoB) {
-    return sqrtPriceX64
-      .mul(slippageTolerance.denominator.sub(numeratorSquared))
-      .div(slippageTolerance.denominator);
+    return BN.max(
+      sqrtPriceX64
+        .mul(slippageTolerance.denominator.sub(numeratorSquared))
+        .div(slippageTolerance.denominator),
+      MIN_SQRT_PRICE_X64
+    );
   } else {
-    return sqrtPriceX64
-      .mul(slippageTolerance.denominator.add(numeratorSquared))
-      .div(slippageTolerance.denominator);
+    return BN.min(
+      sqrtPriceX64
+        .mul(slippageTolerance.denominator.add(numeratorSquared))
+        .div(slippageTolerance.denominator),
+      MAX_SQRT_PRICE_X64
+    );
   }
 }
 
