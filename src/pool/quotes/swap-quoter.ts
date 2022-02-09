@@ -36,7 +36,8 @@ export type SwapSimulatorConfig = {
   getNextInitializedTickIndex: (
     currentTickIndex: number,
     tickArraysCrossed: number,
-    swapDirection: SwapDirection
+    swapDirection: SwapDirection,
+    tickSpacing: number
   ) => Promise<{ tickIndex: number; tickArraysCrossed: number }>;
 };
 
@@ -45,6 +46,7 @@ type SwapSimulationInput = {
   currentSqrtPriceX64: BN;
   currentTickIndex: number;
   currentLiquidity: u64;
+  tickSpacing: number;
 };
 
 type SwapSimulationOutput = {
@@ -61,6 +63,7 @@ type SwapStepSimulationInput = {
   liquidity: u64;
   amountRemaining: u64;
   tickArraysCrossed: number;
+  tickSpacing: number;
 };
 
 type SwapStepSimulationOutput = {
@@ -87,6 +90,7 @@ export class SwapSimulator {
       currentLiquidity,
       amount: specifiedAmount,
       currentSqrtPriceX64,
+      tickSpacing,
     } = input;
 
     const sqrtPriceLimitX64 = adjustForSlippage(
@@ -115,6 +119,7 @@ export class SwapSimulator {
         tickIndex: currentTickIndex,
         liquidity: currentLiquidity,
         tickArraysCrossed,
+        tickSpacing,
       });
 
       const { input, output, nextSqrtPriceX64, nextTickIndex, nextTickSqrtPriceX64 } =
@@ -170,10 +175,11 @@ export class SwapSimulator {
       tickIndex,
       sqrtPriceLimitX64,
       tickArraysCrossed,
+      tickSpacing,
     } = input;
 
     const { tickIndex: nextTickIndex, tickArraysCrossed: tickArraysCrossedUpdate } =
-      await getNextInitializedTickIndex(tickIndex, tickArraysCrossed, swapDirection);
+      await getNextInitializedTickIndex(tickIndex, tickArraysCrossed, swapDirection, tickSpacing);
 
     const [nextTickSqrtPriceX64, targetSqrtPriceX64] = getNextSqrtPrices(
       sqrtPriceLimitX64,

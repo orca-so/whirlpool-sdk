@@ -1,4 +1,4 @@
-import { Address } from "@project-serum/anchor";
+import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -38,6 +38,7 @@ import {
   TickSpacing,
   PDA,
   getWhirlpoolPda,
+  getTickArrayPda,
   getPositionPda,
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
@@ -324,29 +325,13 @@ export class OrcaPool {
     );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    const tickArrayOffsetDirection = aToB ? -1 : 1;
-
-    const tickArray0 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
+    const tickArrayAddresses = this.getTickArrayPublicKeysForSwap(
+      whirlpool.sqrtPrice,
+      sqrtPriceLimitX64,
       whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      0
-    ).publicKey;
-    const tickArray1 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
-      whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      tickArrayOffsetDirection
-    ).publicKey;
-    const tickArray2 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
-      whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      tickArrayOffsetDirection * 2
-    ).publicKey;
+      toPubKey(poolAddress),
+      this.dal.programId
+    );
 
     txBuilder.addInstruction(
       client
@@ -361,14 +346,62 @@ export class OrcaPool {
           tokenVaultA: whirlpool.tokenVaultA,
           tokenOwnerAccountB,
           tokenVaultB: whirlpool.tokenVaultB,
-          tickArray0,
-          tickArray1,
-          tickArray2,
+          tickArray0: tickArrayAddresses[0],
+          tickArray1: tickArrayAddresses[1],
+          tickArray2: tickArrayAddresses[2],
         })
         .compressIx(false)
     );
 
     return new MultiTransactionBuilder(provider, [txBuilder]);
+  }
+
+  getTickArrayPublicKeysForSwap(
+    currentSqrtPriceX64: BN,
+    targetSqrtPriceX64: BN,
+    tickSpacing: number,
+    poolAddress: PublicKey,
+    programId: PublicKey
+  ): [PublicKey, PublicKey, PublicKey] {
+    const currentTickIndex = sqrtPriceX64ToTickIndex(currentSqrtPriceX64);
+    const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
+
+    let currentStartTickIndex = TickUtil.getStartTickIndex(currentTickIndex, tickSpacing);
+    const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
+
+    const offset = currentTickIndex < targetTickIndex ? 1 : -1;
+
+    let count = 1;
+    const tickArrayAddresses: [PublicKey, PublicKey, PublicKey] = [
+      getTickArrayPda(programId, poolAddress, currentStartTickIndex).publicKey,
+      PublicKey.default,
+      PublicKey.default,
+    ];
+
+    while (currentStartTickIndex != targetStartTickIndex) {
+      currentStartTickIndex = TickUtil.getStartTickIndex(
+        currentTickIndex,
+        tickSpacing,
+        offset * count
+      );
+      tickArrayAddresses[count] = getTickArrayPda(
+        programId,
+        poolAddress,
+        currentStartTickIndex
+      ).publicKey;
+      count++;
+    }
+
+    while (count < 3) {
+      tickArrayAddresses[count] = getTickArrayPda(
+        programId,
+        poolAddress,
+        currentStartTickIndex
+      ).publicKey;
+      count++;
+    }
+
+    return tickArrayAddresses;
   }
 
   /*** Quotes ***/
@@ -484,7 +517,8 @@ export class OrcaPool {
       getNextInitializedTickIndex: async (
         currentTickIndex: number,
         tickArraysCrossed: number,
-        swapDirection: SwapDirection
+        swapDirection: SwapDirection,
+        tickSpacing: number
       ) => {
         let nextInitializedTickIndex: number | undefined = undefined;
 
@@ -496,13 +530,13 @@ export class OrcaPool {
             temp = TickUtil.getPrevInitializedTickIndex(
               currentTickArray,
               currentTickIndex,
-              whirlpool.tickSpacing
+              tickSpacing
             );
           } else {
             temp = TickUtil.getNextInitializedTickIndex(
               currentTickArray,
               currentTickIndex,
-              whirlpool.tickSpacing
+              tickSpacing
             );
           }
 
@@ -514,9 +548,7 @@ export class OrcaPool {
               nextTick = currentTickArray.startTickIndex - 1;
             } else {
               nextTick =
-                currentTickArray.startTickIndex +
-                NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing -
-                1;
+                currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * tickSpacing - 1;
             }
 
             if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
@@ -540,6 +572,7 @@ export class OrcaPool {
       currentSqrtPriceX64: whirlpool.sqrtPrice,
       currentTickIndex: whirlpool.tickCurrentIndex,
       currentLiquidity: whirlpool.liquidity,
+      tickSpacing: whirlpool.tickSpacing,
     });
 
     return {
