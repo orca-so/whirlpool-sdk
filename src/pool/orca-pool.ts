@@ -43,7 +43,7 @@ import {
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
   toX64,
-  NUM_TICKS_IN_TICK_ARRAY,
+  TICK_ARRAY_SIZE,
   WhirlpoolData,
   PositionData,
   WhirlpoolClient,
@@ -547,8 +547,7 @@ export class OrcaPool {
             if (swapDirection == SwapDirection.AtoB) {
               nextTick = currentTickArray.startTickIndex - 1;
             } else {
-              nextTick =
-                currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * tickSpacing - 1;
+              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing - 1;
             }
 
             if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {

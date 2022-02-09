@@ -2,7 +2,7 @@ import {
   WhirlpoolData,
   TickArrayData,
   TickData,
-  NUM_TICKS_IN_TICK_ARRAY,
+  TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk";
 import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
@@ -10,6 +10,7 @@ import BN from "bn.js";
 import { Percentage } from "../../src";
 import {
   AmountSpecified,
+  MAX_TICK_ARRAY_CROSSINGS,
   SwapDirection,
   SwapSimulator,
   SwapSimulatorConfig,
@@ -130,54 +131,71 @@ describe("swap", () => {
 
     async function getNextInitializedTickIndex(
       currentTickIndex: number,
-      maxCrossed: boolean
-    ): Promise<number> {
-      let prevInitializedTickIndex: number | undefined = undefined;
+      tickArraysCrossed: number,
+      swapDirection: SwapDirection,
+      tickSpacing: number
+    ) {
+      let nextInitializedTickIndex: number | undefined = undefined;
 
-      while (!prevInitializedTickIndex) {
+      while (!nextInitializedTickIndex) {
         const currentTickArray = await fetchTickArray(currentTickIndex);
 
-        const temp = TickUtil.getNextInitializedTickIndex(
-          currentTickArray,
-          currentTickIndex,
-          whirlpool.tickSpacing
-        );
+        let temp;
+        if (swapDirection == SwapDirection.AtoB) {
+          temp = TickUtil.getPrevInitializedTickIndex(
+            currentTickArray,
+            currentTickIndex,
+            tickSpacing
+          );
+        } else {
+          temp = TickUtil.getNextInitializedTickIndex(
+            currentTickArray,
+            currentTickIndex,
+            tickSpacing
+          );
+        }
 
         if (temp) {
-          prevInitializedTickIndex = temp;
+          nextInitializedTickIndex = temp;
         } else {
-          const lastTickInArray =
-            currentTickArray.startTickIndex + NUM_TICKS_IN_TICK_ARRAY * whirlpool.tickSpacing - 1;
-          if (maxCrossed) {
-            prevInitializedTickIndex = lastTickInArray;
+          let nextTick;
+          if (swapDirection == SwapDirection.AtoB) {
+            nextTick = currentTickArray.startTickIndex - 1;
           } else {
-            currentTickIndex = lastTickInArray;
+            nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing - 1;
+          }
+
+          if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
+            nextInitializedTickIndex = nextTick;
+          } else {
+            currentTickIndex = nextTick;
+            tickArraysCrossed++;
           }
         }
       }
 
-      return prevInitializedTickIndex;
+      return {
+        tickIndex: nextInitializedTickIndex,
+        tickArraysCrossed,
+      };
     }
 
     const swapSimulatorConfig: SwapSimulatorConfig = {
       swapDirection: SwapDirection.BtoA,
       amountSpecified: AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
-      protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
       slippageTolerance: Percentage.fromFraction(25, 1000), // 2.5% just to give enough room
-      fetchTickArray,
       fetchTick,
-      getPrevInitializedTickIndex,
       getNextInitializedTickIndex,
     };
 
     const swapSimulator = new SwapSimulator(swapSimulatorConfig);
     const swapSimulationOutput = await swapSimulator.simulateSwap({
       amount: new u64(7_051_000),
-      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
       currentSqrtPriceX64: whirlpool.sqrtPrice,
       currentTickIndex: whirlpool.tickCurrentIndex,
       currentLiquidity: whirlpool.liquidity,
+      tickSpacing: whirlpool.tickSpacing,
     });
 
     expect(swapSimulationOutput.amountIn.toString()).toEqual("7051000");
