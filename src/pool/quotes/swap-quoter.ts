@@ -1,14 +1,11 @@
 import {
-  TickArrayData,
   TickData,
   MIN_SQRT_PRICE,
   MAX_SQRT_PRICE,
   tickIndexToSqrtPriceX64,
-  sqrtPriceX64ToTickIndex,
 } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { resolve } from "dns";
 import invariant from "tiny-invariant";
 import { Percentage } from "../../utils/public/percentage";
 import { ZERO } from "../../utils/web3/math-utils";
@@ -16,15 +13,7 @@ import {
   getAmountFixedDelta,
   getAmountUnfixedDelta,
   getNextSqrtPrice,
-  getTokenAFromLiquidity,
-  getTokenBFromLiquidity,
 } from "../../utils/whirlpool/position-util";
-import {
-  getLowerSqrtPriceFromTokenA,
-  getLowerSqrtPriceFromTokenB,
-  getUpperSqrtPriceFromTokenA,
-  getUpperSqrtPriceFromTokenB,
-} from "../../utils/whirlpool/swap-util";
 
 export const MAX_TICK_ARRAY_CROSSINGS = 2;
 
@@ -38,17 +27,11 @@ export enum AmountSpecified {
   Output = "Specified output amount",
 }
 
-enum Rounding {
-  Up,
-  Down,
-}
-
 export type SwapSimulatorConfig = {
   swapDirection: SwapDirection;
   amountSpecified: AmountSpecified;
   feeRate: Percentage;
   slippageTolerance: Percentage;
-  fetchTickArray: (tickIndex: number) => Promise<TickArrayData>;
   fetchTick: (tickIndex: number) => Promise<TickData>;
   getNextInitializedTickIndex: (
     currentTickIndex: number,
@@ -57,18 +40,8 @@ export type SwapSimulatorConfig = {
   ) => Promise<{ tickIndex: number; tickArraysCrossed: number }>;
 };
 
-type SwapState = {
-  sqrtPriceX64: BN;
-  tickArray: TickArrayData;
-  tickIndex: number;
-  liquidity: u64;
-  specifiedAmountLeft: u64; // either the input remaining to be swapped or output remaining to be swapped for
-  otherAmountCalculated: u64; // either the output of this swap or the input that needs to be swapped to receive the specified output
-};
-
 type SwapSimulationInput = {
   amount: u64;
-  currentTickArray: TickArrayData;
   currentSqrtPriceX64: BN;
   currentTickIndex: number;
   currentLiquidity: u64;
@@ -83,16 +56,17 @@ type SwapSimulationOutput = {
 
 type SwapStepSimulationInput = {
   sqrtPriceLimitX64: BN;
-  tickArray: TickArrayData;
   sqrtPriceX64: BN;
   tickIndex: number;
   liquidity: u64;
-  amount: u64;
+  amountRemaining: u64;
   tickArraysCrossed: number;
 };
 
 type SwapStepSimulationOutput = {
-  currentTickIndex: number;
+  nextTickSqrtPriceX64: BN;
+  nextSqrtPriceX64: BN;
+  nextTickIndex: number;
   input: u64;
   output: u64;
   tickArraysCrossed: number;
@@ -110,7 +84,6 @@ export class SwapSimulator {
 
     let {
       currentTickIndex,
-      currentTickArray,
       currentLiquidity,
       amount: specifiedAmount,
       currentSqrtPriceX64,
@@ -138,14 +111,14 @@ export class SwapSimulator {
       const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep({
         sqrtPriceLimitX64,
         sqrtPriceX64: currentSqrtPriceX64,
-        amount: specifiedAmountLeft,
-        tickArray: currentTickArray,
+        amountRemaining: specifiedAmountLeft,
         tickIndex: currentTickIndex,
         liquidity: currentLiquidity,
         tickArraysCrossed,
       });
 
-      const { input, output } = swapStepSimulationOutput;
+      const { input, output, nextSqrtPriceX64, nextTickIndex, nextTickSqrtPriceX64 } =
+        swapStepSimulationOutput;
       const [specifiedAmountUsed, otherAmount] = resolveTokenAmounts(
         input,
         output,
@@ -157,12 +130,9 @@ export class SwapSimulator {
       specifiedAmountLeft = specifiedAmountLeft.sub(specifiedAmountUsed);
       otherAmountCalculated = otherAmountCalculated.add(otherAmount);
 
-      if (swapStepSimulationOutput.currentTickIndex !== currentTickIndex) {
-        // Moving between ticks
-        const nextTickIndex = swapStepSimulationOutput.currentTickIndex;
+      if (nextSqrtPriceX64.eq(nextTickSqrtPriceX64)) {
         const nextTick = await fetchTick(nextTickIndex);
 
-        currentSqrtPriceX64 = tickIndexToSqrtPriceX64(nextTickIndex);
         currentLiquidity = calculateNewLiquidity(
           currentLiquidity,
           nextTick.liquidityNet,
@@ -172,6 +142,7 @@ export class SwapSimulator {
           this.config.swapDirection == SwapDirection.AtoB ? nextTickIndex - 1 : nextTickIndex;
       }
 
+      currentSqrtPriceX64 = nextSqrtPriceX64;
       tickArraysCrossed = swapStepSimulationOutput.tickArraysCrossed;
     }
 
@@ -180,8 +151,6 @@ export class SwapSimulator {
       otherAmountCalculated,
       amountSpecified
     );
-    invariant(!!inputAmount, "inputAmount cannot be undefined");
-    invariant(!!outputAmount, "outputAmount cannot be undefined");
 
     return {
       sqrtPriceAfterSwapX64: currentSqrtPriceX64,
@@ -195,9 +164,9 @@ export class SwapSimulator {
     const { swapDirection, amountSpecified, feeRate, getNextInitializedTickIndex } = this.config;
 
     const {
-      amount: specifiedTokenAmount,
-      liquidity: currentLiquidity,
-      sqrtPriceX64: currentSqrtPriceX64,
+      amountRemaining,
+      liquidity,
+      sqrtPriceX64,
       tickIndex,
       sqrtPriceLimitX64,
       tickArraysCrossed,
@@ -206,61 +175,61 @@ export class SwapSimulator {
     const { tickIndex: nextTickIndex, tickArraysCrossed: tickArraysCrossedUpdate } =
       await getNextInitializedTickIndex(tickIndex, tickArraysCrossed, swapDirection);
 
-    const targetSqrtPriceX64 = clampSqrtPrice(sqrtPriceLimitX64, nextTickIndex, swapDirection);
+    const [nextTickSqrtPriceX64, targetSqrtPriceX64] = getNextSqrtPrices(
+      sqrtPriceLimitX64,
+      nextTickIndex,
+      swapDirection
+    );
 
-    let fixedAmount = getAmountFixedDelta(
-      currentSqrtPriceX64,
+    let fixedDelta = getAmountFixedDelta(
+      sqrtPriceX64,
       targetSqrtPriceX64,
-      currentLiquidity,
+      liquidity,
       amountSpecified,
       swapDirection
     );
 
-    let amountCalculated = specifiedTokenAmount;
+    let amountCalculated = amountRemaining;
     if (amountSpecified == AmountSpecified.Input) {
-      amountCalculated = calculateAmountAfterFees(specifiedTokenAmount, feeRate);
+      amountCalculated = calculateAmountAfterFees(amountRemaining, feeRate);
     }
 
-    const nextSqrtPriceX64 = amountCalculated.gte(fixedAmount)
+    const nextSqrtPriceX64 = amountCalculated.gte(fixedDelta)
       ? targetSqrtPriceX64 // Fully utilize liquidity till upcoming (next/prev depending on swap type) initialized tick
-      : getNextSqrtPrice(
-          currentSqrtPriceX64,
-          currentLiquidity,
-          amountCalculated,
-          amountSpecified,
-          swapDirection
-        );
+      : getNextSqrtPrice(sqrtPriceX64, liquidity, amountCalculated, amountSpecified, swapDirection);
 
     const isMaxSwap = nextSqrtPriceX64.eq(targetSqrtPriceX64);
 
-    const unfixedAmount = getAmountUnfixedDelta(
-      currentSqrtPriceX64,
+    const unfixedDelta = getAmountUnfixedDelta(
+      sqrtPriceX64,
       targetSqrtPriceX64,
-      currentLiquidity,
+      liquidity,
       amountSpecified,
       swapDirection
     );
 
     if (!isMaxSwap) {
-      fixedAmount = getAmountFixedDelta(
-        currentSqrtPriceX64,
+      fixedDelta = getAmountFixedDelta(
+        sqrtPriceX64,
         nextSqrtPriceX64,
-        currentLiquidity,
+        liquidity,
         amountSpecified,
         swapDirection
       );
     }
 
-    const [inputDelta, outputDelta] = resolveTokenAmounts(
-      fixedAmount,
-      unfixedAmount,
-      amountSpecified
-    );
+    let [inputDelta, outputDelta] = resolveTokenAmounts(fixedDelta, unfixedDelta, amountSpecified);
     invariant(!!inputDelta, "inputDelta cannot be undefined");
     invariant(!!outputDelta, "outputDelta cannot be undefined");
 
+    if (amountSpecified == AmountSpecified.Output && outputDelta.gt(amountRemaining)) {
+      outputDelta = amountRemaining;
+    }
+
     return {
-      currentTickIndex: sqrtPriceX64ToTickIndex(nextSqrtPriceX64),
+      nextTickIndex,
+      nextTickSqrtPriceX64,
+      nextSqrtPriceX64,
       input: calculateAmountWithFees(inputDelta, feeRate),
       output: outputDelta,
       tickArraysCrossed: tickArraysCrossedUpdate,
@@ -315,14 +284,15 @@ function resolveTokenAmounts(
   }
 }
 
-function clampSqrtPrice(
+function getNextSqrtPrices(
   sqrtPriceLimitX64: BN,
   nextInitializedTickIndex: number,
   swapDirection: SwapDirection
-): BN {
+): [BN, BN] {
+  const nextTickPrice = tickIndexToSqrtPriceX64(nextInitializedTickIndex);
   if (swapDirection == SwapDirection.AtoB) {
-    return BN.max(sqrtPriceLimitX64, tickIndexToSqrtPriceX64(nextInitializedTickIndex));
+    return [nextTickPrice, BN.max(sqrtPriceLimitX64, nextTickPrice)];
   } else {
-    return BN.min(sqrtPriceLimitX64, tickIndexToSqrtPriceX64(nextInitializedTickIndex));
+    return [nextTickPrice, BN.min(sqrtPriceLimitX64, nextTickPrice)];
   }
 }

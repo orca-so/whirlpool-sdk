@@ -480,7 +480,6 @@ export class OrcaPool {
       amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
       slippageTolerance,
-      fetchTickArray,
       fetchTick,
       getNextInitializedTickIndex: async (
         currentTickIndex: number,
@@ -540,7 +539,6 @@ export class OrcaPool {
       amount: tokenAmount,
       currentSqrtPriceX64: whirlpool.sqrtPrice,
       currentTickIndex: whirlpool.tickCurrentIndex,
-      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
       currentLiquidity: whirlpool.liquidity,
     });
 
