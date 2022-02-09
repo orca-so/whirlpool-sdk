@@ -1,6 +1,6 @@
 import { Address } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
@@ -59,14 +59,16 @@ export class OrcaPool {
    * Useful for visualizing the liquidity in the pool.
    *
    * @param poolAddress
+   * @param width
    * @param refresh
    * @returns liquidity distribution
    */
   public async getLiquidityDistribution(
     poolAddress: Address,
+    width: number,
     refresh = true
   ): Promise<LiquidityDistribution | null> {
-    return await getLiquidityDistribution(this.dal, poolAddress, refresh);
+    return await getLiquidityDistribution(this.dal, poolAddress, width, refresh);
   }
 
   /**
@@ -93,7 +95,9 @@ export class OrcaPool {
   /**
    * Construct a transaction for opening an new position
    */
-  public async getOpenPositionTx(param: OpenPositionTxParam): Promise<MultiTransactionBuilder> {
+  public async getOpenPositionTx(
+    param: OpenPositionTxParam
+  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
     const {
       provider,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
@@ -209,7 +213,10 @@ export class OrcaPool {
         .compressIx(false)
     );
 
-    return new MultiTransactionBuilder(provider, [txBuilder]);
+    return {
+      mint: positionMintKeypair.publicKey,
+      tx: new MultiTransactionBuilder(provider, [txBuilder]),
+    };
   }
 
   /**
