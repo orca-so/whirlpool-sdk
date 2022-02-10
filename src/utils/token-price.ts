@@ -61,6 +61,11 @@ export async function getTokenUSDPrices(
         continue;
       }
 
+      if (result[neighbor]) {
+        queue.push(neighbor);
+        continue;
+      }
+
       const yxPrice = fromX64(pool.sqrtPrice).pow(2);
       if (pool.tokenMintA.toBase58() === neighbor) {
         result[neighbor] = yxPrice.mul(vertexPriceUSD);
