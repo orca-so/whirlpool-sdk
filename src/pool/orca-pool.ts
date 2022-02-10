@@ -1,6 +1,6 @@
-import { Address } from "@project-serum/anchor";
+import { Address, BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
@@ -28,11 +28,17 @@ import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./liquidity-distribution";
-import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
+import {
+  AmountSpecified,
+  MAX_TICK_ARRAY_CROSSINGS,
+  SwapDirection,
+  SwapSimulator,
+} from "./quotes/swap-quoter";
 import {
   TickSpacing,
   PDA,
   getWhirlpoolPda,
+  getTickArrayPda,
   getPositionPda,
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
@@ -42,6 +48,7 @@ import {
   PositionData,
   WhirlpoolClient,
   WhirlpoolContext,
+  InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaPool {
@@ -75,7 +82,7 @@ export class OrcaPool {
    * @returns
    */
   public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
-    // TODO tokenMintA and tokenMintB ordering
+    // TODO: Ensure that mints are ordered before call. use PoolUtil.orderMints
     return getWhirlpoolPda(
       this.dal.programId,
       this.dal.whirlpoolsConfig,
@@ -214,6 +221,20 @@ export class OrcaPool {
     };
   }
 
+  public async getInitTickArrayTx(
+    provider: Provider,
+    param: InitTickArrayParams
+  ): Promise<TransactionBuilder> {
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const txBuilder = new TransactionBuilder(provider);
+
+    txBuilder.addInstruction(client.initTickArrayTx(param).compressIx(false));
+
+    return txBuilder;
+  }
+
   /**
    * Construct a transaction for closing an existing position
    */
@@ -259,8 +280,8 @@ export class OrcaPool {
         client
           .decreaseLiquidityTx({
             liquidityAmount: position.liquidity,
-            tokenMaxA: quote.minTokenA,
-            tokenMaxB: quote.minTokenB,
+            tokenMinA: quote.minTokenA,
+            tokenMinB: quote.minTokenB,
             whirlpool: position.whirlpool,
             positionAuthority: provider.wallet.publicKey,
             position: toPubKey(quote.positionAddress),
@@ -319,29 +340,13 @@ export class OrcaPool {
     );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
-    const tickArrayOffsetDirection = aToB ? -1 : 1;
-
-    const tickArray0 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
+    const tickArrayAddresses = this.getTickArrayPublicKeysForSwap(
+      whirlpool.sqrtPrice,
+      sqrtPriceLimitX64,
       whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      0
-    ).publicKey;
-    const tickArray1 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
-      whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      tickArrayOffsetDirection
-    ).publicKey;
-    const tickArray2 = TickUtil.getPdaWithTickIndex(
-      whirlpool.tickCurrentIndex,
-      whirlpool.tickSpacing,
-      poolAddress,
-      this.dal.programId,
-      tickArrayOffsetDirection * 2
-    ).publicKey;
+      toPubKey(poolAddress),
+      this.dal.programId
+    );
 
     txBuilder.addInstruction(
       client
@@ -356,14 +361,62 @@ export class OrcaPool {
           tokenVaultA: whirlpool.tokenVaultA,
           tokenOwnerAccountB,
           tokenVaultB: whirlpool.tokenVaultB,
-          tickArray0,
-          tickArray1,
-          tickArray2,
+          tickArray0: tickArrayAddresses[0],
+          tickArray1: tickArrayAddresses[1],
+          tickArray2: tickArrayAddresses[2],
         })
         .compressIx(false)
     );
 
     return new MultiTransactionBuilder(provider, [txBuilder]);
+  }
+
+  getTickArrayPublicKeysForSwap(
+    currentSqrtPriceX64: BN,
+    targetSqrtPriceX64: BN,
+    tickSpacing: number,
+    poolAddress: PublicKey,
+    programId: PublicKey
+  ): [PublicKey, PublicKey, PublicKey] {
+    const currentTickIndex = sqrtPriceX64ToTickIndex(currentSqrtPriceX64);
+    const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
+
+    let currentStartTickIndex = TickUtil.getStartTickIndex(currentTickIndex, tickSpacing);
+    const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
+
+    const offset = currentTickIndex < targetTickIndex ? 1 : -1;
+
+    let count = 1;
+    const tickArrayAddresses: [PublicKey, PublicKey, PublicKey] = [
+      getTickArrayPda(programId, poolAddress, currentStartTickIndex).publicKey,
+      PublicKey.default,
+      PublicKey.default,
+    ];
+
+    while (currentStartTickIndex != targetStartTickIndex) {
+      currentStartTickIndex = TickUtil.getStartTickIndex(
+        currentTickIndex,
+        tickSpacing,
+        offset * count
+      );
+      tickArrayAddresses[count] = getTickArrayPda(
+        programId,
+        poolAddress,
+        currentStartTickIndex
+      ).publicKey;
+      count++;
+    }
+
+    while (count < 3) {
+      tickArrayAddresses[count] = getTickArrayPda(
+        programId,
+        poolAddress,
+        currentStartTickIndex
+      ).publicKey;
+      count++;
+    }
+
+    return tickArrayAddresses;
   }
 
   /*** Quotes ***/
@@ -372,7 +425,7 @@ export class OrcaPool {
    * Construct a quote for opening a new position
    */
   public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
-    const { poolAddress, tokenMint, tokenAmount, slippageTolerence, refresh } = param;
+    const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
 
@@ -403,7 +456,7 @@ export class OrcaPool {
       inputTokenAmount: tokenAmount,
       tickLowerIndex,
       tickUpperIndex,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     };
 
     return {
@@ -418,7 +471,7 @@ export class OrcaPool {
    * Construct a quote for closing an existing position
    */
   public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
-    const { positionAddress, refresh, slippageTolerence } = param;
+    const { positionAddress, refresh, slippageTolerance } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
     const position = await this.getPosition(positionAddress, shouldRefresh);
     const whirlpool = await this.getWhirlpool(position.whirlpool, shouldRefresh);
@@ -430,7 +483,7 @@ export class OrcaPool {
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
       liquidity: position.liquidity,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     });
   }
 
@@ -442,12 +495,12 @@ export class OrcaPool {
       poolAddress,
       tokenMint,
       tokenAmount,
-      isOutput = false,
+      isOutput,
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh; // default true
-    const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
+
+    const whirlpool = await this.getWhirlpool(poolAddress, refresh);
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
@@ -474,54 +527,57 @@ export class OrcaPool {
       swapDirection,
       amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
-      protocolFeeRate: PoolUtil.getProtocolFeeRate(whirlpool),
       slippageTolerance,
-      fetchTickArray,
       fetchTick,
-      getPrevInitializedTickIndex: async () => {
-        let currentTickIndex = whirlpool.tickCurrentIndex;
-        let prevInitializedTickIndex: number | undefined = undefined;
+      getNextInitializedTickIndex: async (
+        currentTickIndex: number,
+        tickArraysCrossed: number,
+        swapDirection: SwapDirection,
+        tickSpacing: number
+      ) => {
+        let nextInitializedTickIndex: number | undefined = undefined;
 
-        while (!prevInitializedTickIndex) {
+        while (!nextInitializedTickIndex) {
           const currentTickArray = await fetchTickArray(currentTickIndex);
 
-          const temp = TickUtil.getPrevInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
+          let temp;
+          if (swapDirection == SwapDirection.AtoB) {
+            temp = TickUtil.getPrevInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex,
+              tickSpacing
+            );
+          } else {
+            temp = TickUtil.getNextInitializedTickIndex(
+              currentTickArray,
+              currentTickIndex,
+              tickSpacing
+            );
+          }
 
           if (temp) {
-            prevInitializedTickIndex = temp;
+            nextInitializedTickIndex = temp;
           } else {
-            currentTickIndex = currentTickArray.startTickIndex - whirlpool.tickSpacing;
+            let nextTick;
+            if (swapDirection == SwapDirection.AtoB) {
+              nextTick = currentTickArray.startTickIndex - 1;
+            } else {
+              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing - 1;
+            }
+
+            if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
+              nextInitializedTickIndex = nextTick;
+            } else {
+              currentTickIndex = nextTick;
+              tickArraysCrossed++;
+            }
           }
         }
 
-        return prevInitializedTickIndex;
-      },
-      getNextInitializedTickIndex: async () => {
-        let currentTickIndex = whirlpool.tickCurrentIndex;
-        let prevInitializedTickIndex: number | undefined = undefined;
-
-        while (!prevInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(currentTickIndex);
-
-          const temp = TickUtil.getNextInitializedTickIndex(
-            currentTickArray,
-            currentTickIndex,
-            whirlpool.tickSpacing
-          );
-
-          if (temp) {
-            prevInitializedTickIndex = temp;
-          } else {
-            currentTickIndex =
-              currentTickArray.startTickIndex + TICK_ARRAY_SIZE * whirlpool.tickSpacing;
-          }
-        }
-
-        return prevInitializedTickIndex;
+        return {
+          tickIndex: nextInitializedTickIndex,
+          tickArraysCrossed,
+        };
       },
     });
 
@@ -529,8 +585,8 @@ export class OrcaPool {
       amount: tokenAmount,
       currentSqrtPriceX64: whirlpool.sqrtPrice,
       currentTickIndex: whirlpool.tickCurrentIndex,
-      currentTickArray: await fetchTickArray(whirlpool.tickCurrentIndex),
       currentLiquidity: whirlpool.liquidity,
+      tickSpacing: whirlpool.tickSpacing,
     });
 
     return {

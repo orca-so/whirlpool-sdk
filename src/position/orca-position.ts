@@ -128,8 +128,8 @@ export class OrcaPosition {
     const removeLiquidityIx = client
       .decreaseLiquidityTx({
         liquidityAmount: quote.liquidity,
-        tokenMaxA: quote.minTokenA,
-        tokenMaxB: quote.minTokenB,
+        tokenMinA: quote.minTokenA,
+        tokenMinB: quote.minTokenB,
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
         position: toPubKey(quote.positionAddress),
@@ -245,7 +245,7 @@ export class OrcaPosition {
    * Construct a quote for adding liquidity to an existing pool
    */
   public async getAddLiquidityQuote(param: AddLiquidityQuoteParam): Promise<AddLiquidityQuote> {
-    const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerence } = param;
+    const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerance } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
 
     const position = await this.getPosition(positionAddress, shouldRefresh);
@@ -260,7 +260,7 @@ export class OrcaPosition {
       inputTokenAmount: tokenAmount,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     };
 
     return {
@@ -275,7 +275,7 @@ export class OrcaPosition {
   public async getRemoveLiquidityQuote(
     param: RemoveLiquidityQuoteParam
   ): Promise<RemoveLiquidityQuote> {
-    const { positionAddress, liquidity, refresh, slippageTolerence } = param;
+    const { positionAddress, liquidity, refresh, slippageTolerance } = param;
     const shouldRefresh = refresh === undefined ? true : refresh; // default true
 
     const position = await this.getPosition(positionAddress, shouldRefresh);
@@ -288,7 +288,7 @@ export class OrcaPosition {
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
       liquidity,
-      slippageTolerence: slippageTolerence || defaultSlippagePercentage,
+      slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     });
   }
 

@@ -26,7 +26,7 @@ export type AddLiquidityQuoteParam = {
   tokenMint: Address;
   tokenAmount: u64;
   refresh?: boolean;
-  slippageTolerence?: Percentage;
+  slippageTolerance?: Percentage;
 };
 
 export type AddLiquidityQuote = {
@@ -40,7 +40,7 @@ export type RemoveLiquidityQuoteParam = {
   positionAddress: Address;
   liquidity: u64;
   refresh?: boolean;
-  slippageTolerence?: Percentage;
+  slippageTolerance?: Percentage;
 };
 
 export type RemoveLiquidityQuote = {

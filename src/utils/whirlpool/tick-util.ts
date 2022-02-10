@@ -119,7 +119,9 @@ export class TickUtil {
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
-    let stepInitializedTickArrayIndex = currentTickArrayIndex + increment;
+    let stepInitializedTickArrayIndex = TickSearchDirection.Right
+      ? currentTickArrayIndex + increment
+      : currentTickArrayIndex;
     while (
       stepInitializedTickArrayIndex >= 0 &&
       stepInitializedTickArrayIndex < account.ticks.length

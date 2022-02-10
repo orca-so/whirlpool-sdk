@@ -25,9 +25,22 @@ export class PoolUtil {
   public static getProtocolFeeRate(account: WhirlpoolData): Percentage {
     /**
      * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L13-L14
-     * // Denominator for portion of fee rate taken (1/x)%
+     * // Stored as a basis point
      * pub protocol_fee_rate: u16,
      */
-    return Percentage.fromFraction(1, new BN(account.protocolFeeRate.toString()).mul(new BN(100))); // TODO
+    return Percentage.fromFraction(account.protocolFeeRate, 1e4); // TODO
+  }
+
+  public static orderMints(mintX: PublicKey, mintY: PublicKey): [PublicKey, PublicKey] {
+    let mintA, mintB;
+    if (Buffer.compare(mintX.toBuffer(), mintY.toBuffer()) < 0) {
+      mintA = mintX;
+      mintB = mintY;
+    } else {
+      mintA = mintY;
+      mintB = mintX;
+    }
+
+    return [mintA, mintB];
   }
 }

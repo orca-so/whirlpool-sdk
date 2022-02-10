@@ -3,8 +3,17 @@ import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import { AddLiquidityQuote } from "../public/types";
 import { Percentage } from "../../utils/public/percentage";
-import { PositionStatus, PositionUtil } from "../../utils/whirlpool/position-util";
+import {
+  adjustForSlippage,
+  getLiquidityFromTokenA,
+  getLiquidityFromTokenB,
+  getTokenAFromLiquidity,
+  getTokenBFromLiquidity,
+  PositionStatus,
+  PositionUtil,
+} from "../../utils/whirlpool/position-util";
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
+import { shiftRightRoundUp, ZERO } from "../../utils/web3/math-utils";
 
 /*** Public ***/
 
@@ -17,7 +26,7 @@ export type InternalAddLiquidityQuoteParam = {
   inputTokenAmount: u64;
   tickLowerIndex: number;
   tickUpperIndex: number;
-  slippageTolerence: Percentage;
+  slippageTolerance: Percentage;
 };
 
 export type InternalAddLiquidityQuote = Omit<AddLiquidityQuote, "positionAddress">;
@@ -54,32 +63,38 @@ function getAddLiquidityQuoteWhenPositionIsBelowRange(
     inputTokenAmount,
     tickLowerIndex,
     tickUpperIndex,
-    slippageTolerence,
+    slippageTolerance,
   } = param;
 
   if (!tokenMintA.equals(inputTokenMint)) {
     return {
-      maxTokenA: new u64(0),
-      maxTokenB: new u64(0),
-      liquidity: new u64(0),
+      maxTokenA: ZERO,
+      maxTokenB: ZERO,
+      liquidity: ZERO,
     };
   }
 
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
-  const liquidity = inputTokenAmount
-    .mul(sqrtPriceLowerX64)
-    .mul(sqrtPriceUpperX64)
-    .div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64))
-    .shrn(64);
-  const liquidityAfterSlippage = liquidity
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+
+  const liquidity = getLiquidityFromTokenA(
+    inputTokenAmount,
+    sqrtPriceLowerX64,
+    sqrtPriceUpperX64,
+    false
+  );
+
+  const maxTokenA = adjustForSlippage(
+    getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true),
+    slippageTolerance,
+    true
+  );
+  const maxTokenB = ZERO;
 
   return {
-    maxTokenA: new u64(inputTokenAmount),
-    maxTokenB: new u64(0),
-    liquidity: new u64(liquidityAfterSlippage),
+    maxTokenA,
+    maxTokenB,
+    liquidity,
   };
 }
 
@@ -93,7 +108,7 @@ function getAddLiquidityQuoteWhenPositionIsInRange(
     inputTokenAmount,
     tickLowerIndex,
     tickUpperIndex,
-    slippageTolerence,
+    slippageTolerance,
   } = param;
 
   const sqrtPriceX64 = sqrtPrice;
@@ -104,33 +119,27 @@ function getAddLiquidityQuoteWhenPositionIsInRange(
     ? [inputTokenAmount, undefined]
     : [undefined, inputTokenAmount];
 
-  let liquidityX64: BN | undefined = undefined;
+  let liquidity: BN;
 
   if (tokenAmountA) {
-    liquidityX64 = tokenAmountA
-      .mul(sqrtPriceX64)
-      .mul(sqrtPriceUpperX64)
-      .div(sqrtPriceUpperX64.sub(sqrtPriceX64));
-    tokenAmountB = liquidityX64.mul(sqrtPriceX64.sub(sqrtPriceLowerX64)).shrn(128);
+    liquidity = getLiquidityFromTokenA(tokenAmountA, sqrtPriceX64, sqrtPriceUpperX64, false);
+    tokenAmountA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
+    tokenAmountB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
   } else if (tokenAmountB) {
-    liquidityX64 = tokenAmountB.shln(128).div(sqrtPriceX64.sub(sqrtPriceLowerX64));
-    tokenAmountA = liquidityX64
-      .mul(sqrtPriceUpperX64.sub(sqrtPriceX64))
-      .div(sqrtPriceX64)
-      .div(sqrtPriceUpperX64);
+    liquidity = getLiquidityFromTokenB(tokenAmountB, sqrtPriceLowerX64, sqrtPriceX64, false);
+    tokenAmountA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
+    tokenAmountB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
   } else {
     throw new Error("invariant violation");
   }
 
-  const liquidityAfterSlippage = liquidityX64
-    .shrn(64)
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+  const maxTokenA = adjustForSlippage(tokenAmountA, slippageTolerance, true);
+  const maxTokenB = adjustForSlippage(tokenAmountB, slippageTolerance, true);
 
   return {
-    maxTokenA: new u64(tokenAmountA),
-    maxTokenB: new u64(tokenAmountB),
-    liquidity: new u64(liquidityAfterSlippage),
+    maxTokenA,
+    maxTokenB,
+    liquidity,
   };
 }
 
@@ -143,27 +152,36 @@ function getAddLiquidityQuoteWhenPositionIsAboveRange(
     inputTokenAmount,
     tickLowerIndex,
     tickUpperIndex,
-    slippageTolerence,
+    slippageTolerance,
   } = param;
 
   if (!tokenMintB.equals(inputTokenMint)) {
     return {
-      maxTokenA: new u64(0),
-      maxTokenB: new u64(0),
-      liquidity: new u64(0),
+      maxTokenA: ZERO,
+      maxTokenB: ZERO,
+      liquidity: ZERO,
     };
   }
 
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
-  const liquidity = inputTokenAmount.shln(64).div(sqrtPriceUpperX64.sub(sqrtPriceLowerX64));
-  const liquidityAfterSlippage = liquidity
-    .mul(slippageTolerence.denominator)
-    .div(slippageTolerence.numerator.add(slippageTolerence.denominator));
+  const liquidity = getLiquidityFromTokenB(
+    inputTokenAmount,
+    sqrtPriceLowerX64,
+    sqrtPriceUpperX64,
+    false
+  );
+
+  const maxTokenA = ZERO;
+  const maxTokenB = adjustForSlippage(
+    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true),
+    slippageTolerance,
+    true
+  );
 
   return {
-    maxTokenA: new u64(0),
-    maxTokenB: new u64(inputTokenAmount),
-    liquidity: new u64(liquidityAfterSlippage),
+    maxTokenA,
+    maxTokenB,
+    liquidity,
   };
 }
