@@ -150,6 +150,9 @@ export async function getMultipleCollectFeesAndRewardsTx(
       ataTxBuilder = new TransactionBuilder(provider);
     }
   });
+  if (ataTxBuilderSize > 0) {
+    tx.addTxBuilder(ataTxBuilder);
+  }
 
   let collectTxBuilder = new TransactionBuilder(provider);
   let collectTxBuilderSize = 0;
@@ -166,6 +169,9 @@ export async function getMultipleCollectFeesAndRewardsTx(
       collectTxBuilder = new TransactionBuilder(provider);
     }
   });
+  if (collectTxBuilderSize > 0) {
+    tx.addTxBuilder(collectTxBuilder);
+  }
 
   if (tx.txBuilders.length === 0) {
     return null;
