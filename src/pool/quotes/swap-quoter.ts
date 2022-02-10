@@ -42,17 +42,17 @@ export type SwapSimulatorConfig = {
 };
 
 type SwapSimulationInput = {
-  amount: u64;
+  amount: BN;
   currentSqrtPriceX64: BN;
   currentTickIndex: number;
-  currentLiquidity: u64;
+  currentLiquidity: BN;
   tickSpacing: number;
 };
 
 type SwapSimulationOutput = {
   sqrtPriceLimitX64: BN;
-  amountIn: u64;
-  amountOut: u64;
+  amountIn: BN;
+  amountOut: BN;
   sqrtPriceAfterSwapX64: BN;
 };
 
@@ -60,7 +60,7 @@ type SwapStepSimulationInput = {
   sqrtPriceLimitX64: BN;
   sqrtPriceX64: BN;
   tickIndex: number;
-  liquidity: u64;
+  liquidity: BN;
   amountRemaining: u64;
   tickArraysCrossed: number;
   tickSpacing: number;
@@ -70,8 +70,8 @@ type SwapStepSimulationOutput = {
   nextTickSqrtPriceX64: BN;
   nextSqrtPriceX64: BN;
   nextTickIndex: number;
-  input: u64;
-  output: u64;
+  input: BN;
+  output: BN;
   tickArraysCrossed: number;
 };
 

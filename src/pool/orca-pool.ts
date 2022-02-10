@@ -1,6 +1,6 @@
-import { Address, BN } from "@project-serum/anchor";
+import { Address, BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { Keypair, PublicKey } from "@solana/web3.js";
+import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
@@ -48,6 +48,7 @@ import {
   PositionData,
   WhirlpoolClient,
   WhirlpoolContext,
+  InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaPool {
@@ -218,6 +219,20 @@ export class OrcaPool {
       mint: positionMintKeypair.publicKey,
       tx: new MultiTransactionBuilder(provider, [txBuilder]),
     };
+  }
+
+  public async getInitTickArrayTx(
+    provider: Provider,
+    param: InitTickArrayParams
+  ): Promise<TransactionBuilder> {
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const txBuilder = new TransactionBuilder(provider);
+
+    txBuilder.addInstruction(client.initTickArrayTx(param).compressIx(false));
+
+    return txBuilder;
   }
 
   /**
