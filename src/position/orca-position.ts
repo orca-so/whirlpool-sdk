@@ -30,6 +30,7 @@ import {
   PositionData,
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk";
+import { getMultipleCollectFeesAndRewardsTx } from "./txs/fees-and-rewards";
 
 export class OrcaPosition {
   constructor(private readonly dal: OrcaDAL) {}
@@ -66,7 +67,13 @@ export class OrcaPosition {
       return null;
     }
 
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
+      position.tickLowerIndex,
+      position.tickUpperIndex,
+      whirlpool.tickSpacing,
+      position.whirlpool,
+      this.dal.programId
+    );
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -126,7 +133,13 @@ export class OrcaPosition {
       return null;
     }
 
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
+      position.tickLowerIndex,
+      position.tickUpperIndex,
+      whirlpool.tickSpacing,
+      position.whirlpool,
+      this.dal.programId
+    );
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -186,7 +199,13 @@ export class OrcaPosition {
       return null;
     }
 
-    const [tickArrayLower, tickArrayUpper] = this.getTickArrayAddresses(position, whirlpool);
+    const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
+      position.tickLowerIndex,
+      position.tickUpperIndex,
+      whirlpool.tickSpacing,
+      position.whirlpool,
+      this.dal.programId
+    );
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
     // step 0. create transaction builders, and check if the wallet has the position mint
@@ -271,25 +290,13 @@ export class OrcaPosition {
   }
 
   /**
-   * Construct a transaction for collecting fees and rewards from an existing pool
+   * Construct a transaction for collecting fees and rewards from a list of  existing pools
    */
-  // public async getCollectMultipleFeesAndRewardsTx(
-  //   param: CollectMultipleFeesAndRewardsTxParam
-  // ): Promise<MultiTransactionBuilder | null> {
-  //   const { provider, positionAddresses } = param;
-  //   const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
-  //   const client = new WhirlpoolClient(ctx);
-
-  //   const position = await this.dal.getPosition(positionAddress, false);
-  //   if (!position) {
-  //     return null;
-  //   }
-
-  //   const whirlpool = await this.dal.getPool(position.whirlpool, false);
-  //   if (!whirlpool) {
-  //     return null;
-  //   }
-  // }
+  public async getCollectMultipleFeesAndRewardsTx(
+    param: CollectMultipleFeesAndRewardsTxParam
+  ): Promise<MultiTransactionBuilder | null> {
+    return getMultipleCollectFeesAndRewardsTx(this.dal, param);
+  }
 
   /*** Quotes ***/
 
@@ -355,26 +362,5 @@ export class OrcaPosition {
       liquidity,
       slippageTolerance: slippageTolerance || defaultSlippagePercentage,
     });
-  }
-
-  /*** Helpers ***/
-
-  private getTickArrayAddresses(
-    position: PositionData,
-    whirlpool: WhirlpoolData
-  ): [PublicKey, PublicKey] {
-    const tickLowerAddress = TickUtil.getPdaWithTickIndex(
-      position.tickLowerIndex,
-      whirlpool.tickSpacing,
-      position.whirlpool,
-      this.dal.programId
-    ).publicKey;
-    const tickUpperAddress = TickUtil.getPdaWithTickIndex(
-      position.tickUpperIndex,
-      whirlpool.tickSpacing,
-      position.whirlpool,
-      this.dal.programId
-    ).publicKey;
-    return [tickLowerAddress, tickUpperAddress];
   }
 }

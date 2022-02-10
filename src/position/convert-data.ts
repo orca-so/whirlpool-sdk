@@ -9,7 +9,7 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
-import { getPositionPda, PositionData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,
@@ -33,9 +33,11 @@ export async function convertPositionDataToUserPositionData(
       continue;
     }
 
-    const [tickLowerAddress, tickUpperAddress] = getTickArrayAddress(
-      position,
-      whirlpool,
+    const [tickLowerAddress, tickUpperAddress] = TickUtil.getLowerAndUpperTickArrayAddresses(
+      position.tickLowerIndex,
+      position.tickUpperIndex,
+      whirlpool.tickSpacing,
+      position.whirlpool,
       dal.programId
     );
     const tickArrayLower = await dal.getTickArray(tickLowerAddress, false);
@@ -144,9 +146,11 @@ async function getUserPositions(
       if (position) {
         const whirlpool = await dal.getPool(position.whirlpool, false);
         if (whirlpool) {
-          const [tickLowerAddress, tickUpperAddress] = getTickArrayAddress(
-            position,
-            whirlpool,
+          const [tickLowerAddress, tickUpperAddress] = TickUtil.getLowerAndUpperTickArrayAddresses(
+            position.tickLowerIndex,
+            position.tickUpperIndex,
+            whirlpool.tickSpacing,
+            position.whirlpool,
             dal.programId
           );
           tickArrayAddresses.add(tickLowerAddress.toBase58());
@@ -164,24 +168,4 @@ async function getUserPositions(
   return potentialPositionAddresses.filter((_, index) => {
     return positions[index] !== null;
   });
-}
-
-function getTickArrayAddress(
-  position: PositionData,
-  whirlpool: WhirlpoolData,
-  programId: PublicKey
-): [PublicKey, PublicKey] {
-  const tickLowerAddress = TickUtil.getPdaWithTickIndex(
-    position.tickLowerIndex,
-    whirlpool.tickSpacing,
-    position.whirlpool,
-    programId
-  ).publicKey;
-  const tickUpperAddress = TickUtil.getPdaWithTickIndex(
-    position.tickUpperIndex,
-    whirlpool.tickSpacing,
-    position.whirlpool,
-    programId
-  ).publicKey;
-  return [tickLowerAddress, tickUpperAddress];
 }

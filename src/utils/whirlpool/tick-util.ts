@@ -11,6 +11,7 @@ import {
   MIN_TICK_INDEX,
   MAX_TICK_INDEX,
 } from "@orca-so/whirlpool-client-sdk";
+import { PublicKey } from "@solana/web3.js";
 
 enum TickSearchDirection {
   Left,
@@ -40,6 +41,19 @@ export class TickUtil {
     const tick = tickArray.ticks[realIndex];
     invariant(!!tick, "tick realIndex out of range");
     return tick;
+  }
+
+  public static getLowerAndUpperTickArrayAddresses(
+    tickLowerIndex: number,
+    tickUpperIndex: number,
+    tickSpacing: TickSpacing,
+    whirlpool: PublicKey,
+    programId: PublicKey
+  ): [PublicKey, PublicKey] {
+    return [
+      TickUtil.getPdaWithTickIndex(tickLowerIndex, tickSpacing, whirlpool, programId).publicKey,
+      TickUtil.getPdaWithTickIndex(tickUpperIndex, tickSpacing, whirlpool, programId).publicKey,
+    ];
   }
 
   /**

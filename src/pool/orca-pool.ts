@@ -27,7 +27,7 @@ import { MultiTransactionBuilder } from "../utils/public/multi-transaction-build
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
-import { getLiquidityDistribution, LiquidityDistribution } from "./liquidity-distribution";
+import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
 import {
   AmountSpecified,
   MAX_TICK_ARRAY_CROSSINGS,
@@ -385,7 +385,7 @@ export class OrcaPool {
     return new MultiTransactionBuilder(provider, [txBuilder]);
   }
 
-  getTickArrayPublicKeysForSwap(
+  private getTickArrayPublicKeysForSwap(
     currentSqrtPriceX64: BN,
     targetSqrtPriceX64: BN,
     tickSpacing: number,

@@ -1,5 +1,5 @@
 import { Address } from "@project-serum/anchor";
-import { OrcaDAL } from "../dal/orca-dal";
+import { OrcaDAL } from "../../dal/orca-dal";
 
 export type PriceRange = {};
 

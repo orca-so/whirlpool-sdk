@@ -2,8 +2,8 @@ import { fromX64, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import { OrcaDAL } from "../dal/orca-dal";
-import { TickUtil } from "../utils/whirlpool/tick-util";
+import { OrcaDAL } from "../../dal/orca-dal";
+import { TickUtil } from "../../utils/whirlpool/tick-util";
 
 export type LiquidityDataPoint = {
   liquidity: Decimal;
