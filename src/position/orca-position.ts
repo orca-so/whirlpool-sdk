@@ -185,108 +185,11 @@ export class OrcaPosition {
   public async getCollectFeesAndRewardsTx(
     param: CollectFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder | null> {
-    const { provider, positionAddress } = param;
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
-    const client = new WhirlpoolClient(ctx);
-
-    const position = await this.dal.getPosition(positionAddress, false);
-    if (!position) {
-      return null;
-    }
-
-    const whirlpool = await this.dal.getPool(position.whirlpool, false);
-    if (!whirlpool) {
-      return null;
-    }
-
-    const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
-      position.tickLowerIndex,
-      position.tickUpperIndex,
-      whirlpool.tickSpacing,
-      position.whirlpool,
-      this.dal.programId
-    );
-    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
-
-    // step 0. create transaction builders, and check if the wallet has the position mint
-    const ataTxBuilder = new TransactionBuilder(ctx.provider);
-    const mainTxBuilder = new TransactionBuilder(ctx.provider);
-
-    // step 1. update state of owed fees and rewards
-    const updateIx = client
-      .updateFeesAndRewards({
-        whirlpool: position.whirlpool,
-        position: toPubKey(positionAddress),
-        tickArrayLower,
-        tickArrayUpper,
-      })
-      .compressIx(false);
-    mainTxBuilder.addInstruction(updateIx);
-
-    // step 2. collect fees
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintA
-    );
-    ataTxBuilder.addInstruction(tokenOwnerAccountAIx);
-
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
-    ataTxBuilder.addInstruction(tokenOwnerAccountBIx);
-
-    const feeIx = client
-      .collectFeesTx({
-        whirlpool: position.whirlpool,
-        positionAuthority: provider.wallet.publicKey,
-        position: toPubKey(positionAddress),
-        positionTokenAccount,
-        tokenOwnerAccountA,
-        tokenOwnerAccountB,
-        tokenVaultA: whirlpool.tokenVaultA,
-        tokenVaultB: whirlpool.tokenVaultB,
-        tickArrayLower,
-        tickArrayUpper,
-      })
-      .compressIx(false);
-    mainTxBuilder.addInstruction(feeIx);
-
-    // step 3. collect rewards A, B, C
-    for (const i of [...Array(NUM_REWARDS).keys()]) {
-      const rewardInfo = whirlpool.rewardInfos[i];
-      invariant(!!rewardInfo, "rewardInfo cannot be undefined");
-
-      if (PoolUtil.isRewardInitialized(rewardInfo)) {
-        const { address: rewardOwnerAccount, ...rewardOwnerAccountIx } = await resolveOrCreateATA(
-          provider.connection,
-          provider.wallet.publicKey,
-          rewardInfo.mint
-        );
-        ataTxBuilder.addInstruction(rewardOwnerAccountIx);
-
-        const rewardTx = client.collectRewardTx({
-          whirlpool: position.whirlpool,
-          positionAuthority: provider.wallet.publicKey,
-          position: toPubKey(positionAddress),
-          positionTokenAccount,
-          rewardOwnerAccount,
-          rewardVault: rewardInfo.vault,
-          tickArrayLower,
-          tickArrayUpper,
-          rewardIndex: i,
-        });
-        mainTxBuilder.addInstruction(rewardTx.compressIx(false));
-      }
-    }
-
-    if (ataTxBuilder.compressIx(false).instructions.length === 0) {
-      return new MultiTransactionBuilder(provider, [mainTxBuilder]);
-    }
-
-    return new MultiTransactionBuilder(provider, [ataTxBuilder, mainTxBuilder]);
+    const result = await getMultipleCollectFeesAndRewardsTx(this.dal, {
+      provider: param.provider,
+      positionAddresses: [param.positionAddress],
+    });
+    return result?.tx || null;
   }
 
   /**
@@ -295,7 +198,8 @@ export class OrcaPosition {
   public async getCollectMultipleFeesAndRewardsTx(
     param: CollectMultipleFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder | null> {
-    return getMultipleCollectFeesAndRewardsTx(this.dal, param);
+    const result = await getMultipleCollectFeesAndRewardsTx(this.dal, param);
+    return result?.tx || null;
   }
 
   /*** Quotes ***/

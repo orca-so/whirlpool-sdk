@@ -48,6 +48,7 @@ import {
   WhirlpoolContext,
   InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
+import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -121,22 +122,19 @@ export class OrcaPool {
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    txBuilder
-      .addInstruction(
-        client
-          .openPositionTx({
-            funder: provider.wallet.publicKey,
-            ownerKey: provider.wallet.publicKey,
-            positionPda,
-            positionMintAddress: positionMintKeypair.publicKey,
-            positionTokenAccountAddress,
-            whirlpoolKey: toPubKey(poolAddress),
-            tickLowerIndex,
-            tickUpperIndex,
-          })
-          .compressIx(false)
-      )
-      .addSigner(positionMintKeypair);
+    const positionIx = client
+      .openPositionTx({
+        funder: provider.wallet.publicKey,
+        ownerKey: provider.wallet.publicKey,
+        positionPda,
+        positionMintAddress: positionMintKeypair.publicKey,
+        positionTokenAccountAddress,
+        whirlpoolKey: toPubKey(poolAddress),
+        tickLowerIndex,
+        tickUpperIndex,
+      })
+      .compressIx(false);
+    txBuilder.addInstruction(positionIx).addSigner(positionMintKeypair);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
@@ -169,53 +167,50 @@ export class OrcaPool {
     );
 
     if (tickArrayLower === null) {
-      txBuilder.addInstruction(
-        client
-          .initTickArrayTx({
-            whirlpool: toPubKey(poolAddress),
-            tickArrayPda: tickArrayLowerPda,
-            startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
-            funder: provider.wallet.publicKey,
-          })
-          .compressIx(false)
-      );
+      const tickArrayIx = client
+        .initTickArrayTx({
+          whirlpool: toPubKey(poolAddress),
+          tickArrayPda: tickArrayLowerPda,
+          startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
+          funder: provider.wallet.publicKey,
+        })
+        .compressIx(false);
+      txBuilder.addInstruction(tickArrayIx);
     }
 
     if (
       tickArrayUpper === null &&
       !tickArrayLowerPda.publicKey.equals(tickArrayUpperPda.publicKey)
     ) {
-      txBuilder.addInstruction(
-        client
-          .initTickArrayTx({
-            whirlpool: toPubKey(poolAddress),
-            tickArrayPda: tickArrayUpperPda,
-            startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
-            funder: provider.wallet.publicKey,
-          })
-          .compressIx(false)
-      );
+      const tickArrayIx = client
+        .initTickArrayTx({
+          whirlpool: toPubKey(poolAddress),
+          tickArrayPda: tickArrayUpperPda,
+          startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
+          funder: provider.wallet.publicKey,
+        })
+        .compressIx(false);
+      txBuilder.addInstruction(tickArrayIx);
     }
 
-    txBuilder.addInstruction(
-      client
-        .increaseLiquidityTx({
-          liquidityAmount: liquidity,
-          tokenMaxA: maxTokenA,
-          tokenMaxB: maxTokenB,
-          whirlpool: toPubKey(poolAddress),
-          positionAuthority: provider.wallet.publicKey,
-          position: positionPda.publicKey,
-          positionTokenAccount: positionTokenAccountAddress,
-          tokenOwnerAccountA,
-          tokenOwnerAccountB,
-          tokenVaultA: whirlpool.tokenVaultA,
-          tokenVaultB: whirlpool.tokenVaultB,
-          tickArrayLower: tickArrayLowerPda.publicKey,
-          tickArrayUpper: tickArrayUpperPda.publicKey,
-        })
-        .compressIx(false)
-    );
+    const liquidityIx = client
+      .increaseLiquidityTx({
+        liquidityAmount: liquidity,
+        tokenMaxA: maxTokenA,
+        tokenMaxB: maxTokenB,
+        whirlpool: toPubKey(poolAddress),
+        positionAuthority: provider.wallet.publicKey,
+        position: positionPda.publicKey,
+        positionTokenAccount: positionTokenAccountAddress,
+        tokenOwnerAccountA,
+        tokenOwnerAccountB,
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tickArrayLower: tickArrayLowerPda.publicKey,
+        tickArrayUpper: tickArrayUpperPda.publicKey,
+      })
+      .compressIx(false);
+    txBuilder.addInstruction(liquidityIx);
 
     return {
       mint: positionMintKeypair.publicKey,
@@ -229,12 +224,7 @@ export class OrcaPool {
   ): Promise<TransactionBuilder> {
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
-
-    const txBuilder = new TransactionBuilder(provider);
-
-    txBuilder.addInstruction(client.initTickArrayTx(param).compressIx(false));
-
-    return txBuilder;
+    return client.initTickArrayTx(param);
   }
 
   /**
@@ -270,54 +260,60 @@ export class OrcaPool {
 
     const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
 
-    const txBuilder = new TransactionBuilder(ctx.provider);
+    const txBuilder = new TransactionBuilder(provider);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintA
+    /* Collect fees and rewards from the position */
+
+    const collectTx = await getMultipleCollectFeesAndRewardsTx(this.dal, {
+      provider,
+      positionAddresses: [quote.positionAddress],
+    });
+    if (!collectTx) {
+      return null;
+    }
+    collectTx.tx.txBuilders.forEach((builder) =>
+      txBuilder.addInstruction(builder.compressIx(false))
     );
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
-    txBuilder.addInstruction(tokenOwnerAccountAIx);
-    txBuilder.addInstruction(tokenOwnerAccountBIx);
+    const tokenOwnerAccountA = collectTx.ataMap[whirlpool.tokenMintA.toBase58()]?.address;
+    const tokenOwnerAccountB = collectTx.ataMap[whirlpool.tokenMintB.toBase58()]?.address;
+    invariant(tokenOwnerAccountA, "tokenOwnerAccountA doesn't exist");
+    invariant(tokenOwnerAccountB, "tokenOwnerAccountB doesn't exist");
+
+    /* Remove all liquidity remaining in the position */
 
     if (position.liquidity.gt(new u64(0))) {
-      txBuilder.addInstruction(
-        client
-          .decreaseLiquidityTx({
-            liquidityAmount: position.liquidity,
-            tokenMinA: quote.minTokenA,
-            tokenMinB: quote.minTokenB,
-            whirlpool: position.whirlpool,
-            positionAuthority: provider.wallet.publicKey,
-            position: toPubKey(quote.positionAddress),
-            positionTokenAccount,
-            tokenOwnerAccountA,
-            tokenOwnerAccountB,
-            tokenVaultA: whirlpool.tokenVaultA,
-            tokenVaultB: whirlpool.tokenVaultB,
-            tickArrayLower,
-            tickArrayUpper,
-          })
-          .compressIx(false)
-      );
+      const liquidityIx = client
+        .decreaseLiquidityTx({
+          liquidityAmount: position.liquidity,
+          tokenMinA: quote.minTokenA,
+          tokenMinB: quote.minTokenB,
+          whirlpool: position.whirlpool,
+          positionAuthority: provider.wallet.publicKey,
+          position: toPubKey(quote.positionAddress),
+          positionTokenAccount,
+          tokenOwnerAccountA,
+          tokenOwnerAccountB,
+          tokenVaultA: whirlpool.tokenVaultA,
+          tokenVaultB: whirlpool.tokenVaultB,
+          tickArrayLower,
+          tickArrayUpper,
+        })
+        .compressIx(false);
+      txBuilder.addInstruction(liquidityIx);
     }
 
-    txBuilder.addInstruction(
-      client
-        .closePositionTx({
-          positionAuthority: provider.wallet.publicKey,
-          receiver: provider.wallet.publicKey,
-          positionTokenAccount,
-          position: toPubKey(quote.positionAddress),
-          positionMint: position.positionMint,
-        })
-        .compressIx(false)
-    );
+    /* Close position */
+
+    const positionIx = client
+      .closePositionTx({
+        positionAuthority: provider.wallet.publicKey,
+        receiver: provider.wallet.publicKey,
+        positionTokenAccount,
+        position: toPubKey(quote.positionAddress),
+        positionMint: position.positionMint,
+      })
+      .compressIx(false);
+    txBuilder.addInstruction(positionIx);
 
     return txBuilder;
   }

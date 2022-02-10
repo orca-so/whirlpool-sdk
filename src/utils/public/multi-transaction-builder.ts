@@ -1,13 +1,12 @@
 import { TransactionBuilder } from "@orca-so/whirlpool-client-sdk";
 import { Provider } from "@project-serum/anchor";
-import invariant from "tiny-invariant";
 
 /**
  * Collection of TransactionBuilders for grouping multiple transactions together for sendAll.
  */
 export class MultiTransactionBuilder {
-  private readonly provider: Provider;
-  private readonly txBuilders: TransactionBuilder[];
+  public readonly provider: Provider;
+  public readonly txBuilders: TransactionBuilder[];
 
   constructor(provider: Provider, txBuilders: TransactionBuilder[]) {
     this.provider = provider;
@@ -22,6 +21,11 @@ export class MultiTransactionBuilder {
       })
     );
     return await this.provider.sendAll(txRequest);
+  }
+
+  public addTxBuilder(txBuilder: TransactionBuilder): MultiTransactionBuilder {
+    this.txBuilders.push(txBuilder);
+    return this;
   }
 
   public merge(multiTxBuilder: MultiTransactionBuilder): MultiTransactionBuilder {
