@@ -1,4 +1,4 @@
-import { Keypair } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   InitPoolTxParam,
@@ -26,7 +26,7 @@ import {
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
 
-  public getInitPoolTx(param: InitPoolTxParam): TransactionBuilder {
+  public getInitPoolTx(param: InitPoolTxParam): { tx: TransactionBuilder; address: PublicKey } {
     const { provider, initialPrice, tokenMintA, tokenMintB, stable } = param;
     const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
@@ -41,7 +41,7 @@ export class OrcaAdmin {
       tickSpacing
     );
 
-    return client.initPoolTx({
+    const tx = client.initPoolTx({
       initSqrtPrice: toX64(initialPrice.sqrt()),
       whirlpoolConfigKey,
       tokenMintA: toPubKey(tokenMintA),
@@ -52,6 +52,8 @@ export class OrcaAdmin {
       tickSpacing,
       funder: provider.wallet.publicKey,
     });
+
+    return { tx, address: whirlpoolPda.publicKey };
   }
 
   /*** Fee ***/
@@ -108,21 +110,27 @@ export class OrcaAdmin {
 
   /*** Reward ***/
 
-  public getInitRewardTx(param: InitRewardTxParam): TransactionBuilder {
+  public getInitRewardTx(param: InitRewardTxParam): {
+    tx: TransactionBuilder;
+    rewardVault: PublicKey;
+  } {
     const { provider, rewardAuthority, poolAddress, rewardMint, rewardIndex } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
 
-    return client.initializeRewardTx({
+    const rewardVaultKeypair = Keypair.generate();
+    const tx = client.initializeRewardTx({
       rewardAuthority: toPubKey(rewardAuthority),
       funder: provider.wallet.publicKey,
       whirlpool: toPubKey(poolAddress),
       rewardMint: toPubKey(rewardMint),
-      rewardVaultKeypair: Keypair.generate(),
+      rewardVaultKeypair,
       rewardIndex,
     });
+
+    return { tx, rewardVault: rewardVaultKeypair.publicKey };
   }
 
   public getSetRewardAuthorityTx(param: SetRewardAuthorityTxParam): TransactionBuilder {

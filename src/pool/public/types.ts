@@ -38,7 +38,7 @@ type BaseOpenPositionQuoteParam = {
   poolAddress: Address;
   tokenMint: Address;
   tokenAmount: u64;
-  refresh?: boolean;
+  refresh: true;
   slippageTolerance?: Percentage;
 };
 
@@ -53,7 +53,7 @@ export type OpenPositionQuote = {
 
 export type ClosePositionQuoteParam = {
   positionAddress: Address;
-  refresh?: boolean;
+  refresh: true;
   slippageTolerance?: Percentage;
 };
 

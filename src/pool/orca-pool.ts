@@ -1,6 +1,6 @@
 import { Address, BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
@@ -44,8 +44,6 @@ import {
   sqrtPriceX64ToTickIndex,
   toX64,
   TICK_ARRAY_SIZE,
-  WhirlpoolData,
-  PositionData,
   WhirlpoolClient,
   WhirlpoolContext,
   InitTickArrayParams,
@@ -99,7 +97,7 @@ export class OrcaPool {
    */
   public async getOpenPositionTx(
     param: OpenPositionTxParam
-  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
+  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey } | null> {
     const {
       provider,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
@@ -109,7 +107,11 @@ export class OrcaPool {
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.getWhirlpool(poolAddress, false);
+    const whirlpool = await this.dal.getPool(poolAddress, false);
+    if (!whirlpool) {
+      return null;
+    }
+
     const positionMintKeypair = Keypair.generate();
     const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
     const positionTokenAccountAddress = await deriveATA(
@@ -238,13 +240,21 @@ export class OrcaPool {
   /**
    * Construct a transaction for closing an existing position
    */
-  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder> {
+  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder | null> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.getPosition(quote.positionAddress, true);
-    const whirlpool = await this.getWhirlpool(position.whirlpool, false);
+    const position = await this.dal.getPosition(quote.positionAddress, true);
+    if (!position) {
+      return null;
+    }
+
+    const whirlpool = await this.dal.getPool(position.whirlpool, false);
+    if (!whirlpool) {
+      return null;
+    }
+
     const tickArrayLower = TickUtil.getPdaWithTickIndex(
       position.tickLowerIndex,
       whirlpool.tickSpacing,
@@ -315,7 +325,7 @@ export class OrcaPool {
   /**
    * Construct a transaction for a swap
    */
-  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder> {
+  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder | null> {
     const {
       provider,
       quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput, poolAddress },
@@ -323,7 +333,11 @@ export class OrcaPool {
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.getWhirlpool(poolAddress, true);
+    const whirlpool = await this.dal.getPool(poolAddress, true);
+    if (!whirlpool) {
+      return null;
+    }
+
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
@@ -424,10 +438,14 @@ export class OrcaPool {
   /**
    * Construct a quote for opening a new position
    */
-  public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
+  public async getOpenPositionQuote(
+    param: OpenPositionQuoteParam
+  ): Promise<OpenPositionQuote | null> {
     const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh; // default true
-    const whirlpool = await this.getWhirlpool(poolAddress, shouldRefresh);
+    const whirlpool = await this.dal.getPool(poolAddress, refresh);
+    if (!whirlpool) {
+      return null;
+    }
 
     let tickLowerIndex = undefined;
     let tickUpperIndex = undefined;
@@ -470,11 +488,19 @@ export class OrcaPool {
   /**
    * Construct a quote for closing an existing position
    */
-  public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
+  public async getClosePositionQuote(
+    param: ClosePositionQuoteParam
+  ): Promise<ClosePositionQuote | null> {
     const { positionAddress, refresh, slippageTolerance } = param;
-    const shouldRefresh = refresh === undefined ? true : refresh; // default true
-    const position = await this.getPosition(positionAddress, shouldRefresh);
-    const whirlpool = await this.getWhirlpool(position.whirlpool, shouldRefresh);
+    const position = await this.dal.getPosition(positionAddress, refresh);
+    if (!position) {
+      return null;
+    }
+
+    const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
+    if (!whirlpool) {
+      return null;
+    }
 
     return getRemoveLiquidityQuote({
       positionAddress: toPubKey(positionAddress),
@@ -490,7 +516,7 @@ export class OrcaPool {
   /**
    * Construct a quote for swap
    */
-  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
+  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote | null> {
     const {
       poolAddress,
       tokenMint,
@@ -500,7 +526,10 @@ export class OrcaPool {
       refresh,
     } = param;
 
-    const whirlpool = await this.getWhirlpool(poolAddress, refresh);
+    const whirlpool = await this.dal.getPool(poolAddress, refresh);
+    if (!whirlpool) {
+      return null;
+    }
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
@@ -597,18 +626,5 @@ export class OrcaPool {
       aToB: swapDirection === SwapDirection.AtoB,
       fixedOutput: isOutput,
     };
-  }
-
-  /*** Helpers (private) ***/
-  private async getWhirlpool(address: Address, refresh: boolean): Promise<WhirlpoolData> {
-    const whirlpool = await this.dal.getPool(address, refresh);
-    invariant(!!whirlpool, "OrcaWhirlpool - whirlpool does not exist");
-    return whirlpool;
-  }
-
-  private async getPosition(address: Address, refresh: boolean): Promise<PositionData> {
-    const position = await this.dal.getPosition(address, refresh);
-    invariant(!!position, "OrcaWhirlpool - position does not exist");
-    return position;
   }
 }

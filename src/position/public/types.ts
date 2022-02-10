@@ -19,13 +19,18 @@ export type CollectFeesAndRewardsTxParam = {
   positionAddress: Address;
 };
 
+export type CollectMultipleFeesAndRewardsTxParam = {
+  provider: Provider;
+  positionAddresses: Address[];
+};
+
 /*** Quotes ***/
 
 export type AddLiquidityQuoteParam = {
   positionAddress: Address;
   tokenMint: Address;
   tokenAmount: u64;
-  refresh?: boolean;
+  refresh: true;
   slippageTolerance?: Percentage;
 };
 
@@ -39,7 +44,7 @@ export type AddLiquidityQuote = {
 export type RemoveLiquidityQuoteParam = {
   positionAddress: Address;
   liquidity: u64;
-  refresh?: boolean;
+  refresh: true;
   slippageTolerance?: Percentage;
 };
 
