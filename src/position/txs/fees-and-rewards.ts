@@ -35,7 +35,7 @@ export async function getMultipleCollectFeesAndRewardsTx(
 
     const whirlpool = await dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      return null;
+      continue;
     }
 
     const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
