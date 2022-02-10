@@ -35,7 +35,7 @@ export type PoolRewardInfo = {
 
 export type UserPositionData = {
   address: PublicKey;
-  whirlpool: PublicKey;
+  poolAddress: PublicKey;
   positionMint: PublicKey;
   liquidity: u64;
   tickLowerIndex: number;

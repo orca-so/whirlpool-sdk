@@ -82,7 +82,7 @@ export async function convertPositionDataToUserPositionData(
 
     result[positionId] = {
       address: toPubKey(address),
-      whirlpool: position.whirlpool,
+      poolAddress: position.whirlpool,
       positionMint: position.positionMint,
       liquidity: position.liquidity,
       tickLowerIndex: position.tickLowerIndex,
