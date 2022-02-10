@@ -6,7 +6,7 @@ export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
     case OrcaNetwork.MAINNET:
       throw new Error("TODO");
     case OrcaNetwork.DEVNET:
-      return new PublicKey("2GMAtsznwuTUKeD8rFjy5prMr1zKAHrJNq5TNCwSKmpx");
+      return new PublicKey("7ZCKtGzzNw4F2qJUm3muJEtJuUD9892YAEZqq3cmZ5QV");
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }
@@ -17,7 +17,7 @@ export function getWhirlpoolProgramId(network: OrcaNetwork): PublicKey {
     case OrcaNetwork.MAINNET:
       throw new Error("TODO");
     case OrcaNetwork.DEVNET:
-      return new PublicKey("123aHGsUDPaH5tLM8HFZMeMjHgJJXPq9eSEk32syDw6k");
+      return new PublicKey("6cnzkt2ooxusZ2CErhcggzkTW12LjPdZkN8jB9TAGaTj");
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }
