@@ -1,7 +1,9 @@
 import { WhirlpoolRewardInfoData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
+import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import { Percentage } from "../../utils/public/percentage";
+import { toPubKey } from "../address";
 
 export class PoolUtil {
   private constructor() {}
@@ -31,9 +33,9 @@ export class PoolUtil {
     return Percentage.fromFraction(account.protocolFeeRate, 1e4); // TODO
   }
 
-  public static orderMints(mintX: PublicKey, mintY: PublicKey): [PublicKey, PublicKey] {
+  public static orderMints(mintX: Address, mintY: Address): [Address, Address] {
     let mintA, mintB;
-    if (Buffer.compare(mintX.toBuffer(), mintY.toBuffer()) < 0) {
+    if (Buffer.compare(toPubKey(mintX).toBuffer(), toPubKey(mintY).toBuffer()) < 0) {
       mintA = mintX;
       mintB = mintY;
     } else {

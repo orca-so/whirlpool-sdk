@@ -81,12 +81,12 @@ export class OrcaPool {
    * @returns
    */
   public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
-    // TODO: Ensure that mints are ordered before call. use PoolUtil.orderMints
+    const [_tokenMintA, _tokenMintB] = PoolUtil.orderMints(tokenMintA, tokenMintB);
     return getWhirlpoolPda(
       this.dal.programId,
       this.dal.whirlpoolsConfig,
-      toPubKey(tokenMintA),
-      toPubKey(tokenMintB),
+      toPubKey(_tokenMintA),
+      toPubKey(_tokenMintB),
       stable ? TickSpacing.Stable : TickSpacing.Standard
     );
   }
