@@ -184,7 +184,6 @@ describe("swap", () => {
       swapDirection: SwapDirection.BtoA,
       amountSpecified: AmountSpecified.Input,
       feeRate: PoolUtil.getFeeRate(whirlpool),
-      slippageTolerance: Percentage.fromFraction(25, 1000), // 2.5% just to give enough room
       fetchTick,
       getNextInitializedTickIndex,
     };

@@ -26,7 +26,7 @@ describe("Add liquidity", () => {
     const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
-    const { tokenMintA, whirlpool } = await initPool(orcaAdmin, provider);
+    const { tokenMintA, poolAddress } = await initPool(orcaAdmin, provider);
 
     // initialize client
     const client = new OrcaWhirlpoolClient({
@@ -41,7 +41,7 @@ describe("Add liquidity", () => {
     const quote = await client.pool.getOpenPositionQuote({
       tickLowerIndex: -128,
       tickUpperIndex: 128,
-      poolAddress: whirlpool,
+      poolAddress,
       tokenMint: tokenMintA,
       tokenAmount: new BN("100000000"),
       slippageTolerance: zeroSlippage,

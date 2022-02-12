@@ -49,6 +49,7 @@ import {
   InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
+import { adjustForSlippage, adjustPriceForSlippage } from "../utils/whirlpool/position-util";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -325,7 +326,7 @@ export class OrcaPool {
   public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder | null> {
     const {
       provider,
-      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput, poolAddress },
+      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress },
     } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -362,9 +363,9 @@ export class OrcaPool {
     txBuilder.addInstruction(
       client
         .swapTx({
-          amount: fixedOutput ? amountOut : amountIn,
+          amount: fixedInput ? amountOut : amountIn,
           sqrtPriceLimit: sqrtPriceLimitX64,
-          amountSpecifiedIsInput: !fixedOutput,
+          amountSpecifiedIsInput: !fixedInput,
           aToB,
           whirlpool: toPubKey(poolAddress),
           tokenAuthority: provider.wallet.publicKey,
@@ -518,7 +519,7 @@ export class OrcaPool {
       poolAddress,
       tokenMint,
       tokenAmount,
-      isOutput,
+      isInput,
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
@@ -527,6 +528,12 @@ export class OrcaPool {
     if (!whirlpool) {
       return null;
     }
+
+    const swapDirection =
+      toPubKey(tokenMint).equals(whirlpool.tokenMintA) === isInput
+        ? SwapDirection.AtoB
+        : SwapDirection.BtoA;
+    const amountSpecified = isInput ? AmountSpecified.Input : AmountSpecified.Output;
 
     const fetchTickArray = async (tickIndex: number) => {
       const tickArray = await this.dal.getTickArray(
@@ -546,14 +553,10 @@ export class OrcaPool {
       const tickArray = await fetchTickArray(tickIndex);
       return TickUtil.getTick(tickArray, tickIndex, whirlpool.tickSpacing);
     };
-
-    const swapDirection =
-      tokenMint === whirlpool.tokenMintA && isOutput ? SwapDirection.BtoA : SwapDirection.AtoB;
     const swapSimulator = new SwapSimulator({
       swapDirection,
-      amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
+      amountSpecified,
       feeRate: PoolUtil.getFeeRate(whirlpool),
-      slippageTolerance,
       fetchTick,
       getNextInitializedTickIndex: async (
         currentTickIndex: number,
@@ -585,14 +588,14 @@ export class OrcaPool {
             nextInitializedTickIndex = temp;
           } else {
             let nextTick;
-            if (swapDirection == SwapDirection.AtoB) {
+            if (swapDirection === SwapDirection.AtoB) {
               nextTick = currentTickArray.startTickIndex - 1;
             } else {
-              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing - 1;
+              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
             }
 
             if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
-              nextInitializedTickIndex = nextTick;
+              throw Error("Crossed the maximum number of tick arrays");
             } else {
               currentTickIndex = nextTick;
               tickArraysCrossed++;
@@ -607,7 +610,7 @@ export class OrcaPool {
       },
     });
 
-    const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
+    const { amountIn, amountOut, sqrtPriceAfterSwapX64 } = await swapSimulator.simulateSwap({
       amount: tokenAmount,
       currentSqrtPriceX64: whirlpool.sqrtPrice,
       currentTickIndex: whirlpool.tickCurrentIndex,
@@ -615,13 +618,19 @@ export class OrcaPool {
       tickSpacing: whirlpool.tickSpacing,
     });
 
+    const sqrtPriceLimitX64 = adjustPriceForSlippage(
+      sqrtPriceAfterSwapX64,
+      slippageTolerance,
+      swapDirection === SwapDirection.BtoA
+    );
+
     return {
       poolAddress,
       sqrtPriceLimitX64,
       amountIn,
       amountOut,
       aToB: swapDirection === SwapDirection.AtoB,
-      fixedOutput: isOutput,
+      fixedInput: isInput,
     };
   }
 }

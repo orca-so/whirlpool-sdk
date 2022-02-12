@@ -69,7 +69,7 @@ export type SwapQuoteParam = {
   poolAddress: Address;
   tokenMint: Address;
   tokenAmount: u64;
-  isOutput: false;
+  isInput: boolean;
   slippageTolerance?: Percentage;
   refresh: boolean;
 };
@@ -80,7 +80,7 @@ export type SwapQuote = {
   amountIn: u64;
   amountOut: u64;
   aToB: boolean;
-  fixedOutput: boolean;
+  fixedInput: boolean;
 };
 
 /*** Type Guards ***/

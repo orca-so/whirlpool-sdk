@@ -133,9 +133,10 @@ export class TickUtil {
 
     const increment = searchDirection === TickSearchDirection.Right ? 1 : -1;
 
-    let stepInitializedTickArrayIndex = TickSearchDirection.Right
-      ? currentTickArrayIndex + increment
-      : currentTickArrayIndex;
+    let stepInitializedTickArrayIndex =
+      searchDirection === TickSearchDirection.Right
+        ? currentTickArrayIndex + increment
+        : currentTickArrayIndex;
     while (
       stepInitializedTickArrayIndex >= 0 &&
       stepInitializedTickArrayIndex < account.ticks.length
@@ -159,9 +160,7 @@ export class TickUtil {
     tickIndex: number,
     tickSpacing: TickSpacing
   ): number {
-    return startTickIndex >= 0
-      ? Math.floor((tickIndex - startTickIndex) / tickSpacing)
-      : Math.floor((tickIndex + startTickIndex) / tickSpacing);
+    return Math.floor((tickIndex - startTickIndex) / tickSpacing);
   }
 
   private static tickArrayIndexToTickIndex(
@@ -169,8 +168,6 @@ export class TickUtil {
     tickArrayIndex: number,
     tickSpacing: TickSpacing
   ): number {
-    return startTickIndex >= 0
-      ? startTickIndex + tickArrayIndex * tickSpacing
-      : startTickIndex - tickArrayIndex * tickSpacing;
+    return startTickIndex + tickArrayIndex * tickSpacing;
   }
 }

@@ -1,7 +1,7 @@
 import { BN } from "@project-serum/anchor";
 import { AmountSpecified, SwapDirection } from "../../pool/quotes/swap-quoter";
 import { Percentage } from "../public";
-import { shiftRightRoundUp } from "../web3/math-utils";
+import { divRoundUp, shiftRightRoundUp } from "../web3/math-utils";
 import {
   getLowerSqrtPriceFromTokenA,
   getLowerSqrtPriceFromTokenB,
@@ -45,6 +45,18 @@ export function adjustForSlippage(
   }
 }
 
+export function adjustPriceForSlippage(
+  n: BN,
+  { numerator, denominator }: Percentage,
+  adjustUp: boolean
+): BN {
+  if (adjustUp) {
+    return n.mul(denominator.add(numerator).sqr()).div(denominator.sqr());
+  } else {
+    return n.mul(denominator.sqr()).div(denominator.add(numerator).sqr());
+  }
+}
+
 export function getLiquidityFromTokenA(
   amount: BN,
   sqrtPriceLowerX64: BN,
@@ -71,7 +83,7 @@ export function getLiquidityFromTokenB(
   const numerator = amount.shln(64);
   const denominator = sqrtPriceUpperX64.sub(sqrtPriceLowerX64);
   if (roundUp) {
-    return numerator.divRound(denominator);
+    return divRoundUp(numerator, denominator);
   } else {
     return numerator.div(denominator);
   }
@@ -96,7 +108,7 @@ export function getTokenAFromLiquidity(
   const numerator = liquidity.mul(sqrtPriceUpperX64.sub(sqrtPriceLowerX64)).shln(64);
   const denominator = sqrtPriceUpperX64.mul(sqrtPriceLowerX64);
   if (roundUp) {
-    return numerator.divRound(denominator);
+    return divRoundUp(numerator, denominator);
   } else {
     return numerator.div(denominator);
   }
@@ -173,11 +185,11 @@ export function getNextSqrtPrice(
   amountSpecified: AmountSpecified,
   swapDirection: SwapDirection
 ) {
-  if (amountSpecified == AmountSpecified.Input && swapDirection == SwapDirection.AtoB) {
+  if (amountSpecified === AmountSpecified.Input && swapDirection === SwapDirection.AtoB) {
     return getLowerSqrtPriceFromTokenA(amount, liquidity, sqrtPriceX64);
-  } else if (amountSpecified == AmountSpecified.Output && swapDirection == SwapDirection.BtoA) {
+  } else if (amountSpecified === AmountSpecified.Output && swapDirection === SwapDirection.BtoA) {
     return getUpperSqrtPriceFromTokenA(amount, liquidity, sqrtPriceX64);
-  } else if (amountSpecified == AmountSpecified.Input && swapDirection == SwapDirection.BtoA) {
+  } else if (amountSpecified === AmountSpecified.Input && swapDirection === SwapDirection.BtoA) {
     return getUpperSqrtPriceFromTokenB(amount, liquidity, sqrtPriceX64);
   } else {
     return getLowerSqrtPriceFromTokenB(amount, liquidity, sqrtPriceX64);

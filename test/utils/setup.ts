@@ -49,7 +49,7 @@ export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider) {
 
   await tx.buildAndExecute();
   return {
-    whirlpool: address,
+    poolAddress: address,
     tokenMintA,
     tokenMintB,
   };
@@ -58,15 +58,14 @@ export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider) {
 export async function initPoolWithLiquidity(
   client: OrcaWhirlpoolClient,
   orcaAdmin: OrcaAdmin,
-  provider: Provider,
-  programId: PublicKey
+  provider: Provider
 ) {
-  const { tokenMintA, tokenMintB, whirlpool } = await initPool(orcaAdmin, provider);
+  const { tokenMintA, tokenMintB, poolAddress } = await initPool(orcaAdmin, provider);
 
   const quote = await client.pool.getOpenPositionQuote({
     tickLowerIndex: -128,
     tickUpperIndex: 128,
-    poolAddress: whirlpool,
+    poolAddress,
     tokenMint: tokenMintA,
     tokenAmount: new BN("100000000"),
     slippageTolerance: zeroSlippage,
@@ -93,7 +92,7 @@ export async function initPoolWithLiquidity(
   await tx.buildAndExecute();
 
   return {
-    whirlpool,
+    poolAddress,
     tokenMintA,
     tokenMintB,
     positionMint: mint,
