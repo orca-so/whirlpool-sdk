@@ -120,7 +120,8 @@ export class OrcaPool {
       positionMintKeypair.publicKey
     );
 
-    const txBuilder = new TransactionBuilder(ctx.provider);
+    const txBuilder = new TransactionBuilder(provider);
+    const preTxBuilder = new TransactionBuilder(provider);
 
     const positionIx = client
       .openPositionTx({
@@ -175,7 +176,7 @@ export class OrcaPool {
           funder: provider.wallet.publicKey,
         })
         .compressIx(false);
-      txBuilder.addInstruction(tickArrayIx);
+      preTxBuilder.addInstruction(tickArrayIx);
     }
 
     if (
@@ -190,7 +191,7 @@ export class OrcaPool {
           funder: provider.wallet.publicKey,
         })
         .compressIx(false);
-      txBuilder.addInstruction(tickArrayIx);
+      preTxBuilder.addInstruction(tickArrayIx);
     }
 
     const liquidityIx = client
@@ -214,7 +215,7 @@ export class OrcaPool {
 
     return {
       mint: positionMintKeypair.publicKey,
-      tx: new MultiTransactionBuilder(provider, [txBuilder]),
+      tx: new MultiTransactionBuilder(provider, [preTxBuilder, txBuilder]),
     };
   }
 

@@ -92,7 +92,7 @@ export class SwapSimulator {
       currentSqrtPriceX64,
     } = input;
 
-    invariant(specifiedAmountLeft.eq(ZERO), "amount must be nonzero");
+    invariant(!specifiedAmountLeft.eq(ZERO), "amount must be nonzero");
 
     const { tickSpacing } = input;
 
