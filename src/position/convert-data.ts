@@ -9,7 +9,8 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
-import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
+import { ONE } from "../utils/web3/math-utils";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,
@@ -66,8 +67,6 @@ export async function convertPositionDataToUserPositionData(
       console.error(`error - decimals not found`);
       continue;
     }
-    const feeOwedA = DecimalUtil.fromU64(feesQuote.feeOwedA, decimalsA);
-    const feeOwedB = DecimalUtil.fromU64(feesQuote.feeOwedB, decimalsB);
 
     const rewardsQuote = getCollectRewardsQuoteInternal(quoteParam);
     const rewards: UserPositionRewardInfo[] = [];
@@ -89,10 +88,10 @@ export async function convertPositionDataToUserPositionData(
       liquidity: position.liquidity,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
-      priceLower: new Decimal(1.0001).pow(position.tickLowerIndex),
-      priceUpper: new Decimal(1.0001).pow(position.tickUpperIndex),
-      feeOwedA,
-      feeOwedB,
+      priceLower: tickIndexToSqrtPriceX64(position.tickLowerIndex),
+      priceUpper: tickIndexToSqrtPriceX64(position.tickUpperIndex),
+      feeOwedA: feesQuote.feeOwedA,
+      feeOwedB: feesQuote.feeOwedB,
       rewards,
     };
   }
@@ -108,7 +107,7 @@ async function getUserPositions(
   const potentialPositionAddresses: Address[] = [];
   const userTokens = await dal.listUserTokens(walletAddress, refresh);
   userTokens.forEach(({ amount, decimals, mint }) => {
-    if (amount === "1" && decimals === 0 && !!mint) {
+    if (amount?.eq(ONE) && decimals === 0 && !!mint) {
       potentialPositionAddresses.push(getPositionPda(dal.programId, toPubKey(mint)).publicKey);
     }
   });

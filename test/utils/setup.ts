@@ -76,8 +76,6 @@ export async function initPoolWithLiquidity(
     throw Error("No pool found");
   }
 
-  console.log(quote.maxTokenA.toString(), quote.maxTokenB.toString());
-
   const openTx = await client.pool.getOpenPositionTx({
     provider,
     quote,

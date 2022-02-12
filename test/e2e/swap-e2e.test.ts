@@ -1,9 +1,6 @@
-import { getTickArrayPda, getWhirlpoolPda, TickSpacing } from "@orca-so/whirlpool-client-sdk";
-import Decimal from "@orca-so/whirlpool-client-sdk/node_modules/decimal.js";
 import { BN, Provider } from "@project-serum/anchor";
-import { Keypair, PublicKey } from "@solana/web3.js";
-import { assert } from "console";
-import { getInitWhirlpoolConfigsTx, OrcaNetwork, OrcaWhirlpoolClient, Percentage } from "../../src";
+import { PublicKey } from "@solana/web3.js";
+import { OrcaNetwork, OrcaWhirlpoolClient, Percentage, PoolData, SwapQuote } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
@@ -51,23 +48,28 @@ describe("Swap", () => {
     }
 
     if (!quote) {
-      throw Error("pool not found");
+      throw new Error("pool not found");
     }
 
-    console.log("sqrtPriceLimit", quote.sqrtPriceLimitX64.toString());
-    await printPoolValues(client, poolAddress);
-    console.log("amountIn", quote.amountIn.toString());
-    console.log("amountOut", quote.amountOut.toString());
+    const oldPool = await client.getPool(poolAddress, true);
+    if (!oldPool) {
+      throw new Error("pool not found");
+    }
 
     const tx = await client.pool.getSwapTx({ provider, quote });
 
     if (!tx) {
-      throw Error("pool not found");
+      throw new Error("pool not found");
     }
 
     await tx.buildAndExecute();
 
-    await printPoolValues(client, poolAddress);
+    const pool = await client.getPool(poolAddress, true);
+    if (!pool) {
+      throw new Error("pool not found");
+    }
+
+    expectSwapOutput(pool, oldPool, quote);
   });
 
   it("swaps right", async () => {
@@ -105,10 +107,10 @@ describe("Swap", () => {
       throw Error("pool not found");
     }
 
-    console.log("sqrtPriceLimit", quote.sqrtPriceLimitX64.toString());
-    await printPoolValues(client, poolAddress);
-    console.log("amountIn", quote.amountIn.toString());
-    console.log("amountOut", quote.amountOut.toString());
+    const oldPool = await client.getPool(poolAddress, true);
+    if (!oldPool) {
+      throw new Error("pool not found");
+    }
 
     const tx = await client.pool.getSwapTx({ provider, quote });
 
@@ -117,7 +119,13 @@ describe("Swap", () => {
     }
 
     await tx.buildAndExecute();
-    await printPoolValues(client, poolAddress);
+
+    const pool = await client.getPool(poolAddress, true);
+    if (!pool) {
+      throw new Error("pool not found");
+    }
+
+    expectSwapOutput(pool, oldPool, quote);
   });
 
   it("swaps left with output", async () => {
@@ -155,10 +163,10 @@ describe("Swap", () => {
       throw Error("pool not found");
     }
 
-    await printPoolValues(client, poolAddress);
-    console.log("sqrtPriceLimit", quote.sqrtPriceLimitX64.toString());
-    console.log("amountIn", quote.amountIn.toString());
-    console.log("amountOut", quote.amountOut.toString());
+    const oldPool = await client.getPool(poolAddress, true);
+    if (!oldPool) {
+      throw new Error("pool not found");
+    }
 
     const tx = await client.pool.getSwapTx({ provider, quote });
 
@@ -167,7 +175,13 @@ describe("Swap", () => {
     }
 
     await tx.buildAndExecute();
-    await printPoolValues(client, poolAddress);
+
+    const pool = await client.getPool(poolAddress, true);
+    if (!pool) {
+      throw new Error("pool not found");
+    }
+
+    expectSwapOutput(pool, oldPool, quote);
   });
 
   it("swaps right with output", async () => {
@@ -205,10 +219,10 @@ describe("Swap", () => {
       throw Error("pool not found");
     }
 
-    console.log("sqrtPriceLimit", quote.sqrtPriceLimitX64.toString());
-    console.log("amountIn", quote.amountIn.toString());
-    console.log("amountOut", quote.amountOut.toString());
-    await printPoolValues(client, poolAddress);
+    const oldPool = await client.getPool(poolAddress, true);
+    if (!oldPool) {
+      throw new Error("pool not found");
+    }
 
     const tx = await client.pool.getSwapTx({ provider, quote });
 
@@ -217,13 +231,23 @@ describe("Swap", () => {
     }
 
     await tx.buildAndExecute();
-    await printPoolValues(client, poolAddress);
+
+    const pool = await client.getPool(poolAddress, true);
+    if (!pool) {
+      throw new Error("pool not found");
+    }
+
+    expectSwapOutput(pool, oldPool, quote);
   });
 });
 
-async function printPoolValues(client: OrcaWhirlpoolClient, poolAddress: PublicKey) {
-  const pool = await client.getPool(poolAddress, true);
-  console.log("sqrtPrice", pool?.sqrtPrice.toString());
-  console.log("tokenVaultAmountA", pool?.tokenVaultAmountA);
-  console.log("tokenVaultAmountB", pool?.tokenVaultAmountB);
+function expectSwapOutput(pool: PoolData, oldPool: PoolData, quote: SwapQuote) {
+  expect(pool.sqrtPrice.eq(quote.sqrtPriceLimitX64));
+  if (quote.aToB === quote.fixedInput) {
+    expect(oldPool.tokenVaultAmountA.add(quote.amountIn).eq(pool.tokenVaultAmountA));
+    expect(oldPool.tokenVaultAmountB.sub(quote.amountOut).eq(pool.tokenVaultAmountB));
+  } else {
+    expect(oldPool.tokenVaultAmountB.add(quote.amountIn).eq(pool.tokenVaultAmountB));
+    expect(oldPool.tokenVaultAmountA.sub(quote.amountOut).eq(pool.tokenVaultAmountA));
+  }
 }

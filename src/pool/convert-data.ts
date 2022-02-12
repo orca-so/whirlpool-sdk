@@ -7,6 +7,7 @@ import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
 import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
+import { ZERO } from "../utils/web3/math-utils";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,
@@ -62,18 +63,16 @@ export async function convertWhirlpoolDataToPoolData(
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
-      let amount = undefined;
-      let decimals = undefined;
+      let amount = ZERO;
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
-        amount = (await dal.getTokenInfo(vault, false))?.amount;
-        decimals = (await dal.getMintInfo(mint, false))?.decimals;
+        amount = (await dal.getTokenInfo(vault, false))?.amount || ZERO;
       }
 
-      let vaultAmount = new Decimal(0);
-      if (amount && decimals !== undefined) {
-        vaultAmount = DecimalUtil.fromU64(amount, decimals);
-      }
-      rewards.push({ mint, vaultAmount, emissionsPerSecond: fromX64(emissionsPerSecondX64) });
+      rewards.push({
+        mint,
+        vaultAmount: amount,
+        emissionsPerSecond: fromX64(emissionsPerSecondX64),
+      });
     }
 
     result[poolId] = {
@@ -87,10 +86,10 @@ export async function convertWhirlpoolDataToPoolData(
       sqrtPrice: pool.sqrtPrice,
       tickCurrentIndex: pool.tickCurrentIndex,
       price: fromX64(pool.sqrtPrice).pow(2),
-      protocolFeeOwedA: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
-      protocolFeeOwedB: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
-      tokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),
-      tokenVaultAmountB: DecimalUtil.fromU64(amountB, decimalsB),
+      protocolFeeOwedA: pool.protocolFeeOwedA,
+      protocolFeeOwedB: pool.protocolFeeOwedA,
+      tokenVaultAmountA: amountA,
+      tokenVaultAmountB: amountB,
       rewards,
       tokenDecimalsA: decimalsA,
       tokenDecimalsB: decimalsB,

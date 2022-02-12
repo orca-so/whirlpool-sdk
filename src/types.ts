@@ -12,14 +12,14 @@ export type PoolData = {
   stable: boolean;
   feeRate: Decimal;
   protocolFeeRate: Decimal;
-  liquidity: u64;
+  liquidity: BN;
   sqrtPrice: BN;
   tickCurrentIndex: number;
   price: Decimal;
-  protocolFeeOwedA: Decimal;
-  protocolFeeOwedB: Decimal;
-  tokenVaultAmountA: Decimal;
-  tokenVaultAmountB: Decimal;
+  protocolFeeOwedA: BN;
+  protocolFeeOwedB: BN;
+  tokenVaultAmountA: BN;
+  tokenVaultAmountB: BN;
   rewards: PoolRewardInfo[];
   tokenDecimalsA: number;
   tokenDecimalsB: number;
@@ -27,7 +27,7 @@ export type PoolData = {
 
 export type PoolRewardInfo = {
   mint: PublicKey;
-  vaultAmount: Decimal;
+  vaultAmount: BN;
   emissionsPerSecond: Decimal;
 };
 
@@ -37,13 +37,13 @@ export type UserPositionData = {
   address: PublicKey;
   poolAddress: PublicKey;
   positionMint: PublicKey;
-  liquidity: u64;
+  liquidity: BN;
   tickLowerIndex: number;
   tickUpperIndex: number;
-  priceLower: Decimal;
-  priceUpper: Decimal;
-  feeOwedA: Decimal;
-  feeOwedB: Decimal;
+  priceLower: BN;
+  priceUpper: BN;
+  feeOwedA: BN;
+  feeOwedB: BN;
   rewards: UserPositionRewardInfo[];
 };
 
@@ -56,7 +56,7 @@ export type UserPositionRewardInfo = {
 
 export type UserToken = {
   address: PublicKey;
-  amount?: string;
+  amount?: BN;
   decimals?: number;
   mint?: string;
 };
