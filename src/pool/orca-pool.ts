@@ -363,9 +363,9 @@ export class OrcaPool {
     txBuilder.addInstruction(
       client
         .swapTx({
-          amount: fixedInput ? amountOut : amountIn,
+          amount: fixedInput ? amountIn : amountOut,
           sqrtPriceLimit: sqrtPriceLimitX64,
-          amountSpecifiedIsInput: !fixedInput,
+          amountSpecifiedIsInput: fixedInput,
           aToB,
           whirlpool: toPubKey(poolAddress),
           tokenAuthority: provider.wallet.publicKey,
