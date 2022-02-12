@@ -56,7 +56,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx({ provider, quote });
+    const tx = await client.pool.getSwapTx(provider, quote);
 
     if (!tx) {
       throw new Error("pool not found");
@@ -112,7 +112,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx({ provider, quote });
+    const tx = await client.pool.getSwapTx(provider, quote);
 
     if (!tx) {
       throw Error("pool not found");
@@ -168,7 +168,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx({ provider, quote });
+    const tx = await client.pool.getSwapTx(provider, quote);
 
     if (!tx) {
       throw Error("pool not found");
@@ -224,7 +224,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx({ provider, quote });
+    const tx = await client.pool.getSwapTx(provider, quote);
 
     if (!tx) {
       throw Error("pool not found");

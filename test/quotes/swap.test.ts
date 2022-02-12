@@ -102,33 +102,6 @@ describe("swap", () => {
       return TickUtil.getTick(await fetchTickArray(tickIndex), tickIndex, whirlpool.tickSpacing);
     }
 
-    async function getPrevInitializedTickIndex(
-      currentTickIndex: number,
-      maxCrossed: boolean
-    ): Promise<number> {
-      let prevInitializedTickIndex: number | undefined = undefined;
-
-      while (!prevInitializedTickIndex) {
-        const currentTickArray = await fetchTickArray(currentTickIndex);
-
-        const temp = TickUtil.getPrevInitializedTickIndex(
-          currentTickArray,
-          currentTickIndex,
-          whirlpool.tickSpacing
-        );
-
-        if (temp) {
-          prevInitializedTickIndex = temp;
-        } else if (maxCrossed) {
-          prevInitializedTickIndex = currentTickArray.startTickIndex - 1;
-        } else {
-          currentTickIndex = currentTickArray.startTickIndex - 1;
-        }
-      }
-
-      return prevInitializedTickIndex;
-    }
-
     async function getNextInitializedTickIndex(
       currentTickIndex: number,
       tickArraysCrossed: number,

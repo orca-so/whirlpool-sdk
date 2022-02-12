@@ -72,9 +72,6 @@ type SwapStepSimulationOutput = {
   hasReachedNextTick: boolean;
 };
 
-const MIN_SQRT_PRICE_X64 = new BN(MIN_SQRT_PRICE);
-const MAX_SQRT_PRICE_X64 = new BN(MAX_SQRT_PRICE);
-
 export class SwapSimulator {
   public constructor(private readonly config: SwapSimulatorConfig) {}
 
@@ -227,29 +224,6 @@ function calculateFeesFromAmount(amount: u64, feeRate: Percentage): BN {
   return divRoundUp(amount.mul(feeRate.numerator), feeRate.denominator.sub(feeRate.numerator));
 }
 
-function adjustForSlippage(
-  sqrtPriceX64: BN,
-  slippageTolerance: Percentage,
-  swapDirection: SwapDirection
-) {
-  const numeratorSquared = slippageTolerance.numerator.pow(new BN(2));
-  if (swapDirection == SwapDirection.AtoB) {
-    return BN.max(
-      sqrtPriceX64
-        .mul(slippageTolerance.denominator.sub(numeratorSquared))
-        .div(slippageTolerance.denominator),
-      MIN_SQRT_PRICE_X64
-    );
-  } else {
-    return BN.min(
-      sqrtPriceX64
-        .mul(slippageTolerance.denominator.add(numeratorSquared))
-        .div(slippageTolerance.denominator),
-      MAX_SQRT_PRICE_X64
-    );
-  }
-}
-
 function calculateNewLiquidity(liquidity: BN, nextLiquidityNet: BN, swapDirection: SwapDirection) {
   if (swapDirection == SwapDirection.AtoB) {
     nextLiquidityNet = nextLiquidityNet.neg();
@@ -267,18 +241,5 @@ function resolveTokenAmounts(
     return [specifiedTokenAmount, otherTokenAmount];
   } else {
     return [otherTokenAmount, specifiedTokenAmount];
-  }
-}
-
-function getNextSqrtPrices(
-  sqrtPriceLimitX64: BN,
-  nextInitializedTickIndex: number,
-  swapDirection: SwapDirection
-): [BN, BN] {
-  const nextTickPrice = tickIndexToSqrtPriceX64(nextInitializedTickIndex);
-  if (swapDirection == SwapDirection.AtoB) {
-    return [nextTickPrice, BN.max(sqrtPriceLimitX64, nextTickPrice)];
-  } else {
-    return [nextTickPrice, BN.min(sqrtPriceLimitX64, nextTickPrice)];
   }
 }

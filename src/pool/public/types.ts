@@ -3,23 +3,6 @@ import { Address, BN, Provider } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { Percentage } from "../../utils/public/percentage";
 
-/*** Transactions ***/
-
-export type OpenPositionTxParam = {
-  provider: Provider;
-  quote: OpenPositionQuote;
-};
-
-export type ClosePositionTxParam = {
-  provider: Provider;
-  quote: ClosePositionQuote;
-};
-
-export type SwapTxParam = {
-  provider: Provider;
-  quote: SwapQuote;
-};
-
 /*** Quotes ***/
 
 export type OpenPositionQuoteParam = OpenPositionQuoteByPrice | OpenPositionQuoteByTickIndex;
