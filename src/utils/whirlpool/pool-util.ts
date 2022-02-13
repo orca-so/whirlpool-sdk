@@ -14,14 +14,14 @@ export class PoolUtil {
     );
   }
 
-  public static getFeeRate(account: WhirlpoolData): Percentage {
+  public static getFeeRate(feeRate: BN): Percentage {
     /**
      * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L9-L11
      * // Stored as hundredths of a basis point
      * // u16::MAX corresponds to ~6.5%
      * pub fee_rate: u16,
      */
-    return Percentage.fromFraction(account.feeRate, 1e6); // TODO
+    return Percentage.fromFraction(feeRate, 1e6); // TODO
   }
 
   public static getProtocolFeeRate(account: WhirlpoolData): Percentage {

@@ -25,12 +25,7 @@ import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
-import {
-  AmountSpecified,
-  MAX_TICK_ARRAY_CROSSINGS,
-  SwapDirection,
-  SwapSimulator,
-} from "./quotes/swap-quoter";
+import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 import {
   TickSpacing,
   PDA,
@@ -40,13 +35,12 @@ import {
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
   toX64,
-  TICK_ARRAY_SIZE,
   WhirlpoolClient,
   WhirlpoolContext,
   InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
-import { adjustForSlippage, adjustPriceForSlippage } from "../utils/whirlpool/position-util";
+import { adjustPriceForSlippage } from "../utils/whirlpool/position-util";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -532,88 +526,24 @@ export class OrcaPool {
         : SwapDirection.BtoA;
     const amountSpecified = isInput ? AmountSpecified.Input : AmountSpecified.Output;
 
-    const fetchTickArray = async (tickIndex: number) => {
-      const tickArray = await this.dal.getTickArray(
-        TickUtil.getPdaWithTickIndex(
-          tickIndex,
-          whirlpool.tickSpacing,
-          poolAddress,
-          this.dal.programId
-        ).publicKey,
-        refresh || false
-      );
-      invariant(!!tickArray, "tickArray is null");
-      return tickArray;
-    };
+    const swapSimulator = new SwapSimulator();
 
-    const fetchTick = async (tickIndex: number) => {
-      const tickArray = await fetchTickArray(tickIndex);
-      return TickUtil.getTick(tickArray, tickIndex, whirlpool.tickSpacing);
-    };
-    const swapSimulator = new SwapSimulator({
-      swapDirection,
-      amountSpecified,
-      feeRate: PoolUtil.getFeeRate(whirlpool),
-      fetchTick,
-      getNextInitializedTickIndex: async (
-        currentTickIndex: number,
-        tickArraysCrossed: number,
-        swapDirection: SwapDirection,
-        tickSpacing: number
-      ) => {
-        let nextInitializedTickIndex: number | undefined = undefined;
-
-        while (!nextInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(currentTickIndex);
-
-          let temp;
-          if (swapDirection == SwapDirection.AtoB) {
-            temp = TickUtil.getPrevInitializedTickIndex(
-              currentTickArray,
-              currentTickIndex,
-              tickSpacing
-            );
-          } else {
-            temp = TickUtil.getNextInitializedTickIndex(
-              currentTickArray,
-              currentTickIndex,
-              tickSpacing
-            );
-          }
-
-          if (temp) {
-            nextInitializedTickIndex = temp;
-          } else {
-            let nextTick;
-            if (swapDirection === SwapDirection.AtoB) {
-              nextTick = currentTickArray.startTickIndex - 1;
-            } else {
-              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
-            }
-
-            if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
-              throw Error("Crossed the maximum number of tick arrays");
-            } else {
-              currentTickIndex = nextTick;
-              tickArraysCrossed++;
-            }
-          }
-        }
-
-        return {
-          tickIndex: nextInitializedTickIndex,
-          tickArraysCrossed,
-        };
+    const { amountIn, amountOut, sqrtPriceAfterSwapX64 } = await swapSimulator.simulateSwap(
+      {
+        refresh,
+        dal: this.dal,
+        poolAddress,
+        whirlpoolData: whirlpool,
+        amountSpecified,
+        swapDirection,
       },
-    });
-
-    const { amountIn, amountOut, sqrtPriceAfterSwapX64 } = await swapSimulator.simulateSwap({
-      amount: tokenAmount,
-      currentSqrtPriceX64: whirlpool.sqrtPrice,
-      currentTickIndex: whirlpool.tickCurrentIndex,
-      currentLiquidity: whirlpool.liquidity,
-      tickSpacing: whirlpool.tickSpacing,
-    });
+      {
+        amount: tokenAmount,
+        currentSqrtPriceX64: whirlpool.sqrtPrice,
+        currentTickIndex: whirlpool.tickCurrentIndex,
+        currentLiquidity: whirlpool.liquidity,
+      }
+    );
 
     const sqrtPriceLimitX64 = adjustPriceForSlippage(
       sqrtPriceAfterSwapX64,

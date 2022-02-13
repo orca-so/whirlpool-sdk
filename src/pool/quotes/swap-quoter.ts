@@ -3,17 +3,22 @@ import {
   MIN_SQRT_PRICE,
   MAX_SQRT_PRICE,
   tickIndexToSqrtPriceX64,
+  WhirlpoolData,
+  TICK_ARRAY_SIZE,
 } from "@orca-so/whirlpool-client-sdk";
-import { BN } from "@project-serum/anchor";
+import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
+import { OrcaDAL } from "../../dal/orca-dal";
 import { Percentage } from "../../utils/public/percentage";
 import { divRoundUp, ZERO } from "../../utils/web3/math-utils";
+import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import {
   getAmountFixedDelta,
   getAmountUnfixedDelta,
   getNextSqrtPrice,
 } from "../../utils/whirlpool/position-util";
+import { TickUtil } from "../../utils/whirlpool/tick-util";
 
 export const MAX_TICK_ARRAY_CROSSINGS = 2;
 
@@ -27,17 +32,13 @@ export enum AmountSpecified {
   Output = "Specified output amount",
 }
 
-export type SwapSimulatorConfig = {
-  swapDirection: SwapDirection;
+type SwapSimulationBaseInput = {
+  refresh: boolean;
+  dal: OrcaDAL;
+  poolAddress: Address;
+  whirlpoolData: WhirlpoolData;
   amountSpecified: AmountSpecified;
-  feeRate: Percentage;
-  fetchTick: (tickIndex: number) => Promise<TickData>;
-  getNextInitializedTickIndex: (
-    currentTickIndex: number,
-    tickArraysCrossed: number,
-    swapDirection: SwapDirection,
-    tickSpacing: number
-  ) => Promise<{ tickIndex: number; tickArraysCrossed: number }>;
+  swapDirection: SwapDirection;
 };
 
 type SwapSimulationInput = {
@@ -45,7 +46,6 @@ type SwapSimulationInput = {
   currentSqrtPriceX64: BN;
   currentTickIndex: number;
   currentLiquidity: BN;
-  tickSpacing: number;
 };
 
 type SwapSimulationOutput = {
@@ -60,7 +60,6 @@ type SwapStepSimulationInput = {
   liquidity: BN;
   amountRemaining: u64;
   tickArraysCrossed: number;
-  tickSpacing: number;
 };
 
 type SwapStepSimulationOutput = {
@@ -73,11 +72,14 @@ type SwapStepSimulationOutput = {
 };
 
 export class SwapSimulator {
-  public constructor(private readonly config: SwapSimulatorConfig) {}
+  public constructor() {}
 
   // ** METHODS **
-  public async simulateSwap(input: SwapSimulationInput): Promise<SwapSimulationOutput> {
-    const { swapDirection, amountSpecified, fetchTick } = this.config;
+  public async simulateSwap(
+    baseInput: SwapSimulationBaseInput,
+    input: SwapSimulationInput
+  ): Promise<SwapSimulationOutput> {
+    const { refresh, dal, poolAddress, whirlpoolData, amountSpecified, swapDirection } = baseInput;
 
     let {
       currentTickIndex,
@@ -88,21 +90,21 @@ export class SwapSimulator {
 
     invariant(!specifiedAmountLeft.eq(ZERO), "amount must be nonzero");
 
-    const { tickSpacing } = input;
-
     let otherAmountCalculated = ZERO;
 
     let tickArraysCrossed = 0;
 
     while (specifiedAmountLeft.gt(ZERO)) {
-      const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep({
-        sqrtPriceX64: currentSqrtPriceX64,
-        amountRemaining: specifiedAmountLeft,
-        tickIndex: currentTickIndex,
-        liquidity: currentLiquidity,
-        tickArraysCrossed,
-        tickSpacing,
-      });
+      const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
+        baseInput,
+        {
+          sqrtPriceX64: currentSqrtPriceX64,
+          amountRemaining: specifiedAmountLeft,
+          tickIndex: currentTickIndex,
+          liquidity: currentLiquidity,
+          tickArraysCrossed,
+        }
+      );
 
       const { input, output, nextSqrtPriceX64, nextTickIndex, hasReachedNextTick } =
         swapStepSimulationOutput;
@@ -117,7 +119,7 @@ export class SwapSimulator {
       otherAmountCalculated = otherAmountCalculated.add(otherAmount);
 
       if (hasReachedNextTick) {
-        const nextTick = await fetchTick(nextTickIndex);
+        const nextTick = await fetchTick(baseInput, nextTickIndex);
 
         currentLiquidity = calculateNewLiquidity(
           currentLiquidity,
@@ -144,14 +146,20 @@ export class SwapSimulator {
     };
   }
 
-  public async simulateSwapStep(input: SwapStepSimulationInput): Promise<SwapStepSimulationOutput> {
-    const { swapDirection, amountSpecified, feeRate, getNextInitializedTickIndex } = this.config;
+  public async simulateSwapStep(
+    baseInput: SwapSimulationBaseInput,
+    input: SwapStepSimulationInput
+  ): Promise<SwapStepSimulationOutput> {
+    const { whirlpoolData, amountSpecified, swapDirection } = baseInput;
 
-    const { amountRemaining, liquidity, sqrtPriceX64, tickIndex, tickArraysCrossed, tickSpacing } =
-      input;
+    const { feeRate } = whirlpoolData;
+
+    const feeRatePercentage = PoolUtil.getFeeRate(feeRate);
+
+    const { amountRemaining, liquidity, sqrtPriceX64, tickIndex, tickArraysCrossed } = input;
 
     const { tickIndex: nextTickIndex, tickArraysCrossed: tickArraysCrossedUpdate } =
-      await getNextInitializedTickIndex(tickIndex, tickArraysCrossed, swapDirection, tickSpacing);
+      await getNextInitializedTickIndex(baseInput, tickIndex, tickArraysCrossed);
 
     const targetSqrtPriceX64 = tickIndexToSqrtPriceX64(nextTickIndex);
 
@@ -165,7 +173,7 @@ export class SwapSimulator {
 
     let amountCalculated = amountRemaining;
     if (amountSpecified == AmountSpecified.Input) {
-      amountCalculated = calculateAmountAfterFees(amountRemaining, feeRate);
+      amountCalculated = calculateAmountAfterFees(amountRemaining, feeRatePercentage);
     }
 
     const nextSqrtPriceX64 = amountCalculated.gte(fixedDelta)
@@ -202,7 +210,7 @@ export class SwapSimulator {
     if (amountSpecified == AmountSpecified.Input && !hasReachedNextTick) {
       inputDelta = amountRemaining;
     } else {
-      inputDelta = inputDelta.add(calculateFeesFromAmount(inputDelta, feeRate));
+      inputDelta = inputDelta.add(calculateFeesFromAmount(inputDelta, feeRatePercentage));
     }
 
     return {
@@ -242,4 +250,73 @@ function resolveTokenAmounts(
   } else {
     return [otherTokenAmount, specifiedTokenAmount];
   }
+}
+
+async function fetchTickArray(baseInput: SwapSimulationBaseInput, tickIndex: number) {
+  const {
+    dal,
+    poolAddress,
+    refresh,
+    whirlpoolData: { tickSpacing },
+  } = baseInput;
+  const tickArray = await dal.getTickArray(
+    TickUtil.getPdaWithTickIndex(tickIndex, tickSpacing, poolAddress, dal.programId).publicKey,
+    refresh
+  );
+  invariant(!!tickArray, "tickArray is null");
+  return tickArray;
+}
+
+async function fetchTick(baseInput: SwapSimulationBaseInput, tickIndex: number) {
+  const tickArray = await fetchTickArray(baseInput, tickIndex);
+  const {
+    whirlpoolData: { tickSpacing },
+  } = baseInput;
+  return TickUtil.getTick(tickArray, tickIndex, tickSpacing);
+}
+
+async function getNextInitializedTickIndex(
+  baseInput: SwapSimulationBaseInput,
+  currentTickIndex: number,
+  tickArraysCrossed: number
+) {
+  const {
+    whirlpoolData: { tickSpacing },
+    swapDirection,
+  } = baseInput;
+  let nextInitializedTickIndex: number | undefined = undefined;
+
+  while (!nextInitializedTickIndex) {
+    const currentTickArray = await fetchTickArray(baseInput, currentTickIndex);
+
+    let temp;
+    if (swapDirection == SwapDirection.AtoB) {
+      temp = TickUtil.getPrevInitializedTickIndex(currentTickArray, currentTickIndex, tickSpacing);
+    } else {
+      temp = TickUtil.getNextInitializedTickIndex(currentTickArray, currentTickIndex, tickSpacing);
+    }
+
+    if (temp) {
+      nextInitializedTickIndex = temp;
+    } else {
+      let nextTick;
+      if (swapDirection === SwapDirection.AtoB) {
+        nextTick = currentTickArray.startTickIndex - 1;
+      } else {
+        nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
+      }
+
+      if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
+        throw Error("Crossed the maximum number of tick arrays");
+      } else {
+        currentTickIndex = nextTick;
+        tickArraysCrossed++;
+      }
+    }
+  }
+
+  return {
+    tickIndex: nextInitializedTickIndex,
+    tickArraysCrossed,
+  };
 }
