@@ -1,11 +1,16 @@
 import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
+import invariant from "tiny-invariant";
 import { OrcaNetwork, OrcaWhirlpoolClient, Percentage, PoolData, SwapQuote } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { ZERO } from "../../src/utils/web3/math-utils";
-import { initPoolWithLiquidity, initWhirlpoolsConfig } from "../utils/setup";
+import {
+  initPoolWithLiquidity,
+  initStandardPoolWithLiquidity,
+  initWhirlpoolsConfig,
+} from "../utils/setup";
 
 const NETWORK_URL = "http://127.0.0.1:8899";
 const PROGRAM_ID = new PublicKey("123aHGsUDPaH5tLM8HFZMeMjHgJJXPq9eSEk32syDw6k");
@@ -30,7 +35,11 @@ describe("Swap", () => {
       offchainDataURI,
     });
 
-    const { tokenMintA, poolAddress } = await initPoolWithLiquidity(client, orcaAdmin, provider);
+    const { tokenMintA, poolAddress } = await initStandardPoolWithLiquidity(
+      client,
+      orcaAdmin,
+      provider
+    );
 
     let quote;
     try {
@@ -46,10 +55,7 @@ describe("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-
-    if (!quote) {
-      throw new Error("pool not found");
-    }
+    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
     if (!oldPool) {
@@ -57,17 +63,12 @@ describe("Swap", () => {
     }
 
     const tx = await client.pool.getSwapTx(provider, quote);
-
-    if (!tx) {
-      throw new Error("pool not found");
-    }
+    invariant(!!tx);
 
     await tx.buildAndExecute();
 
     const pool = await client.getPool(poolAddress, true);
-    if (!pool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!pool);
 
     expectSwapOutput(pool, oldPool, quote);
   });
@@ -86,7 +87,11 @@ describe("Swap", () => {
       offchainDataURI,
     });
 
-    const { tokenMintB, poolAddress } = await initPoolWithLiquidity(client, orcaAdmin, provider);
+    const { tokenMintB, poolAddress } = await initStandardPoolWithLiquidity(
+      client,
+      orcaAdmin,
+      provider
+    );
 
     let quote;
     try {
@@ -103,9 +108,7 @@ describe("Swap", () => {
       return;
     }
 
-    if (!quote) {
-      throw Error("pool not found");
-    }
+    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
     if (!oldPool) {
@@ -113,17 +116,12 @@ describe("Swap", () => {
     }
 
     const tx = await client.pool.getSwapTx(provider, quote);
-
-    if (!tx) {
-      throw Error("pool not found");
-    }
+    invariant(!!tx);
 
     await tx.buildAndExecute();
 
     const pool = await client.getPool(poolAddress, true);
-    if (!pool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!pool);
 
     expectSwapOutput(pool, oldPool, quote);
   });
@@ -142,7 +140,11 @@ describe("Swap", () => {
       offchainDataURI,
     });
 
-    const { tokenMintB, poolAddress } = await initPoolWithLiquidity(client, orcaAdmin, provider);
+    const { tokenMintB, poolAddress } = await initStandardPoolWithLiquidity(
+      client,
+      orcaAdmin,
+      provider
+    );
 
     let quote;
     try {
@@ -158,28 +160,18 @@ describe("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-
-    if (!quote) {
-      throw Error("pool not found");
-    }
+    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx(provider, quote);
-
-    if (!tx) {
-      throw Error("pool not found");
-    }
+    invariant(!!tx);
 
     await tx.buildAndExecute();
 
     const pool = await client.getPool(poolAddress, true);
-    if (!pool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!pool);
 
     expectSwapOutput(pool, oldPool, quote);
   });
@@ -198,7 +190,11 @@ describe("Swap", () => {
       offchainDataURI,
     });
 
-    const { tokenMintA, poolAddress } = await initPoolWithLiquidity(client, orcaAdmin, provider);
+    const { tokenMintA, poolAddress } = await initStandardPoolWithLiquidity(
+      client,
+      orcaAdmin,
+      provider
+    );
 
     let quote;
     try {
@@ -214,28 +210,18 @@ describe("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-
-    if (!quote) {
-      throw Error("pool not found");
-    }
+    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx(provider, quote);
-
-    if (!tx) {
-      throw Error("pool not found");
-    }
+    invariant(!!tx);
 
     await tx.buildAndExecute();
 
     const pool = await client.getPool(poolAddress, true);
-    if (!pool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!pool);
 
     expectSwapOutput(pool, oldPool, quote);
   });

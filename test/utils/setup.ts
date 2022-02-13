@@ -1,4 +1,4 @@
-import { WhirlpoolClient } from "@orca-so/whirlpool-client-sdk";
+import { toX64, WhirlpoolClient } from "@orca-so/whirlpool-client-sdk";
 import { BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -35,14 +35,14 @@ export async function initWhirlpoolsConfig(
   return whirlpoolsConfig;
 }
 
-export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider) {
+export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider, initSqrtPrice: BN) {
   const [tokenMintA, tokenMintB] = await createInOrderMints(provider);
   await createAndMintToTokenAccount(provider, tokenMintA, new u64("1000000000"));
   await createAndMintToTokenAccount(provider, tokenMintB, new u64("1000000000"));
 
   const { tx, address } = orcaAdmin.getInitPoolTx({
     provider,
-    initialPrice: new Decimal(1.0005),
+    initSqrtPrice,
     tokenMintA,
     tokenMintB,
     stable: false,
@@ -56,37 +56,73 @@ export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider) {
   };
 }
 
-export async function initPoolWithLiquidity(
+export type PoolLiquidityParam = {
+  tickLowerIndex: number;
+  tickUpperIndex: number;
+  isTokenMintA: true;
+  tokenAmount: BN;
+};
+
+export async function initStandardPoolWithLiquidity(
   client: OrcaWhirlpoolClient,
   orcaAdmin: OrcaAdmin,
   provider: Provider
 ) {
-  const { tokenMintA, tokenMintB, poolAddress } = await initPool(orcaAdmin, provider);
+  return initPoolWithLiquidity(client, orcaAdmin, provider, toX64(new Decimal(1.0005)), [
+    {
+      tickLowerIndex: -128,
+      tickUpperIndex: 128,
+      isTokenMintA: true,
+      tokenAmount: new BN("1000"),
+    },
+  ]);
+}
 
-  const quote = await client.pool.getOpenPositionQuote({
-    tickLowerIndex: -128,
-    tickUpperIndex: 128,
-    poolAddress,
-    tokenMint: tokenMintA,
-    tokenAmount: new BN("100000000"),
-    slippageTolerance: zeroSlippage,
-    refresh: true,
-  });
+export async function initPoolWithLiquidity(
+  client: OrcaWhirlpoolClient,
+  orcaAdmin: OrcaAdmin,
+  provider: Provider,
+  initSqrtPrice: BN,
+  poolLiquidityParams: PoolLiquidityParam[]
+) {
+  const { tokenMintA, tokenMintB, poolAddress } = await initPool(
+    orcaAdmin,
+    provider,
+    initSqrtPrice
+  );
 
-  invariant(!!quote);
+  const positionMints = [];
 
-  const openTx = await client.pool.getOpenPositionTx(provider, quote);
+  for (let i = 0; i < poolLiquidityParams.length; i++) {
+    const { tickLowerIndex, tickUpperIndex, isTokenMintA, tokenAmount } = poolLiquidityParams[i];
 
-  invariant(!!openTx);
+    const quote = await client.pool.getOpenPositionQuote({
+      tickLowerIndex,
+      tickUpperIndex,
+      poolAddress,
+      tokenMint: isTokenMintA ? tokenMintA : tokenMintB,
+      tokenAmount,
+      slippageTolerance: zeroSlippage,
+      refresh: true,
+    });
 
-  const { tx, mint } = openTx;
+    invariant(!!quote);
 
-  await tx.buildAndExecute();
+    const openTx = await client.pool.getOpenPositionTx(provider, quote);
+
+    invariant(!!openTx);
+
+    const { tx, mint } = openTx;
+
+    await tx.buildAndExecute();
+
+    positionMints.push(mint);
+  }
 
   return {
     poolAddress,
     tokenMintA,
     tokenMintB,
-    positionMint: mint,
+    positionMints,
   };
 }

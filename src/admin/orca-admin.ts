@@ -27,7 +27,7 @@ export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
 
   public getInitPoolTx(param: InitPoolTxParam): { tx: TransactionBuilder; address: PublicKey } {
-    const { provider, initialPrice, tokenMintA, tokenMintB, stable } = param;
+    const { provider, initSqrtPrice, tokenMintA, tokenMintB, stable } = param;
     const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -42,7 +42,7 @@ export class OrcaAdmin {
     );
 
     const tx = client.initPoolTx({
-      initSqrtPrice: toX64(initialPrice.sqrt()),
+      initSqrtPrice,
       whirlpoolConfigKey,
       tokenMintA: toPubKey(tokenMintA),
       tokenMintB: toPubKey(tokenMintB),

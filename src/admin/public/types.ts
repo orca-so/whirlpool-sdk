@@ -1,10 +1,8 @@
 import { Address, BN, Provider } from "@project-serum/anchor";
-import { Keypair } from "@solana/web3.js";
-import Decimal from "decimal.js";
 
 export type InitPoolTxParam = {
   provider: Provider;
-  initialPrice: Decimal;
+  initSqrtPrice: BN;
   tokenMintA: Address;
   tokenMintB: Address;
   stable: boolean;
