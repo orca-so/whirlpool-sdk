@@ -79,7 +79,7 @@ export class SwapSimulator {
     baseInput: SwapSimulationBaseInput,
     input: SwapSimulationInput
   ): Promise<SwapSimulationOutput> {
-    const { refresh, dal, poolAddress, whirlpoolData, amountSpecified, swapDirection } = baseInput;
+    const { amountSpecified, swapDirection } = baseInput;
 
     let {
       currentTickIndex,

@@ -73,7 +73,7 @@ export async function initStandardPoolWithLiquidity(
       tickLowerIndex: -128,
       tickUpperIndex: 128,
       isTokenMintA: true,
-      tokenAmount: new BN("1000"),
+      tokenAmount: new BN("100000000"),
     },
   ]);
 }
