@@ -61,12 +61,6 @@ export async function convertPositionDataToUserPositionData(
     const quoteParam = { whirlpool, position, tickLower, tickUpper };
 
     const feesQuote = getCollectFeesQuoteInternal(quoteParam);
-    const decimalsA = (await dal.getMintInfo(whirlpool.tokenMintA, false))?.decimals;
-    const decimalsB = (await dal.getMintInfo(whirlpool.tokenMintB, false))?.decimals;
-    if (decimalsA === undefined || decimalsB === undefined) {
-      console.error(`error - decimals not found`);
-      continue;
-    }
 
     const rewardsQuote = getCollectRewardsQuoteInternal(quoteParam);
     const rewards: UserPositionRewardInfo[] = [];
@@ -76,9 +70,7 @@ export async function convertPositionDataToUserPositionData(
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
         decimals = (await dal.getMintInfo(mint, false))?.decimals;
       }
-      const amountOwed =
-        quote && decimals !== undefined ? DecimalUtil.fromU64(quote, decimals) : undefined;
-      rewards.push({ mint, amountOwed });
+      rewards.push({ mint, amountOwed: quote });
     }
 
     result[positionId] = {

@@ -1,4 +1,3 @@
-import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
@@ -28,7 +27,7 @@ export type PoolData = {
 export type PoolRewardInfo = {
   mint: PublicKey;
   vaultAmount: BN;
-  emissionsPerSecond: Decimal;
+  emissionsPerSecondX64: BN;
 };
 
 /*** Position ***/
@@ -49,7 +48,7 @@ export type UserPositionData = {
 
 export type UserPositionRewardInfo = {
   mint: PublicKey;
-  amountOwed?: Decimal;
+  amountOwed?: BN;
 };
 
 /*** Misc ***/

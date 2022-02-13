@@ -71,7 +71,7 @@ export async function convertWhirlpoolDataToPoolData(
       rewards.push({
         mint,
         vaultAmount: amount,
-        emissionsPerSecond: fromX64(emissionsPerSecondX64),
+        emissionsPerSecondX64,
       });
     }
 
