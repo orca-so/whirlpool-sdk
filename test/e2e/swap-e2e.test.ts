@@ -73,7 +73,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -140,7 +140,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -207,7 +207,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -274,7 +274,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -341,7 +341,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -393,7 +393,7 @@ describe("Swap", () => {
       throw new Error("pool not found");
     }
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -443,7 +443,7 @@ describe("Swap", () => {
     const oldPool = await client.getPool(poolAddress, true);
     invariant(!!oldPool);
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();
@@ -493,7 +493,7 @@ describe("Swap", () => {
     const oldPool = await client.getPool(poolAddress, true);
     invariant(!!oldPool);
 
-    const tx = await client.pool.getSwapTx(provider, quote);
+    const tx = await client.pool.getSwapTx({ provider, quote });
     invariant(!!tx);
 
     await tx.buildAndExecute();

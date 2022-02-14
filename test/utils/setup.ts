@@ -108,7 +108,7 @@ export async function initPoolWithLiquidity(
 
     invariant(!!quote);
 
-    const openTx = await client.pool.getOpenPositionTx(provider, quote);
+    const openTx = await client.pool.getOpenPositionTx({ provider, quote });
 
     invariant(!!openTx);
 

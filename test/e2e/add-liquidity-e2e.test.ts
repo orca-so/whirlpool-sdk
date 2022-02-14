@@ -5,7 +5,7 @@ import { OrcaNetwork, OrcaWhirlpoolClient, Percentage } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
-import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, toX64 } from "@orca-so/whirlpool-client-sdk";
 import { initPool, initWhirlpoolsConfig, zeroSlippage } from "../utils/setup";
 import invariant from "tiny-invariant";
 
@@ -27,7 +27,11 @@ describe("Add liquidity", () => {
     const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
-    const { tokenMintA, poolAddress } = await initPool(orcaAdmin, provider);
+    const { tokenMintA, poolAddress } = await initPool(
+      orcaAdmin,
+      provider,
+      toX64(new Decimal(1.0005))
+    );
 
     // initialize client
     const client = new OrcaWhirlpoolClient({
@@ -53,7 +57,7 @@ describe("Add liquidity", () => {
 
     console.log(quote.maxTokenA.toString(), quote.maxTokenB.toString());
 
-    const openTx = await client.pool.getOpenPositionTx(provider, quote);
+    const openTx = await client.pool.getOpenPositionTx({ provider, quote });
 
     invariant(!!openTx);
 
@@ -74,7 +78,7 @@ describe("Add liquidity", () => {
 
     console.log(closeQuote.minTokenA.toString(), closeQuote.minTokenB.toString());
 
-    const closeTx = await client.pool.getClosePositionTx(provider, closeQuote);
+    const closeTx = await client.pool.getClosePositionTx({ provider, quote: closeQuote });
 
     invariant(!!closeTx);
 
