@@ -78,7 +78,7 @@ export async function convertWhirlpoolDataToPoolData(
         decimalVaultAmount: decimals && amount ? DecimalUtil.fromU64(amount, decimals) : undefined,
         emissionsPerSecondX64,
         emissionsPerSecond: decimals
-          ? DecimalUtil.fromU64(emissionsPerSecondX64, decimals)
+          ? DecimalUtil.adjustDecimals(fromX64(emissionsPerSecondX64), decimals)
           : undefined,
       });
     }

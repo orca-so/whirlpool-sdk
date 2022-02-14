@@ -5,12 +5,15 @@ import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
   ClosePositionQuoteParam,
+  ClosePositionTxParam,
   isQuoteByPrice,
   isQuoteByTickIndex,
   OpenPositionQuote,
   OpenPositionQuoteParam,
+  OpenPositionTxParam,
   SwapQuote,
   SwapQuoteParam,
+  SwapTxParam,
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
@@ -89,10 +92,12 @@ export class OrcaPool {
    * Construct a transaction for opening an new position
    */
   public async getOpenPositionTx(
-    provider: Provider,
-    quote: OpenPositionQuote
+    param: OpenPositionTxParam
   ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey } | null> {
-    const { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress } = quote;
+    const {
+      provider,
+      quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
+    } = param;
     invariant(liquidity.gt(new u64(0)), "liquidity must be greater than zero");
 
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
@@ -221,10 +226,8 @@ export class OrcaPool {
   /**
    * Construct a transaction for closing an existing position
    */
-  public async getClosePositionTx(
-    provider: Provider,
-    quote: ClosePositionQuote
-  ): Promise<TransactionBuilder | null> {
+  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder | null> {
+    const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
@@ -314,11 +317,11 @@ export class OrcaPool {
   /**
    * Construct a transaction for a swap
    */
-  public async getSwapTx(
-    provider: Provider,
-    quote: SwapQuote
-  ): Promise<MultiTransactionBuilder | null> {
-    const { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress } = quote;
+  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder | null> {
+    const {
+      provider,
+      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress },
+    } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
