@@ -58,8 +58,10 @@ export async function convertWhirlpoolDataToPoolData(
       continue;
     }
 
-    const feePercentage = DecimalUtil.fromU64(pool.feeRate, 6);
-    const protocolFeePercentage = new Decimal(1).div(DecimalUtil.fromU64(pool.protocolFeeRate, 2));
+    const feePercentage = DecimalUtil.fromNumber(pool.feeRate, 6);
+    const protocolFeePercentage = new Decimal(1).div(
+      DecimalUtil.fromNumber(pool.protocolFeeRate, 2)
+    );
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
@@ -86,8 +88,8 @@ export async function convertWhirlpoolDataToPoolData(
       tokenMintA: pool.tokenMintA,
       tokenMintB: pool.tokenMintB,
       stable: pool.tickSpacing === TickSpacing.Stable,
-      feeRate: pool.feeRate.toNumber(),
-      protocolFeeRate: pool.protocolFeeRate.toNumber(),
+      feeRate: pool.feeRate,
+      protocolFeeRate: pool.protocolFeeRate,
       liquidity: pool.liquidity,
       sqrtPrice: pool.sqrtPrice,
       tickCurrentIndex: pool.tickCurrentIndex,

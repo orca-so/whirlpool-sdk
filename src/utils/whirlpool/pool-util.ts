@@ -14,7 +14,7 @@ export class PoolUtil {
     );
   }
 
-  public static getFeeRate(feeRate: BN): Percentage {
+  public static getFeeRate(feeRate: number): Percentage {
     /**
      * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L9-L11
      * // Stored as hundredths of a basis point
@@ -24,13 +24,13 @@ export class PoolUtil {
     return Percentage.fromFraction(feeRate, 1e6); // TODO
   }
 
-  public static getProtocolFeeRate(account: WhirlpoolData): Percentage {
+  public static getProtocolFeeRate(protocolFeeRate: number): Percentage {
     /**
      * Smart Contract comment: https://github.com/orca-so/whirlpool/blob/main/programs/whirlpool/src/state/whirlpool.rs#L13-L14
      * // Stored as a basis point
      * pub protocol_fee_rate: u16,
      */
-    return Percentage.fromFraction(account.protocolFeeRate, 1e4); // TODO
+    return Percentage.fromFraction(protocolFeeRate, 1e4); // TODO
   }
 
   public static orderMints(mintX: Address, mintY: Address): [Address, Address] {

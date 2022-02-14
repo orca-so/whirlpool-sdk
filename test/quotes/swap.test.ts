@@ -24,8 +24,8 @@ function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData
   return {
     whirlpoolsConfig: new PublicKey(whirlpoolJson.whirlpoolsConfig),
     whirlpoolBump: whirlpoolJson.whirlpoolBump,
-    feeRate: new BN(whirlpoolJson.feeRate),
-    protocolFeeRate: new BN(whirlpoolJson.protocolFeeRate),
+    feeRate: whirlpoolJson.feeRate,
+    protocolFeeRate: whirlpoolJson.protocolFeeRate,
     liquidity: new BN(whirlpoolJson.liquidity),
     sqrtPrice: new BN(whirlpoolJson.sqrtPrice),
     tickCurrentIndex: whirlpoolJson.tickCurrentIndex,
@@ -156,7 +156,7 @@ describe("swap", () => {
     const swapSimulatorConfig: SwapSimulatorConfig = {
       swapDirection: SwapDirection.BtoA,
       amountSpecified: AmountSpecified.Input,
-      feeRate: PoolUtil.getFeeRate(whirlpool),
+      feeRate: PoolUtil.getFeeRate(whirlpool.feeRate),
       fetchTick,
       getNextInitializedTickIndex,
     };
