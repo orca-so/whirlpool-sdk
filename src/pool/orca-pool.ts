@@ -162,6 +162,7 @@ export class OrcaPool {
       true
     );
 
+    let requirePreTx = false;
     if (tickArrayLower === null) {
       const tickArrayIx = client
         .initTickArrayTx({
@@ -172,6 +173,7 @@ export class OrcaPool {
         })
         .compressIx(false);
       preTxBuilder.addInstruction(tickArrayIx);
+      requirePreTx = true;
     }
 
     if (
@@ -187,6 +189,7 @@ export class OrcaPool {
         })
         .compressIx(false);
       preTxBuilder.addInstruction(tickArrayIx);
+      requirePreTx = true;
     }
 
     const liquidityIx = client
@@ -208,9 +211,15 @@ export class OrcaPool {
       .compressIx(false);
     txBuilder.addInstruction(liquidityIx);
 
+    const tx = new MultiTransactionBuilder(provider, []);
+    if (requirePreTx) {
+      tx.addTxBuilder(preTxBuilder);
+    }
+    tx.addTxBuilder(txBuilder);
+
     return {
       mint: positionMintKeypair.publicKey,
-      tx: new MultiTransactionBuilder(provider, [preTxBuilder, txBuilder]),
+      tx,
     };
   }
 
