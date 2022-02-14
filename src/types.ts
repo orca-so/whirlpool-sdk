@@ -55,7 +55,7 @@ export type UserPositionData = {
   feeOwedB: BN;
   rewards: UserPositionRewardInfo[];
 
-  // Derived helper attributes
+  // Derived helper fields
   priceLower: Decimal;
   priceUpper: Decimal;
   decimalFeeOwedA: Decimal;
@@ -66,7 +66,7 @@ export type UserPositionRewardInfo = {
   mint: PublicKey;
   amountOwed?: BN;
 
-  // Derived helper attributes
+  // Derived helper fields
   decimalAmountOwed?: Decimal;
 };
 

@@ -67,7 +67,7 @@ export async function convertWhirlpoolDataToPoolData(
       let decimals = undefined;
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
         amount = (await dal.getTokenInfo(vault, false))?.amount;
-        decimals = (await dal.getMintInfo(vault, false))?.decimals;
+        decimals = (await dal.getMintInfo(mint, false))?.decimals;
       }
 
       rewards.push({

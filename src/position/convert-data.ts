@@ -79,9 +79,7 @@ export async function convertPositionDataToUserPositionData(
           ? (await dal.getMintInfo(mint, false))?.decimals
           : undefined;
       const decimalAmountOwed =
-        amountOwed && decimals !== undefined
-          ? DecimalUtil.fromU64(amountOwed, decimals)
-          : undefined;
+        amountOwed && decimals ? DecimalUtil.fromU64(amountOwed, decimals) : undefined;
       rewards.push({
         mint,
         amountOwed,
@@ -100,7 +98,7 @@ export async function convertPositionDataToUserPositionData(
       feeOwedB: feesQuote.feeOwedB,
       rewards,
 
-      // Derived helper attributes
+      // Derived helper fields
       priceLower: Decimal.pow(1.0001, position.tickLowerIndex),
       priceUpper: Decimal.pow(1.0001, position.tickUpperIndex),
       decimalFeeOwedA,
