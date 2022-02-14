@@ -61,16 +61,32 @@ export async function convertPositionDataToUserPositionData(
     const quoteParam = { whirlpool, position, tickLower, tickUpper };
 
     const feesQuote = getCollectFeesQuoteInternal(quoteParam);
+    const decimalsA = (await dal.getMintInfo(whirlpool.tokenMintA, false))?.decimals;
+    const decimalsB = (await dal.getMintInfo(whirlpool.tokenMintB, false))?.decimals;
+    if (decimalsA === undefined || decimalsB === undefined) {
+      console.error(`error - decimals not found`);
+      continue;
+    }
+    const decimalFeeOwedA = DecimalUtil.fromU64(feesQuote.feeOwedA, decimalsA);
+    const decimalFeeOwedB = DecimalUtil.fromU64(feesQuote.feeOwedB, decimalsB);
 
     const rewardsQuote = getCollectRewardsQuoteInternal(quoteParam);
     const rewards: UserPositionRewardInfo[] = [];
     for (const [index, { mint, vault }] of whirlpool.rewardInfos.entries()) {
-      const quote = rewardsQuote[index];
-      let decimals = undefined;
-      if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
-        decimals = (await dal.getMintInfo(mint, false))?.decimals;
-      }
-      rewards.push({ mint, amountOwed: quote });
+      const amountOwed = rewardsQuote[index];
+      const decimals =
+        !mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)
+          ? (await dal.getMintInfo(mint, false))?.decimals
+          : undefined;
+      const decimalAmountOwed =
+        amountOwed && decimals !== undefined
+          ? DecimalUtil.fromU64(amountOwed, decimals)
+          : undefined;
+      rewards.push({
+        mint,
+        amountOwed,
+        decimalAmountOwed,
+      });
     }
 
     result[positionId] = {
@@ -80,11 +96,15 @@ export async function convertPositionDataToUserPositionData(
       liquidity: position.liquidity,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
-      priceLower: tickIndexToSqrtPriceX64(position.tickLowerIndex),
-      priceUpper: tickIndexToSqrtPriceX64(position.tickUpperIndex),
       feeOwedA: feesQuote.feeOwedA,
       feeOwedB: feesQuote.feeOwedB,
       rewards,
+
+      // Derived helper attributes
+      priceLower: Decimal.pow(1.0001, position.tickLowerIndex),
+      priceUpper: Decimal.pow(1.0001, position.tickUpperIndex),
+      decimalFeeOwedA,
+      decimalFeeOwedB,
     };
   }
 
@@ -99,7 +119,7 @@ async function getUserPositions(
   const potentialPositionAddresses: Address[] = [];
   const userTokens = await dal.listUserTokens(walletAddress, refresh);
   userTokens.forEach(({ amount, decimals, mint }) => {
-    if (amount?.eq(ONE) && decimals === 0 && !!mint) {
+    if (amount === "1" && decimals === 0 && !!mint) {
       potentialPositionAddresses.push(getPositionPda(dal.programId, toPubKey(mint)).publicKey);
     }
   });

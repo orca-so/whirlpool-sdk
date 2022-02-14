@@ -9,25 +9,37 @@ export type PoolData = {
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
   stable: boolean;
-  feeRate: Decimal;
-  protocolFeeRate: Decimal;
+  feeRate: number;
+  protocolFeeRate: number;
   liquidity: BN;
   sqrtPrice: BN;
   tickCurrentIndex: number;
-  price: Decimal;
   protocolFeeOwedA: BN;
   protocolFeeOwedB: BN;
   tokenVaultAmountA: BN;
   tokenVaultAmountB: BN;
   rewards: PoolRewardInfo[];
+
+  // Derived helper fields
+  feePercentage: Decimal;
+  protocolFeePercentage: Decimal;
+  price: Decimal;
+  decimalProtocolFeeOwedA: Decimal;
+  decimalProtocolFeeOwedB: Decimal;
+  decimalTokenVaultAmountA: Decimal;
+  decimalTokenVaultAmountB: Decimal;
   tokenDecimalsA: number;
   tokenDecimalsB: number;
 };
 
 export type PoolRewardInfo = {
   mint: PublicKey;
-  vaultAmount: BN;
+  vaultAmount?: BN;
   emissionsPerSecondX64: BN;
+
+  // Derived helper fields
+  decimalVaultAmount?: Decimal;
+  emissionsPerSecond?: Decimal;
 };
 
 /*** Position ***/
@@ -39,23 +51,30 @@ export type UserPositionData = {
   liquidity: BN;
   tickLowerIndex: number;
   tickUpperIndex: number;
-  priceLower: BN;
-  priceUpper: BN;
   feeOwedA: BN;
   feeOwedB: BN;
   rewards: UserPositionRewardInfo[];
+
+  // Derived helper attributes
+  priceLower: Decimal;
+  priceUpper: Decimal;
+  decimalFeeOwedA: Decimal;
+  decimalFeeOwedB: Decimal;
 };
 
 export type UserPositionRewardInfo = {
   mint: PublicKey;
   amountOwed?: BN;
+
+  // Derived helper attributes
+  decimalAmountOwed?: Decimal;
 };
 
 /*** Misc ***/
 
 export type UserToken = {
   address: PublicKey;
-  amount?: BN;
+  amount?: string;
   decimals?: number;
   mint?: string;
 };

@@ -58,20 +58,26 @@ export async function convertWhirlpoolDataToPoolData(
       continue;
     }
 
-    const feeRate = DecimalUtil.fromU64(pool.feeRate, 6);
-    const protocolFeeRate = new Decimal(1).div(DecimalUtil.fromU64(pool.protocolFeeRate, 2));
+    const feePercentage = DecimalUtil.fromU64(pool.feeRate, 6);
+    const protocolFeePercentage = new Decimal(1).div(DecimalUtil.fromU64(pool.protocolFeeRate, 2));
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
-      let amount = ZERO;
+      let amount = undefined;
+      let decimals = undefined;
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
-        amount = (await dal.getTokenInfo(vault, false))?.amount || ZERO;
+        amount = (await dal.getTokenInfo(vault, false))?.amount;
+        decimals = (await dal.getMintInfo(vault, false))?.decimals;
       }
 
       rewards.push({
         mint,
         vaultAmount: amount,
+        decimalVaultAmount: decimals && amount ? DecimalUtil.fromU64(amount, decimals) : undefined,
         emissionsPerSecondX64,
+        emissionsPerSecond: decimals
+          ? DecimalUtil.fromU64(emissionsPerSecondX64, decimals)
+          : undefined,
       });
     }
 
@@ -80,17 +86,25 @@ export async function convertWhirlpoolDataToPoolData(
       tokenMintA: pool.tokenMintA,
       tokenMintB: pool.tokenMintB,
       stable: pool.tickSpacing === TickSpacing.Stable,
-      feeRate,
-      protocolFeeRate,
+      feeRate: pool.feeRate.toNumber(),
+      protocolFeeRate: pool.protocolFeeRate.toNumber(),
       liquidity: pool.liquidity,
       sqrtPrice: pool.sqrtPrice,
       tickCurrentIndex: pool.tickCurrentIndex,
-      price: fromX64(pool.sqrtPrice).pow(2),
       protocolFeeOwedA: pool.protocolFeeOwedA,
       protocolFeeOwedB: pool.protocolFeeOwedA,
       tokenVaultAmountA: amountA,
       tokenVaultAmountB: amountB,
       rewards,
+
+      // Derived helper fields
+      feePercentage,
+      protocolFeePercentage,
+      price: fromX64(pool.sqrtPrice).pow(2),
+      decimalProtocolFeeOwedA: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
+      decimalProtocolFeeOwedB: DecimalUtil.fromU64(pool.protocolFeeOwedB, decimalsB),
+      decimalTokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),
+      decimalTokenVaultAmountB: DecimalUtil.fromU64(amountB, decimalsB),
       tokenDecimalsA: decimalsA,
       tokenDecimalsB: decimalsB,
     };
