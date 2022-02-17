@@ -57,8 +57,8 @@ export async function convertWhirlpoolDataToPoolData(
       continue;
     }
 
-    const feeRate = DecimalUtil.fromU64(pool.feeRate, 6);
-    const protocolFeeRate = new Decimal(1).div(DecimalUtil.fromU64(pool.protocolFeeRate, 2));
+    const feeRate = DecimalUtil.shiftNumber(pool.feeRate, 6);
+    const protocolFeeRate = new Decimal(1).div(DecimalUtil.shiftNumber(pool.protocolFeeRate, 2));
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
