@@ -1,5 +1,4 @@
-import { Address, Provider } from "@project-serum/anchor";
-import { u64 } from "@solana/spl-token";
+import { Address, BN, Provider } from "@project-serum/anchor";
 import { Percentage } from "../../utils/public/percentage";
 
 /*** Transactions ***/
@@ -29,35 +28,35 @@ export type CollectMultipleFeesAndRewardsTxParam = {
 export type AddLiquidityQuoteParam = {
   positionAddress: Address;
   tokenMint: Address;
-  tokenAmount: u64;
+  tokenAmount: BN;
   refresh: boolean;
   slippageTolerance?: Percentage;
 };
 
 export type AddLiquidityQuote = {
   positionAddress: Address;
-  maxTokenA: u64;
-  maxTokenB: u64;
-  liquidity: u64;
+  maxTokenA: BN;
+  maxTokenB: BN;
+  liquidity: BN;
 };
 
 export type RemoveLiquidityQuoteParam = {
   positionAddress: Address;
-  liquidity: u64;
+  liquidity: BN;
   refresh: boolean;
   slippageTolerance?: Percentage;
 };
 
 export type RemoveLiquidityQuote = {
   positionAddress: Address;
-  minTokenA: u64;
-  minTokenB: u64;
-  liquidity: u64;
+  minTokenA: BN;
+  minTokenB: BN;
+  liquidity: BN;
 };
 
 export type CollectFeesQuote = {
-  feeOwedA: u64;
-  feeOwedB: u64;
+  feeOwedA: BN;
+  feeOwedB: BN;
 };
 
-export type CollectRewardsQuote = [u64 | undefined, u64 | undefined, u64 | undefined];
+export type CollectRewardsQuote = [BN | undefined, BN | undefined, BN | undefined];

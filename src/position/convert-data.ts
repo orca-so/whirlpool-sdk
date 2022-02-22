@@ -9,7 +9,8 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
-import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
+import { ONE } from "../utils/web3/math-utils";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,
@@ -66,20 +67,24 @@ export async function convertPositionDataToUserPositionData(
       console.error(`error - decimals not found`);
       continue;
     }
-    const feeOwedA = DecimalUtil.fromU64(feesQuote.feeOwedA, decimalsA);
-    const feeOwedB = DecimalUtil.fromU64(feesQuote.feeOwedB, decimalsB);
+    const decimalFeeOwedA = DecimalUtil.fromU64(feesQuote.feeOwedA, decimalsA);
+    const decimalFeeOwedB = DecimalUtil.fromU64(feesQuote.feeOwedB, decimalsB);
 
     const rewardsQuote = getCollectRewardsQuoteInternal(quoteParam);
     const rewards: UserPositionRewardInfo[] = [];
     for (const [index, { mint, vault }] of whirlpool.rewardInfos.entries()) {
-      const quote = rewardsQuote[index];
-      let decimals = undefined;
-      if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
-        decimals = (await dal.getMintInfo(mint, false))?.decimals;
-      }
-      const amountOwed =
-        quote && decimals !== undefined ? DecimalUtil.fromU64(quote, decimals) : undefined;
-      rewards.push({ mint, amountOwed });
+      const amountOwed = rewardsQuote[index];
+      const decimals =
+        !mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)
+          ? (await dal.getMintInfo(mint, false))?.decimals
+          : undefined;
+      const decimalAmountOwed =
+        amountOwed && decimals ? DecimalUtil.fromU64(amountOwed, decimals) : undefined;
+      rewards.push({
+        mint,
+        amountOwed,
+        decimalAmountOwed,
+      });
     }
 
     result[positionId] = {
@@ -89,11 +94,15 @@ export async function convertPositionDataToUserPositionData(
       liquidity: position.liquidity,
       tickLowerIndex: position.tickLowerIndex,
       tickUpperIndex: position.tickUpperIndex,
-      priceLower: new Decimal(1.0001).pow(position.tickLowerIndex),
-      priceUpper: new Decimal(1.0001).pow(position.tickUpperIndex),
-      feeOwedA,
-      feeOwedB,
+      feeOwedA: feesQuote.feeOwedA,
+      feeOwedB: feesQuote.feeOwedB,
       rewards,
+
+      // Derived helper fields
+      priceLower: Decimal.pow(1.0001, position.tickLowerIndex),
+      priceUpper: Decimal.pow(1.0001, position.tickUpperIndex),
+      decimalFeeOwedA,
+      decimalFeeOwedB,
     };
   }
 

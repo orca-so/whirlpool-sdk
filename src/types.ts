@@ -1,4 +1,3 @@
-import { u64 } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
@@ -10,25 +9,37 @@ export type PoolData = {
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
   stable: boolean;
-  feeRate: Decimal;
-  protocolFeeRate: Decimal;
-  liquidity: u64;
+  feeRate: number;
+  protocolFeeRate: number;
+  liquidity: BN;
   sqrtPrice: BN;
   tickCurrentIndex: number;
-  price: Decimal;
-  protocolFeeOwedA: Decimal;
-  protocolFeeOwedB: Decimal;
-  tokenVaultAmountA: Decimal;
-  tokenVaultAmountB: Decimal;
+  protocolFeeOwedA: BN;
+  protocolFeeOwedB: BN;
+  tokenVaultAmountA: BN;
+  tokenVaultAmountB: BN;
   rewards: PoolRewardInfo[];
+
+  // Derived helper fields
+  feePercentage: Decimal;
+  protocolFeePercentage: Decimal;
+  price: Decimal;
+  decimalProtocolFeeOwedA: Decimal;
+  decimalProtocolFeeOwedB: Decimal;
+  decimalTokenVaultAmountA: Decimal;
+  decimalTokenVaultAmountB: Decimal;
   tokenDecimalsA: number;
   tokenDecimalsB: number;
 };
 
 export type PoolRewardInfo = {
   mint: PublicKey;
-  vaultAmount: Decimal;
-  emissionsPerSecond: Decimal;
+  vaultAmount?: BN;
+  emissionsPerSecondX64: BN;
+
+  // Derived helper fields
+  decimalVaultAmount?: Decimal;
+  emissionsPerSecond?: Decimal;
 };
 
 /*** Position ***/
@@ -37,19 +48,26 @@ export type UserPositionData = {
   address: PublicKey;
   poolAddress: PublicKey;
   positionMint: PublicKey;
-  liquidity: u64;
+  liquidity: BN;
   tickLowerIndex: number;
   tickUpperIndex: number;
+  feeOwedA: BN;
+  feeOwedB: BN;
+  rewards: UserPositionRewardInfo[];
+
+  // Derived helper fields
   priceLower: Decimal;
   priceUpper: Decimal;
-  feeOwedA: Decimal;
-  feeOwedB: Decimal;
-  rewards: UserPositionRewardInfo[];
+  decimalFeeOwedA: Decimal;
+  decimalFeeOwedB: Decimal;
 };
 
 export type UserPositionRewardInfo = {
   mint: PublicKey;
-  amountOwed?: Decimal;
+  amountOwed?: BN;
+
+  // Derived helper fields
+  decimalAmountOwed?: Decimal;
 };
 
 /*** Misc ***/

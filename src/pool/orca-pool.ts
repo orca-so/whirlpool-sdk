@@ -28,12 +28,7 @@ import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
-import {
-  AmountSpecified,
-  MAX_TICK_ARRAY_CROSSINGS,
-  SwapDirection,
-  SwapSimulator,
-} from "./quotes/swap-quoter";
+import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 import {
   TickSpacing,
   PDA,
@@ -43,12 +38,12 @@ import {
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
   toX64,
-  TICK_ARRAY_SIZE,
   WhirlpoolClient,
   WhirlpoolContext,
   InitTickArrayParams,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
+import { adjustPriceForSlippage } from "../utils/whirlpool/position-util";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -120,7 +115,8 @@ export class OrcaPool {
       positionMintKeypair.publicKey
     );
 
-    const txBuilder = new TransactionBuilder(ctx.provider);
+    const txBuilder = new TransactionBuilder(provider);
+    const preTxBuilder = new TransactionBuilder(provider);
 
     const positionIx = client
       .openPositionTx({
@@ -166,6 +162,7 @@ export class OrcaPool {
       true
     );
 
+    let requirePreTx = false;
     if (tickArrayLower === null) {
       const tickArrayIx = client
         .initTickArrayTx({
@@ -175,7 +172,8 @@ export class OrcaPool {
           funder: provider.wallet.publicKey,
         })
         .compressIx(false);
-      txBuilder.addInstruction(tickArrayIx);
+      preTxBuilder.addInstruction(tickArrayIx);
+      requirePreTx = true;
     }
 
     if (
@@ -190,7 +188,8 @@ export class OrcaPool {
           funder: provider.wallet.publicKey,
         })
         .compressIx(false);
-      txBuilder.addInstruction(tickArrayIx);
+      preTxBuilder.addInstruction(tickArrayIx);
+      requirePreTx = true;
     }
 
     const liquidityIx = client
@@ -212,9 +211,15 @@ export class OrcaPool {
       .compressIx(false);
     txBuilder.addInstruction(liquidityIx);
 
+    const tx = new MultiTransactionBuilder(provider, []);
+    if (requirePreTx) {
+      tx.addTxBuilder(preTxBuilder);
+    }
+    tx.addTxBuilder(txBuilder);
+
     return {
       mint: positionMintKeypair.publicKey,
-      tx: new MultiTransactionBuilder(provider, [txBuilder]),
+      tx,
     };
   }
 
@@ -324,7 +329,7 @@ export class OrcaPool {
   public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder | null> {
     const {
       provider,
-      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedOutput, poolAddress },
+      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress },
     } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -361,9 +366,9 @@ export class OrcaPool {
     txBuilder.addInstruction(
       client
         .swapTx({
-          amount: fixedOutput ? amountOut : amountIn,
+          amount: fixedInput ? amountIn : amountOut,
           sqrtPriceLimit: sqrtPriceLimitX64,
-          amountSpecifiedIsInput: !fixedOutput,
+          amountSpecifiedIsInput: fixedInput,
           aToB,
           whirlpool: toPubKey(poolAddress),
           tokenAuthority: provider.wallet.publicKey,
@@ -517,7 +522,7 @@ export class OrcaPool {
       poolAddress,
       tokenMint,
       tokenAmount,
-      isOutput,
+      isInput,
       slippageTolerance = defaultSlippagePercentage,
       refresh,
     } = param;
@@ -527,92 +532,36 @@ export class OrcaPool {
       return null;
     }
 
-    const fetchTickArray = async (tickIndex: number) => {
-      const tickArray = await this.dal.getTickArray(
-        TickUtil.getPdaWithTickIndex(
-          tickIndex,
-          whirlpool.tickSpacing,
-          poolAddress,
-          this.dal.programId
-        ).publicKey,
-        refresh || false
-      );
-      invariant(!!tickArray, "tickArray is null");
-      return tickArray;
-    };
-
-    const fetchTick = async (tickIndex: number) => {
-      const tickArray = await fetchTickArray(tickIndex);
-      return TickUtil.getTick(tickArray, tickIndex, whirlpool.tickSpacing);
-    };
-
     const swapDirection =
-      tokenMint === whirlpool.tokenMintA && isOutput ? SwapDirection.BtoA : SwapDirection.AtoB;
-    const swapSimulator = new SwapSimulator({
-      swapDirection,
-      amountSpecified: isOutput ? AmountSpecified.Output : AmountSpecified.Input,
-      feeRate: PoolUtil.getFeeRate(whirlpool),
-      slippageTolerance,
-      fetchTick,
-      getNextInitializedTickIndex: async (
-        currentTickIndex: number,
-        tickArraysCrossed: number,
-        swapDirection: SwapDirection,
-        tickSpacing: number
-      ) => {
-        let nextInitializedTickIndex: number | undefined = undefined;
+      toPubKey(tokenMint).equals(whirlpool.tokenMintA) === isInput
+        ? SwapDirection.AtoB
+        : SwapDirection.BtoA;
+    const amountSpecified = isInput ? AmountSpecified.Input : AmountSpecified.Output;
 
-        while (!nextInitializedTickIndex) {
-          const currentTickArray = await fetchTickArray(currentTickIndex);
+    const swapSimulator = new SwapSimulator();
 
-          let temp;
-          if (swapDirection == SwapDirection.AtoB) {
-            temp = TickUtil.getPrevInitializedTickIndex(
-              currentTickArray,
-              currentTickIndex,
-              tickSpacing
-            );
-          } else {
-            temp = TickUtil.getNextInitializedTickIndex(
-              currentTickArray,
-              currentTickIndex,
-              tickSpacing
-            );
-          }
-
-          if (temp) {
-            nextInitializedTickIndex = temp;
-          } else {
-            let nextTick;
-            if (swapDirection == SwapDirection.AtoB) {
-              nextTick = currentTickArray.startTickIndex - 1;
-            } else {
-              nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing - 1;
-            }
-
-            if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
-              nextInitializedTickIndex = nextTick;
-            } else {
-              currentTickIndex = nextTick;
-              tickArraysCrossed++;
-            }
-          }
-        }
-
-        return {
-          tickIndex: nextInitializedTickIndex,
-          tickArraysCrossed,
-        };
+    const { amountIn, amountOut, sqrtPriceAfterSwapX64 } = await swapSimulator.simulateSwap(
+      {
+        refresh,
+        dal: this.dal,
+        poolAddress,
+        whirlpoolData: whirlpool,
+        amountSpecified,
+        swapDirection,
       },
-    });
+      {
+        amount: tokenAmount,
+        currentSqrtPriceX64: whirlpool.sqrtPrice,
+        currentTickIndex: whirlpool.tickCurrentIndex,
+        currentLiquidity: whirlpool.liquidity,
+      }
+    );
 
-    const { sqrtPriceLimitX64, amountIn, amountOut } = await swapSimulator.simulateSwap({
-      amount: tokenAmount,
-      currentSqrtPriceX64: whirlpool.sqrtPrice,
-      currentTickIndex: whirlpool.tickCurrentIndex,
-      currentLiquidity: whirlpool.liquidity,
-      tickSpacing: whirlpool.tickSpacing,
-    });
+    const sqrtPriceLimitX64 = adjustPriceForSlippage(
+      sqrtPriceAfterSwapX64,
+      slippageTolerance,
+      swapDirection === SwapDirection.BtoA
+    );
 
     return {
       poolAddress,
@@ -620,7 +569,7 @@ export class OrcaPool {
       amountIn,
       amountOut,
       aToB: swapDirection === SwapDirection.AtoB,
-      fixedOutput: isOutput,
+      fixedInput: isInput,
     };
   }
 }

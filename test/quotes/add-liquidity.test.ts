@@ -19,6 +19,7 @@ import {
   WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk";
 import { ZERO } from "../../src/utils/web3/math-utils";
+import invariant from "tiny-invariant";
 const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
 const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");
@@ -29,8 +30,8 @@ function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData
   return {
     whirlpoolsConfig: new PublicKey(whirlpoolJson.whirlpoolsConfig),
     whirlpoolBump: whirlpoolJson.whirlpoolBump,
-    feeRate: new BN(whirlpoolJson.feeRate),
-    protocolFeeRate: new BN(whirlpoolJson.protocolFeeRate),
+    feeRate: whirlpoolJson.feeRate,
+    protocolFeeRate: whirlpoolJson.protocolFeeRate,
     liquidity: new BN(whirlpoolJson.liquidity),
     sqrtPrice: new BN(whirlpoolJson.sqrtPrice),
     tickCurrentIndex: whirlpoolJson.tickCurrentIndex,
@@ -172,6 +173,8 @@ describe("Add Liquidity", () => {
     };
 
     const addLiquidityQuote = await orcaPosition.getAddLiquidityQuote(params);
+
+    invariant(!!addLiquidityQuote);
 
     expect(addLiquidityQuote.maxTokenA.toString()).toEqual(expectedTokenAAmount.toString());
     expect(addLiquidityQuote.maxTokenB.toString()).toEqual(expectedTokenBAmount.toString());

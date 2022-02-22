@@ -15,3 +15,12 @@ export function shiftRightRoundUp(n: BN): BN {
 
   return result;
 }
+
+export function divRoundUp(n0: BN, n1: BN): BN {
+  const hasRemainder = !n0.mod(n1).eq(ZERO);
+  if (hasRemainder) {
+    return n0.div(n1).add(new BN(1));
+  } else {
+    return n0.div(n1);
+  }
+}

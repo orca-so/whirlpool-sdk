@@ -7,6 +7,7 @@ import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
 import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
+import { ZERO } from "../utils/web3/math-utils";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,
@@ -57,8 +58,10 @@ export async function convertWhirlpoolDataToPoolData(
       continue;
     }
 
-    const feeRate = DecimalUtil.shiftNumber(pool.feeRate, 6);
-    const protocolFeeRate = new Decimal(1).div(DecimalUtil.shiftNumber(pool.protocolFeeRate, 2));
+    const feePercentage = DecimalUtil.fromNumber(pool.feeRate, 6);
+    const protocolFeePercentage = new Decimal(1).div(
+      DecimalUtil.fromNumber(pool.protocolFeeRate, 2)
+    );
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
@@ -69,11 +72,15 @@ export async function convertWhirlpoolDataToPoolData(
         decimals = (await dal.getMintInfo(mint, false))?.decimals;
       }
 
-      let vaultAmount = new Decimal(0);
-      if (amount && decimals !== undefined) {
-        vaultAmount = DecimalUtil.fromU64(amount, decimals);
-      }
-      rewards.push({ mint, vaultAmount, emissionsPerSecond: fromX64(emissionsPerSecondX64) });
+      rewards.push({
+        mint,
+        vaultAmount: amount,
+        decimalVaultAmount: decimals && amount ? DecimalUtil.fromU64(amount, decimals) : undefined,
+        emissionsPerSecondX64,
+        emissionsPerSecond: decimals
+          ? DecimalUtil.adjustDecimals(fromX64(emissionsPerSecondX64), decimals)
+          : undefined,
+      });
     }
 
     result[poolId] = {
@@ -81,17 +88,25 @@ export async function convertWhirlpoolDataToPoolData(
       tokenMintA: pool.tokenMintA,
       tokenMintB: pool.tokenMintB,
       stable: pool.tickSpacing === TickSpacing.Stable,
-      feeRate,
-      protocolFeeRate,
+      feeRate: pool.feeRate,
+      protocolFeeRate: pool.protocolFeeRate,
       liquidity: pool.liquidity,
       sqrtPrice: pool.sqrtPrice,
       tickCurrentIndex: pool.tickCurrentIndex,
-      price: fromX64(pool.sqrtPrice).pow(2),
-      protocolFeeOwedA: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
-      protocolFeeOwedB: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
-      tokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),
-      tokenVaultAmountB: DecimalUtil.fromU64(amountB, decimalsB),
+      protocolFeeOwedA: pool.protocolFeeOwedA,
+      protocolFeeOwedB: pool.protocolFeeOwedA,
+      tokenVaultAmountA: amountA,
+      tokenVaultAmountB: amountB,
       rewards,
+
+      // Derived helper fields
+      feePercentage,
+      protocolFeePercentage,
+      price: fromX64(pool.sqrtPrice).pow(2),
+      decimalProtocolFeeOwedA: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
+      decimalProtocolFeeOwedB: DecimalUtil.fromU64(pool.protocolFeeOwedB, decimalsB),
+      decimalTokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),
+      decimalTokenVaultAmountB: DecimalUtil.fromU64(amountB, decimalsB),
       tokenDecimalsA: decimalsA,
       tokenDecimalsB: decimalsB,
     };
