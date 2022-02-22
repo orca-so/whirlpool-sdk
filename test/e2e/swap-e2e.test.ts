@@ -28,9 +28,13 @@ const zeroSlippage = new Percentage(ZERO, new BN(100));
 
 jest.setTimeout(10_000);
 
-describe("Swap", () => {
-  const provider = Provider.local(NETWORK_URL);
-  const owner = provider.wallet.publicKey;
+describe.skip("Swap", () => {
+  let provider: Provider;
+  let owner: PublicKey;
+  beforeEach(() => {
+    provider = Provider.local(NETWORK_URL);
+    owner = provider.wallet.publicKey;
+  });
 
   it("swaps left", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);

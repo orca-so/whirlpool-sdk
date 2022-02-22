@@ -15,11 +15,15 @@ const offchainDataURI = getDefaultOffchainDataURI(OrcaNetwork.DEVNET);
 
 jest.setTimeout(10_000);
 
-describe("Add liquidity", () => {
-  const provider = Provider.local(NETWORK_URL);
-  const owner = provider.wallet.publicKey;
+describe.skip("Add liquidity", () => {
+  let provider: Provider;
+  let owner: PublicKey;
+  beforeEach(() => {
+    provider = Provider.local(NETWORK_URL);
+    owner = provider.wallet.publicKey;
+  });
 
-  it("Adds liquidity", async () => {
+  test("Adds liquidity", async () => {
     // deploy config
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
