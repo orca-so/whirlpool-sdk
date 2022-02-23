@@ -1,4 +1,4 @@
-import { Address, BN, Provider } from "@project-serum/anchor";
+import { Address, BN, Provider, translateAddress } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -93,7 +93,7 @@ export class OrcaPool {
    */
   public async getOpenPositionTx(
     param: OpenPositionTxParam
-  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey } | null> {
+  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
     const {
       provider,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
@@ -105,7 +105,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, false);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const positionMintKeypair = Keypair.generate();
@@ -235,19 +235,19 @@ export class OrcaPool {
   /**
    * Construct a transaction for closing an existing position
    */
-  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder | null> {
+  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.dal.getPosition(quote.positionAddress, true);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const tickArrayLower = TickUtil.getPdaWithTickIndex(
@@ -273,9 +273,6 @@ export class OrcaPool {
       provider,
       positionAddresses: [quote.positionAddress],
     });
-    if (!collectTx) {
-      return null;
-    }
     collectTx.tx.txBuilders.forEach((builder) =>
       txBuilder.addInstruction(builder.compressIx(false))
     );
@@ -326,7 +323,7 @@ export class OrcaPool {
   /**
    * Construct a transaction for a swap
    */
-  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder | null> {
+  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder> {
     const {
       provider,
       quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress },
@@ -336,7 +333,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, true);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -439,13 +436,11 @@ export class OrcaPool {
   /**
    * Construct a quote for opening a new position
    */
-  public async getOpenPositionQuote(
-    param: OpenPositionQuoteParam
-  ): Promise<OpenPositionQuote | null> {
+  public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
     const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
     const whirlpool = await this.dal.getPool(poolAddress, refresh);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     let tickLowerIndex = undefined;
@@ -489,18 +484,16 @@ export class OrcaPool {
   /**
    * Construct a quote for closing an existing position
    */
-  public async getClosePositionQuote(
-    param: ClosePositionQuoteParam
-  ): Promise<ClosePositionQuote | null> {
+  public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
     const { positionAddress, refresh, slippageTolerance } = param;
     const position = await this.dal.getPosition(positionAddress, refresh);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     return getRemoveLiquidityQuote({
@@ -517,7 +510,7 @@ export class OrcaPool {
   /**
    * Construct a quote for swap
    */
-  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote | null> {
+  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
     const {
       poolAddress,
       tokenMint,
@@ -529,7 +522,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, refresh);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const swapDirection =

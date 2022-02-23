@@ -69,7 +69,7 @@ export class OrcaWhirlpoolClient {
   ): Promise<TokenUSDPrices> {
     const allPools = await this.data.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
-    return await getTokenUSDPrices(pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokenMints);
+    return getTokenUSDPrices(pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokenMints);
   }
 
   /**
@@ -83,7 +83,7 @@ export class OrcaWhirlpoolClient {
     walletAddress: Address,
     refresh = true
   ): Promise<Record<string, UserPositionData>> {
-    return await convertPositionDataToUserPositionData(this.data, walletAddress, refresh);
+    return convertPositionDataToUserPositionData(this.data, walletAddress, refresh);
   }
 
   /**
@@ -97,7 +97,7 @@ export class OrcaWhirlpoolClient {
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
-    return await convertWhirlpoolDataToPoolData(this.data, poolAddresses, refresh);
+    return convertWhirlpoolDataToPoolData(this.data, poolAddresses, refresh);
   }
 
   /**

@@ -18,7 +18,7 @@ import { PoolUtil } from "../../utils/whirlpool/pool-util";
 export async function getMultipleCollectFeesAndRewardsTx(
   dal: OrcaDAL,
   param: CollectMultipleFeesAndRewardsTxParam
-): Promise<{ tx: MultiTransactionBuilder; ataMap: Record<string, { address: PublicKey }> } | null> {
+): Promise<{ tx: MultiTransactionBuilder; ataMap: Record<string, { address: PublicKey }> }> {
   const { provider, positionAddresses } = param;
 
   const ctx = WhirlpoolContext.withProvider(provider, dal.programId);
@@ -171,10 +171,6 @@ export async function getMultipleCollectFeesAndRewardsTx(
   });
   if (collectTxBuilderSize > 0) {
     tx.addTxBuilder(collectTxBuilder);
-  }
-
-  if (tx.txBuilders.length === 0) {
-    return null;
   }
 
   return { tx, ataMap };
