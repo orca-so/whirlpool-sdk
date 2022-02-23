@@ -1,5 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
-import invariant from "tiny-invariant";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
@@ -12,7 +10,6 @@ import {
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
-import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
@@ -26,9 +23,6 @@ import {
   TransactionBuilder,
   WhirlpoolContext,
   WhirlpoolClient,
-  NUM_REWARDS,
-  PositionData,
-  WhirlpoolData,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "./txs/fees-and-rewards";
 
@@ -52,19 +46,19 @@ export class OrcaPosition {
   /**
    * Construct a transaction for adding liquidity to an existing pool
    */
-  public async getAddLiquidityTx(param: AddLiquidityTxParam): Promise<TransactionBuilder | null> {
+  public async getAddLiquidityTx(param: AddLiquidityTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.dal.getPosition(quote.positionAddress, false);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
@@ -116,21 +110,19 @@ export class OrcaPosition {
   /**
    * Construct a transaction for removing liquidity from an existing pool
    */
-  public async getRemoveLiquidityTx(
-    param: RemoveLiquidityTxParam
-  ): Promise<TransactionBuilder | null> {
+  public async getRemoveLiquidityTx(param: RemoveLiquidityTxParam): Promise<TransactionBuilder> {
     const { provider, quote } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
     const position = await this.dal.getPosition(quote.positionAddress, false);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
@@ -184,12 +176,12 @@ export class OrcaPosition {
    */
   public async getCollectFeesAndRewardsTx(
     param: CollectFeesAndRewardsTxParam
-  ): Promise<MultiTransactionBuilder | null> {
+  ): Promise<MultiTransactionBuilder> {
     const result = await getMultipleCollectFeesAndRewardsTx(this.dal, {
       provider: param.provider,
       positionAddresses: [param.positionAddress],
     });
-    return result?.tx || null;
+    return result.tx;
   }
 
   /**
@@ -197,9 +189,9 @@ export class OrcaPosition {
    */
   public async getCollectMultipleFeesAndRewardsTx(
     param: CollectMultipleFeesAndRewardsTxParam
-  ): Promise<MultiTransactionBuilder | null> {
+  ): Promise<MultiTransactionBuilder> {
     const result = await getMultipleCollectFeesAndRewardsTx(this.dal, param);
-    return result?.tx || null;
+    return result.tx;
   }
 
   /*** Quotes ***/
@@ -207,18 +199,16 @@ export class OrcaPosition {
   /**
    * Construct a quote for adding liquidity to an existing pool
    */
-  public async getAddLiquidityQuote(
-    param: AddLiquidityQuoteParam
-  ): Promise<AddLiquidityQuote | null> {
+  public async getAddLiquidityQuote(param: AddLiquidityQuoteParam): Promise<AddLiquidityQuote> {
     const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerance } = param;
     const position = await this.dal.getPosition(positionAddress, refresh);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     const internalParam: InternalAddLiquidityQuoteParam = {
@@ -244,17 +234,17 @@ export class OrcaPosition {
    */
   public async getRemoveLiquidityQuote(
     param: RemoveLiquidityQuoteParam
-  ): Promise<RemoveLiquidityQuote | null> {
+  ): Promise<RemoveLiquidityQuote> {
     const { positionAddress, liquidity, refresh, slippageTolerance } = param;
 
     const position = await this.dal.getPosition(positionAddress, refresh);
     if (!position) {
-      return null;
+      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
-      return null;
+      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
     }
 
     return getRemoveLiquidityQuote({

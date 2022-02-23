@@ -3,14 +3,7 @@ import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { Decimal } from "decimal.js";
 import invariant from "tiny-invariant";
-import {
-  DecimalUtil,
-  OrcaNetwork,
-  OrcaWhirlpoolClient,
-  Percentage,
-  PoolData,
-  SwapQuote,
-} from "../../src";
+import { OrcaNetwork, OrcaWhirlpoolClient, Percentage, PoolData, SwapQuote } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
@@ -70,15 +63,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -137,16 +126,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote", e);
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
-
     await tx.buildAndExecute();
 
     const pool = await client.getPool(poolAddress, true);
@@ -204,15 +188,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote", e);
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -271,15 +251,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote", e);
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -338,15 +314,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote", e);
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -390,15 +362,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
-    if (!oldPool) {
-      throw new Error("pool not found");
-    }
+    invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -442,13 +410,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
     invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 
@@ -492,13 +458,11 @@ describe.skip("Swap", () => {
       console.error("Failed to get swap quote");
       return;
     }
-    invariant(!!quote);
 
     const oldPool = await client.getPool(poolAddress, true);
     invariant(!!oldPool);
 
     const tx = await client.pool.getSwapTx({ provider, quote });
-    invariant(!!tx);
 
     await tx.buildAndExecute();
 

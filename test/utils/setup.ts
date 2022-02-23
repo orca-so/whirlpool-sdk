@@ -3,7 +3,6 @@ import { BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import invariant from "tiny-invariant";
 import { getInitWhirlpoolConfigsTx, OrcaWhirlpoolClient, Percentage } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { ZERO } from "../../src/utils/web3/math-utils";
@@ -106,11 +105,7 @@ export async function initPoolWithLiquidity(
       refresh: true,
     });
 
-    invariant(!!quote);
-
     const openTx = await client.pool.getOpenPositionTx({ provider, quote });
-
-    invariant(!!openTx);
 
     const { tx, mint } = openTx;
 

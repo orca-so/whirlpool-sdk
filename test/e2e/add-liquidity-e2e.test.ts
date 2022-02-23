@@ -7,7 +7,6 @@ import { OrcaDAL } from "../../src/dal/orca-dal";
 import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
 import { getPositionPda, toX64 } from "@orca-so/whirlpool-client-sdk";
 import { initPool, initWhirlpoolsConfig, zeroSlippage } from "../utils/setup";
-import invariant from "tiny-invariant";
 
 const NETWORK_URL = "http://127.0.0.1:8899";
 const PROGRAM_ID = new PublicKey("123aHGsUDPaH5tLM8HFZMeMjHgJJXPq9eSEk32syDw6k");
@@ -57,13 +56,9 @@ describe.skip("Add liquidity", () => {
       refresh: true,
     });
 
-    invariant(!!quote);
-
     console.log(quote.maxTokenA.toString(), quote.maxTokenB.toString());
 
     const openTx = await client.pool.getOpenPositionTx({ provider, quote });
-
-    invariant(!!openTx);
 
     const { tx, mint } = openTx;
 
@@ -78,13 +73,9 @@ describe.skip("Add liquidity", () => {
       refresh: true,
     });
 
-    invariant(!!closeQuote);
-
     console.log(closeQuote.minTokenA.toString(), closeQuote.minTokenB.toString());
 
     const closeTx = await client.pool.getClosePositionTx({ provider, quote: closeQuote });
-
-    invariant(!!closeTx);
 
     await closeTx.buildAndExecute();
   });
