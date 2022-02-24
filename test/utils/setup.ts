@@ -1,9 +1,14 @@
-import { toX64, WhirlpoolClient } from "@orca-so/whirlpool-client-sdk";
+import { TickSpacing, toX64, WhirlpoolClient } from "@orca-so/whirlpool-client-sdk";
 import { BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import { getInitWhirlpoolConfigsTx, OrcaWhirlpoolClient, Percentage } from "../../src";
+import {
+  getInitFeeTierConfigTx,
+  getInitWhirlpoolConfigsTx,
+  OrcaWhirlpoolClient,
+  Percentage,
+} from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { ZERO } from "../../src/utils/web3/math-utils";
 import { createAndMintToTokenAccount, createInOrderMints } from "./token";
@@ -15,7 +20,9 @@ export const zeroSlippage = new Percentage(ZERO, new BN(100));
 export async function initWhirlpoolsConfig(
   provider: Provider,
   programId: PublicKey,
-  owner: PublicKey
+  owner: PublicKey,
+  initTickSpacing = TickSpacing.Standard,
+  initDefaultFee = DEFAULT_FEE_RATE
 ) {
   const whirlpoolsConfigKeypair = Keypair.generate();
   const whirlpoolsConfig = whirlpoolsConfigKeypair.publicKey;
@@ -27,8 +34,16 @@ export async function initWhirlpoolsConfig(
     feeAuthority: owner,
     collectProtocolFeesAuthority: owner,
     rewardEmissionsSuperAuthority: owner,
-    defaultFeeRate: DEFAULT_FEE_RATE,
     defaultProtocolFeeRate: DEFAULT_PROTOCOL_FEE_RATE,
+  }).buildAndExecute();
+
+  await getInitFeeTierConfigTx({
+    programId,
+    provider,
+    whirlpoolConfigKey: whirlpoolsConfigKeypair.publicKey,
+    feeAuthority: owner,
+    tickSpacing: initTickSpacing,
+    defaultFeeRate: initDefaultFee,
   }).buildAndExecute();
 
   return whirlpoolsConfig;

@@ -21,6 +21,7 @@ import {
   toX64,
   NUM_REWARDS,
   TickSpacing,
+  getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
 
 export class OrcaAdmin {
@@ -41,6 +42,8 @@ export class OrcaAdmin {
       tickSpacing
     );
 
+    const feeTierPda = getFeeTierPda(programId, whirlpoolConfigKey, tickSpacing);
+
     const tx = client.initPoolTx({
       initSqrtPrice,
       whirlpoolConfigKey,
@@ -50,6 +53,7 @@ export class OrcaAdmin {
       tokenVaultAKeypair: Keypair.generate(),
       tokenVaultBKeypair: Keypair.generate(),
       tickSpacing,
+      feeTierKey: feeTierPda.publicKey,
       funder: provider.wallet.publicKey,
     });
 

@@ -1,4 +1,4 @@
-import { toX64 } from "@orca-so/whirlpool-client-sdk";
+import { TickSpacing, toX64 } from "@orca-so/whirlpool-client-sdk";
 import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { Decimal } from "decimal.js";
@@ -9,6 +9,7 @@ import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { ZERO } from "../../src/utils/web3/math-utils";
 import {
+  DEFAULT_FEE_RATE,
   initPoolWithLiquidity,
   initStandardPoolWithLiquidity,
   initWhirlpoolsConfig,
