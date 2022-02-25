@@ -91,8 +91,6 @@ export async function getMultipleCollectFeesAndRewardsTx(
         tokenOwnerAccountB,
         tokenVaultA: whirlpool.tokenVaultA,
         tokenVaultB: whirlpool.tokenVaultB,
-        tickArrayLower,
-        tickArrayUpper,
       })
       .compressIx(false);
     collectInstructions.push(feeIx);
@@ -122,8 +120,6 @@ export async function getMultipleCollectFeesAndRewardsTx(
             positionTokenAccount,
             rewardOwnerAccount,
             rewardVault: rewardInfo.vault,
-            tickArrayLower,
-            tickArrayUpper,
             rewardIndex: i,
           })
           .compressIx(false);
