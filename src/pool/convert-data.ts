@@ -7,7 +7,7 @@ import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
 import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
-import { ZERO } from "../utils/web3/math-utils";
+import { TickUtil } from "../utils/whirlpool/tick-util";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,
@@ -19,12 +19,22 @@ export async function convertWhirlpoolDataToPoolData(
 
     const allTokenAccounts: Set<string> = new Set();
     const allMintInfos: Set<string> = new Set();
-    pools.forEach((pool) => {
-      if (pool) {
+    const allTickArrays: Array<string> = [];
+    pools.forEach((pool, index) => {
+      const poolAddress = poolAddresses[index];
+      if (pool && poolAddress) {
         allTokenAccounts.add(pool.tokenVaultA.toBase58());
         allTokenAccounts.add(pool.tokenVaultB.toBase58());
         allMintInfos.add(pool.tokenMintA.toBase58());
         allMintInfos.add(pool.tokenMintB.toBase58());
+        allTickArrays.push(
+          TickUtil.getPDAWithSqrtPrice(
+            pool.sqrtPrice,
+            pool.tickSpacing,
+            poolAddress,
+            dal.programId
+          ).publicKey.toBase58()
+        );
 
         pool.rewardInfos.forEach(({ vault, mint }) => {
           if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
@@ -37,6 +47,7 @@ export async function convertWhirlpoolDataToPoolData(
     await Promise.all([
       dal.listTokenInfos(Array.from(allTokenAccounts), true),
       dal.listMintInfos(Array.from(allMintInfos), false),
+      dal.listTickArrays(allTickArrays, true),
     ]);
   }
 
