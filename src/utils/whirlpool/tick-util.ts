@@ -1,5 +1,5 @@
 import invariant from "tiny-invariant";
-import { Address } from "@project-serum/anchor";
+import { Address, BN } from "@project-serum/anchor";
 import { toPubKey } from "../address";
 import {
   TickSpacing,
@@ -10,6 +10,7 @@ import {
   TICK_ARRAY_SIZE,
   MIN_TICK_INDEX,
   MAX_TICK_INDEX,
+  sqrtPriceX64ToTickIndex,
 } from "@orca-so/whirlpool-client-sdk";
 import { PublicKey } from "@solana/web3.js";
 
@@ -69,6 +70,23 @@ export class TickUtil {
   ): PDA {
     const startIndex = TickUtil.getStartTickIndex(tickIndex, tickSpacing, tickArrayOffset);
     return getTickArrayPda(toPubKey(programId), toPubKey(whirlpool), startIndex);
+  }
+
+  public static getPDAWithSqrtPrice(
+    sqrtPriceX64: BN,
+    tickSpacing: TickSpacing,
+    whirlpool: Address,
+    programId: Address,
+    tickArrayOffset = 0
+  ): PDA {
+    const tickIndex = sqrtPriceX64ToTickIndex(sqrtPriceX64);
+    return TickUtil.getPdaWithTickIndex(
+      tickIndex,
+      tickSpacing,
+      whirlpool,
+      programId,
+      tickArrayOffset
+    );
   }
 
   /**
