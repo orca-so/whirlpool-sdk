@@ -10,7 +10,7 @@ import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
 import { getPositionPda, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { ONE } from "../utils/web3/math-utils";
+import { tickIndexToPrice } from "..";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,
@@ -99,8 +99,8 @@ export async function convertPositionDataToUserPositionData(
       rewards,
 
       // Derived helper fields
-      priceLower: Decimal.pow(1.0001, position.tickLowerIndex),
-      priceUpper: Decimal.pow(1.0001, position.tickUpperIndex),
+      priceLower: tickIndexToPrice(position.tickLowerIndex, decimalsA, decimalsB),
+      priceUpper: tickIndexToPrice(position.tickUpperIndex, decimalsA, decimalsB),
       decimalFeeOwedA,
       decimalFeeOwedB,
     };

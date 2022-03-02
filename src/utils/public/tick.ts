@@ -1,10 +1,22 @@
-import { sqrtPriceX64ToTickIndex, TickSpacing, toX64 } from "@orca-so/whirlpool-client-sdk";
+import {
+  fromX64,
+  sqrtPriceX64ToTickIndex,
+  tickIndexToSqrtPriceX64,
+  TickSpacing,
+  toX64,
+} from "@orca-so/whirlpool-client-sdk";
+import { BN } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { TickUtil } from "../whirlpool/tick-util";
 
-export function getNearestValidTickIndex(price: Decimal, stable = false) {
+export function getNearestValidTickIndex(
+  price: Decimal,
+  decimalsA: number,
+  decimalsB: number,
+  stable = false
+) {
   const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
-  return TickUtil.toValid(sqrtPriceX64ToTickIndex(toX64(price.sqrt())), tickSpacing);
+  return TickUtil.toValid(priceToTickIndex(price, decimalsA, decimalsB), tickSpacing);
 }
 
 export function getNextValidTickIndex(tickIndex: number, stable = false) {
@@ -15,4 +27,26 @@ export function getNextValidTickIndex(tickIndex: number, stable = false) {
 export function getPrevValidTickIndex(tickIndex: number, stable = false) {
   const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
   return tickIndex - tickSpacing;
+}
+
+export function sqrtPriceX64ToPrice(
+  sqrtPriceX64: BN,
+  decimalsA: number,
+  decimalsB: number
+): Decimal {
+  return fromX64(sqrtPriceX64)
+    .mul(Decimal.pow(10, decimalsB - decimalsA))
+    .pow(2);
+}
+
+export function priceToSqrtX64(price: Decimal, decimalsA: number, decimalsB: number): BN {
+  return toX64(price.sqrt().mul(Decimal.pow(10, decimalsA - decimalsB)));
+}
+
+export function tickIndexToPrice(tickIndex: number, decimalsA: number, decimalsB: number): Decimal {
+  return sqrtPriceX64ToPrice(tickIndexToSqrtPriceX64(tickIndex), decimalsA, decimalsB);
+}
+
+export function priceToTickIndex(price: Decimal, decimalsA: number, decimalsB: number): number {
+  return sqrtPriceX64ToTickIndex(priceToSqrtX64(price, decimalsA, decimalsB));
 }

@@ -15,7 +15,7 @@ import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { getAddLiquidityQuote, InternalAddLiquidityQuoteParam } from "./quotes/add-liquidity";
 import { getRemoveLiquidityQuote } from "./quotes/remove-liquidity";
-import { Address } from "@project-serum/anchor";
+import { Address, translateAddress } from "@project-serum/anchor";
 import { toPubKey } from "../utils/address";
 import {
   PDA,
@@ -53,12 +53,12 @@ export class OrcaPosition {
 
     const position = await this.dal.getPosition(quote.positionAddress, false);
     if (!position) {
-      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
+      throw new Error(`Position not found: ${translateAddress(quote.positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
 
     const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
@@ -117,12 +117,12 @@ export class OrcaPosition {
 
     const position = await this.dal.getPosition(quote.positionAddress, false);
     if (!position) {
-      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
+      throw new Error(`Position not found: ${translateAddress(quote.positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
 
     const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
@@ -203,12 +203,12 @@ export class OrcaPosition {
     const { positionAddress, tokenMint, tokenAmount, refresh, slippageTolerance } = param;
     const position = await this.dal.getPosition(positionAddress, refresh);
     if (!position) {
-      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
+      throw new Error(`Position not found: ${translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
 
     const internalParam: InternalAddLiquidityQuoteParam = {

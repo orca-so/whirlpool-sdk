@@ -63,8 +63,8 @@ export class OrcaPool {
     poolAddress: Address,
     width: number,
     refresh = true
-  ): Promise<LiquidityDistribution | null> {
-    return await getLiquidityDistribution(this.dal, poolAddress, width, refresh);
+  ): Promise<LiquidityDistribution> {
+    return getLiquidityDistribution(this.dal, poolAddress, width, refresh);
   }
 
   /**
@@ -105,7 +105,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, false);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     const positionMintKeypair = Keypair.generate();
@@ -242,12 +242,12 @@ export class OrcaPool {
 
     const position = await this.dal.getPosition(quote.positionAddress, true);
     if (!position) {
-      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
+      throw new Error(`Position not found: ${translateAddress(quote.positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
 
     const tickArrayLower = TickUtil.getPdaWithTickIndex(
@@ -333,7 +333,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, true);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     const txBuilder = new TransactionBuilder(ctx.provider);
@@ -440,7 +440,7 @@ export class OrcaPool {
     const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
     const whirlpool = await this.dal.getPool(poolAddress, refresh);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     let tickLowerIndex = undefined;
@@ -488,12 +488,12 @@ export class OrcaPool {
     const { positionAddress, refresh, slippageTolerance } = param;
     const position = await this.dal.getPosition(positionAddress, refresh);
     if (!position) {
-      throw new Error(`Position not found: {$translateAddress(positionAddress).toBase58()}`);
+      throw new Error(`Position not found: ${translateAddress(positionAddress).toBase58()}`);
     }
 
     const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
 
     return getRemoveLiquidityQuote({
@@ -522,7 +522,7 @@ export class OrcaPool {
 
     const whirlpool = await this.dal.getPool(poolAddress, refresh);
     if (!whirlpool) {
-      throw new Error(`Whirlpool not found: {$translateAddress(poolAddress).toBase58()}`);
+      throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     const swapDirection =
