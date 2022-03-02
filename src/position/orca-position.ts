@@ -75,12 +75,14 @@ export class OrcaPosition {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      whirlpool.tokenMintA,
+      quote.maxTokenA
     );
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintB
+      whirlpool.tokenMintB,
+      quote.maxTokenB
     );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
