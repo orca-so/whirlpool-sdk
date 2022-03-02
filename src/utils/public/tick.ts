@@ -14,5 +14,5 @@ export function getNextValidTickIndex(tickIndex: number, stable = false) {
 
 export function getPrevValidTickIndex(tickIndex: number, stable = false) {
   const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
-  return tickIndex + tickSpacing;
+  return tickIndex - tickSpacing;
 }
