@@ -6,3 +6,13 @@ export function getNearestValidTickIndex(price: Decimal, stable = false) {
   const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
   return TickUtil.toValid(sqrtPriceX64ToTickIndex(toX64(price.sqrt())), tickSpacing);
 }
+
+export function getNextValidTickIndex(tickIndex: number, stable = false) {
+  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+  return tickIndex + tickSpacing;
+}
+
+export function getPrevValidTickIndex(tickIndex: number, stable = false) {
+  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+  return tickIndex + tickSpacing;
+}
