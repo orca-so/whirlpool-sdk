@@ -1,5 +1,5 @@
 import { Address, BN, Provider, translateAddress } from "@project-serum/anchor";
-import { u64 } from "@solana/spl-token";
+import { NATIVE_MINT, u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -44,6 +44,7 @@ import {
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustPriceForSlippage } from "../utils/whirlpool/position-util";
+import { ZERO } from "../utils/web3/math-utils";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -135,12 +136,14 @@ export class OrcaPool {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      whirlpool.tokenMintA,
+      maxTokenA
     );
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintB
+      whirlpool.tokenMintB,
+      maxTokenB
     );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
@@ -341,14 +344,16 @@ export class OrcaPool {
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      whirlpool.tokenMintA,
+      aToB ? amountIn : ZERO
     );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintB
+      whirlpool.tokenMintB,
+      !aToB ? amountIn : ZERO
     );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
