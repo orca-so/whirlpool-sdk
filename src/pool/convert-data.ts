@@ -8,6 +8,7 @@ import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
 import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../utils/whirlpool/tick-util";
+import { sqrtPriceX64ToPrice } from "../utils/public";
 
 export async function convertWhirlpoolDataToPoolData(
   dal: OrcaDAL,
@@ -113,7 +114,7 @@ export async function convertWhirlpoolDataToPoolData(
       // Derived helper fields
       feePercentage,
       protocolFeePercentage,
-      price: fromX64(pool.sqrtPrice).pow(2),
+      price: sqrtPriceX64ToPrice(pool.sqrtPrice, decimalsA, decimalsB),
       decimalProtocolFeeOwedA: DecimalUtil.fromU64(pool.protocolFeeOwedA, decimalsA),
       decimalProtocolFeeOwedB: DecimalUtil.fromU64(pool.protocolFeeOwedB, decimalsB),
       decimalTokenVaultAmountA: DecimalUtil.fromU64(amountA, decimalsA),

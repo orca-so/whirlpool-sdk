@@ -2,6 +2,8 @@ import { WhirlpoolData, fromX64 } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import Decimal from "decimal.js";
+import { sqrtPriceX64ToPrice } from "..";
+import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey, toPubKeys } from "./address";
 
 type TokenMint = string;
@@ -19,6 +21,7 @@ export type TokenUSDPrices = Record<TokenMint, Decimal>;
  * @param otherBaseTokenMints optional list of token mints to prioritize as base
  */
 export async function getTokenUSDPrices(
+  dal: OrcaDAL,
   pools: PoolData[],
   baseTokenMint: Address,
   baseTokenUSDPrice = new Decimal(1),
@@ -66,7 +69,17 @@ export async function getTokenUSDPrices(
         continue;
       }
 
-      const yxPrice = fromX64(pool.sqrtPrice).pow(2);
+      const tokenDecimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
+      if (!tokenDecimalsA) {
+        throw new Error(`Token mint not found: ${pool.tokenMintA.toBase58()}`);
+      }
+
+      const tokenDecimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
+      if (!tokenDecimalsB) {
+        throw new Error(`Token mint not found: ${pool.tokenMintB.toBase58()}`);
+      }
+
+      const yxPrice = sqrtPriceX64ToPrice(pool.sqrtPrice, tokenDecimalsA, tokenDecimalsB);
       if (pool.tokenMintA.toBase58() === neighbor) {
         result[neighbor] = yxPrice.mul(vertexPriceUSD);
       } else {
