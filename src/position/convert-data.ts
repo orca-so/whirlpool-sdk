@@ -22,13 +22,13 @@ export async function convertPositionDataToUserPositionData(
   const result: Record<string, UserPositionData> = {};
   for (const address of positionAddresses) {
     const positionId = toPubKey(address).toBase58();
-    const position = await dal.getPosition(address, false);
+    const position = await dal.getPosition(address, refresh);
     if (!position) {
       console.error(`error - position not found`);
       continue;
     }
 
-    const whirlpool = await dal.getPool(position.whirlpool, false);
+    const whirlpool = await dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
       console.error(`error - whirlpool not found`);
       continue;
@@ -122,7 +122,7 @@ async function getUserPositions(
     }
   });
 
-  const positions = await dal.listPositions(potentialPositionAddresses, false);
+  const positions = await dal.listPositions(potentialPositionAddresses, refresh);
   invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
 
   if (refresh) {
@@ -133,7 +133,7 @@ async function getUserPositions(
         whirlpoolAddresses.add(position.whirlpool.toBase58());
       }
     });
-    const pools = await dal.listPools(Array.from(whirlpoolAddresses), false);
+    const pools = await dal.listPools(Array.from(whirlpoolAddresses), refresh);
 
     /*** Refresh mint infos ***/
     const allMintInfos: Set<string> = new Set();
