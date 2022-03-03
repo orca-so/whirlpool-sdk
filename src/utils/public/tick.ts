@@ -35,12 +35,12 @@ export function sqrtPriceX64ToPrice(
   decimalsB: number
 ): Decimal {
   return fromX64(sqrtPriceX64)
-    .mul(Decimal.pow(10, decimalsB - decimalsA))
-    .pow(2);
+    .pow(2)
+    .mul(Decimal.pow(10, decimalsA - decimalsB));
 }
 
 export function priceToSqrtX64(price: Decimal, decimalsA: number, decimalsB: number): BN {
-  return toX64(price.sqrt().mul(Decimal.pow(10, decimalsA - decimalsB)));
+  return toX64(price.mul(Decimal.pow(10, decimalsB - decimalsA)).sqrt());
 }
 
 export function tickIndexToPrice(tickIndex: number, decimalsA: number, decimalsB: number): Decimal {

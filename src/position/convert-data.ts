@@ -9,7 +9,7 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
-import { getPositionPda, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
+import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
 import { tickIndexToPrice } from "..";
 
 export async function convertPositionDataToUserPositionData(
