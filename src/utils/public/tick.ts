@@ -9,6 +9,11 @@ import { BN } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { TickUtil } from "../whirlpool/tick-util";
 
+export function getNearestValidTickIndexFromTickIndex(tickIndex: number, stable = false) {
+  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+  return TickUtil.toValid(tickIndex, tickSpacing);
+}
+
 export function getNearestValidTickIndex(
   price: Decimal,
   decimalsA: number,
