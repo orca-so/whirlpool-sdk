@@ -20,7 +20,7 @@ export class MultiTransactionBuilder {
         return { tx: transaction, signers };
       })
     );
-    return await this.provider.sendAll(txRequest, { commitment: "singleGossip" });
+    return this.provider.sendAll(txRequest, { commitment: "singleGossip" });
   }
 
   public addTxBuilder(txBuilder: TransactionBuilder): MultiTransactionBuilder {
