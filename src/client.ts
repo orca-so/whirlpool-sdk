@@ -69,7 +69,13 @@ export class OrcaWhirlpoolClient {
   ): Promise<TokenUSDPrices> {
     const allPools = await this.data.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
-    return getTokenUSDPrices(pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokenMints);
+    return getTokenUSDPrices(
+      this.data,
+      pools,
+      baseTokenMint,
+      baseTokenUSDPrice,
+      otherBaseTokenMints
+    );
   }
 
   /**

@@ -9,8 +9,8 @@ import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
-import { getPositionPda, tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { ONE } from "../utils/web3/math-utils";
+import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
+import { tickIndexToPrice } from "..";
 
 export async function convertPositionDataToUserPositionData(
   dal: OrcaDAL,
@@ -22,13 +22,13 @@ export async function convertPositionDataToUserPositionData(
   const result: Record<string, UserPositionData> = {};
   for (const address of positionAddresses) {
     const positionId = toPubKey(address).toBase58();
-    const position = await dal.getPosition(address, false);
+    const position = await dal.getPosition(address, refresh);
     if (!position) {
       console.error(`error - position not found`);
       continue;
     }
 
-    const whirlpool = await dal.getPool(position.whirlpool, false);
+    const whirlpool = await dal.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
       console.error(`error - whirlpool not found`);
       continue;
@@ -99,8 +99,8 @@ export async function convertPositionDataToUserPositionData(
       rewards,
 
       // Derived helper fields
-      priceLower: Decimal.pow(1.0001, position.tickLowerIndex),
-      priceUpper: Decimal.pow(1.0001, position.tickUpperIndex),
+      priceLower: tickIndexToPrice(position.tickLowerIndex, decimalsA, decimalsB),
+      priceUpper: tickIndexToPrice(position.tickUpperIndex, decimalsA, decimalsB),
       decimalFeeOwedA,
       decimalFeeOwedB,
     };
@@ -122,7 +122,7 @@ async function getUserPositions(
     }
   });
 
-  const positions = await dal.listPositions(potentialPositionAddresses, false);
+  const positions = await dal.listPositions(potentialPositionAddresses, refresh);
   invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
 
   if (refresh) {
@@ -133,7 +133,7 @@ async function getUserPositions(
         whirlpoolAddresses.add(position.whirlpool.toBase58());
       }
     });
-    const pools = await dal.listPools(Array.from(whirlpoolAddresses), false);
+    const pools = await dal.listPools(Array.from(whirlpoolAddresses), refresh);
 
     /*** Refresh mint infos ***/
     const allMintInfos: Set<string> = new Set();

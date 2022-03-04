@@ -1,7 +1,9 @@
 import { fromX64, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
-import { Address } from "@project-serum/anchor";
+import { Address, translateAddress } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
+import { hasUncaughtExceptionCaptureCallback } from "process";
+import { sqrtPriceX64ToPrice, tickIndexToPrice } from "../..";
 import { OrcaDAL } from "../../dal/orca-dal";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 
@@ -21,12 +23,22 @@ export async function getLiquidityDistribution(
   poolAddress: Address,
   width: number,
   refresh: boolean
-): Promise<LiquidityDistribution | null> {
+): Promise<LiquidityDistribution> {
   const datapoints: LiquidityDataPoint[] = [];
 
   const pool = await dal.getPool(poolAddress, refresh);
   if (!pool) {
-    return null;
+    throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
+  }
+
+  const tokenDecimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
+  if (!tokenDecimalsA) {
+    throw new Error(`Token mint not found: ${pool.tokenMintA.toBase58()}`);
+  }
+
+  const tokenDecimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
+  if (!tokenDecimalsB) {
+    throw new Error(`Token mint not found: ${pool.tokenMintB.toBase58()}`);
   }
 
   const tickArrayAddresses = getSurroundingTickArrayAddresses(
@@ -46,14 +58,14 @@ export async function getLiquidityDistribution(
     const startIndex = tickArray.startTickIndex;
     tickArray.ticks.forEach((tick, index) => {
       const tickIndex = startIndex + index * pool.tickSpacing;
-      const price = new Decimal(1.0001).pow(tickIndex);
+      const price = tickIndexToPrice(tickIndex, tokenDecimalsA, tokenDecimalsB);
       liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
       datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
     });
   });
 
   return {
-    currentPrice: fromX64(pool.sqrtPrice).pow(2),
+    currentPrice: sqrtPriceX64ToPrice(pool.sqrtPrice, tokenDecimalsA, tokenDecimalsB),
     currentTickIndex: pool.tickCurrentIndex,
     datapoints,
   };
