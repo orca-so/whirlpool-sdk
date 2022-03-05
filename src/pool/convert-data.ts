@@ -71,9 +71,7 @@ export async function convertWhirlpoolDataToPoolData(
     }
 
     const feePercentage = DecimalUtil.fromNumber(pool.feeRate, 6);
-    const protocolFeePercentage = new Decimal(1).div(
-      DecimalUtil.fromNumber(pool.protocolFeeRate, 2)
-    );
+    const protocolFeePercentage = DecimalUtil.fromNumber(pool.protocolFeeRate, 4);
 
     const rewards: PoolRewardInfo[] = [];
     for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
