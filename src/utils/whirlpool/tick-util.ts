@@ -100,7 +100,10 @@ export class TickUtil {
   public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
     const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
     const startTickIndex = (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
-    invariant(startTickIndex >= MIN_TICK_INDEX, "startTickIndex is too small");
+
+    const ticksInArray = TICK_ARRAY_SIZE * tickSpacing;
+    const minTickIndex = MIN_TICK_INDEX - ((MIN_TICK_INDEX % ticksInArray) + ticksInArray);
+    invariant(startTickIndex >= minTickIndex, "startTickIndex is too small");
     invariant(startTickIndex <= MAX_TICK_INDEX, "startTickIndex is too large");
     return startTickIndex;
   }

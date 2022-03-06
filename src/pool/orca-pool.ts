@@ -427,7 +427,7 @@ export class OrcaPool {
       PublicKey.default,
     ];
 
-    while (currentStartTickIndex != targetStartTickIndex) {
+    while (currentStartTickIndex != targetStartTickIndex && count < 3) {
       currentStartTickIndex = TickUtil.getStartTickIndex(
         currentTickIndex,
         tickSpacing,
