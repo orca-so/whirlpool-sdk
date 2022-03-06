@@ -51,7 +51,6 @@ type SwapSimulationInput = {
 type SwapSimulationOutput = {
   amountIn: BN;
   amountOut: BN;
-  sqrtPriceAfterSwapX64: BN;
 };
 
 type SwapStepSimulationInput = {
@@ -140,7 +139,6 @@ export class SwapSimulator {
     );
 
     return {
-      sqrtPriceAfterSwapX64: currentSqrtPriceX64,
       amountIn: inputAmount,
       amountOut: outputAmount,
     };

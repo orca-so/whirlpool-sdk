@@ -41,9 +41,11 @@ import {
   WhirlpoolClient,
   WhirlpoolContext,
   InitTickArrayParams,
+  MIN_SQRT_PRICE,
+  MAX_SQRT_PRICE,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
-import { adjustPriceForSlippage } from "../utils/whirlpool/position-util";
+import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
 import { ZERO } from "../utils/web3/math-utils";
 
 export class OrcaPool {
@@ -329,7 +331,15 @@ export class OrcaPool {
   public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder> {
     const {
       provider,
-      quote: { sqrtPriceLimitX64, amountIn, amountOut, aToB, fixedInput, poolAddress },
+      quote: {
+        sqrtPriceLimitX64,
+        amountThreshold,
+        amountIn,
+        amountOut,
+        aToB,
+        fixedInput,
+        poolAddress,
+      },
     } = param;
     const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
@@ -357,9 +367,11 @@ export class OrcaPool {
     );
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
+    const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
+
     const tickArrayAddresses = this.getTickArrayPublicKeysForSwap(
       whirlpool.sqrtPrice,
-      sqrtPriceLimitX64,
+      targetSqrtPriceLimitX64,
       whirlpool.tickSpacing,
       toPubKey(poolAddress),
       this.dal.programId
@@ -369,7 +381,8 @@ export class OrcaPool {
       client
         .swapTx({
           amount: fixedInput ? amountIn : amountOut,
-          sqrtPriceLimit: sqrtPriceLimitX64,
+          amountThreshold,
+          sqrtPriceLimit: targetSqrtPriceLimitX64,
           amountSpecifiedIsInput: fixedInput,
           aToB,
           whirlpool: toPubKey(poolAddress),
@@ -386,6 +399,10 @@ export class OrcaPool {
     );
 
     return new MultiTransactionBuilder(provider, [txBuilder]);
+  }
+
+  private getDefaultSqrtPriceLimit(aToB: boolean): BN {
+    return new BN(aToB ? MIN_SQRT_PRICE : MAX_SQRT_PRICE);
   }
 
   private getTickArrayPublicKeysForSwap(
@@ -538,7 +555,7 @@ export class OrcaPool {
 
     const swapSimulator = new SwapSimulator();
 
-    const { amountIn, amountOut, sqrtPriceAfterSwapX64 } = await swapSimulator.simulateSwap(
+    const { amountIn, amountOut } = await swapSimulator.simulateSwap(
       {
         refresh,
         dal: this.dal,
@@ -555,15 +572,16 @@ export class OrcaPool {
       }
     );
 
-    const sqrtPriceLimitX64 = adjustPriceForSlippage(
-      sqrtPriceAfterSwapX64,
+    const amountThreshold = adjustAmountForSlippage(
+      amountIn,
+      amountOut,
       slippageTolerance,
-      swapDirection === SwapDirection.BtoA
+      amountSpecified
     );
 
     return {
       poolAddress,
-      sqrtPriceLimitX64,
+      amountThreshold,
       amountIn,
       amountOut,
       aToB: swapDirection === SwapDirection.AtoB,
