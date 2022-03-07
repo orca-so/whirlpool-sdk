@@ -7,6 +7,7 @@
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
+    "lib": ["DOM", "ES6", "DOM.Iterable", "ScriptHost", "ES2016.Array.Include"],
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
