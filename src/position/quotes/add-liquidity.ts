@@ -13,7 +13,7 @@ import {
   PositionUtil,
 } from "../../utils/whirlpool/position-util";
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
-import { shiftRightRoundUp, ZERO } from "../../utils/web3/math-utils";
+import { ZERO } from "../../utils/web3/math-utils";
 
 /*** Public ***/
 
