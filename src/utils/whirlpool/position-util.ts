@@ -45,15 +45,16 @@ export function adjustForSlippage(
   }
 }
 
-export function adjustPriceForSlippage(
-  n: BN,
+export function adjustAmountForSlippage(
+  amountIn: BN,
+  amountOut: BN,
   { numerator, denominator }: Percentage,
-  adjustUp: boolean
+  amountSpecified: AmountSpecified
 ): BN {
-  if (adjustUp) {
-    return n.mul(denominator.add(numerator).sqr()).div(denominator.sqr());
+  if (amountSpecified === AmountSpecified.Input) {
+    return amountOut.mul(denominator).div(denominator.add(numerator));
   } else {
-    return n.mul(denominator.sqr()).div(denominator.add(numerator).sqr());
+    return amountIn.mul(denominator.add(numerator)).div(denominator);
   }
 }
 
