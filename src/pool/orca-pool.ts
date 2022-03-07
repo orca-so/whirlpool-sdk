@@ -333,7 +333,7 @@ export class OrcaPool {
       provider,
       quote: {
         sqrtPriceLimitX64,
-        amountThreshold,
+        otherAmountThreshold,
         amountIn,
         amountOut,
         aToB,
@@ -381,7 +381,7 @@ export class OrcaPool {
       client
         .swapTx({
           amount: fixedInput ? amountIn : amountOut,
-          amountThreshold,
+          otherAmountThreshold,
           sqrtPriceLimit: targetSqrtPriceLimitX64,
           amountSpecifiedIsInput: fixedInput,
           aToB,
@@ -572,7 +572,7 @@ export class OrcaPool {
       }
     );
 
-    const amountThreshold = adjustAmountForSlippage(
+    const otherAmountThreshold = adjustAmountForSlippage(
       amountIn,
       amountOut,
       slippageTolerance,
@@ -581,7 +581,7 @@ export class OrcaPool {
 
     return {
       poolAddress,
-      amountThreshold,
+      otherAmountThreshold,
       amountIn,
       amountOut,
       aToB: swapDirection === SwapDirection.AtoB,

@@ -76,7 +76,7 @@ export type SwapQuoteParam = {
 
 export type SwapQuote = {
   poolAddress: Address;
-  amountThreshold: u64;
+  otherAmountThreshold: u64;
   sqrtPriceLimitX64?: BN;
   amountIn: u64;
   amountOut: u64;
