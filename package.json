@@ -1,6 +1,6 @@
 {
   "name": "@orca-so/whirlpool-sdk",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Whirlpool SDK for the Orca protocol.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
