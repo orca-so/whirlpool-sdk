@@ -369,7 +369,7 @@ export class OrcaPool {
 
     const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
 
-    const tickArrayAddresses = this.getTickArrayPublicKeysForSwap(
+    const tickArrayAddresses = await this.getTickArrayPublicKeysForSwap(
       whirlpool.sqrtPrice,
       targetSqrtPriceLimitX64,
       whirlpool.tickSpacing,
@@ -405,13 +405,13 @@ export class OrcaPool {
     return new BN(aToB ? MIN_SQRT_PRICE : MAX_SQRT_PRICE);
   }
 
-  private getTickArrayPublicKeysForSwap(
+  private async getTickArrayPublicKeysForSwap(
     currentSqrtPriceX64: BN,
     targetSqrtPriceX64: BN,
     tickSpacing: number,
     poolAddress: PublicKey,
     programId: PublicKey
-  ): [PublicKey, PublicKey, PublicKey] {
+  ): Promise<[PublicKey, PublicKey, PublicKey]> {
     const currentTickIndex = sqrtPriceX64ToTickIndex(currentSqrtPriceX64);
     const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
 
@@ -428,17 +428,25 @@ export class OrcaPool {
     ];
 
     while (currentStartTickIndex != targetStartTickIndex && count < 3) {
-      currentStartTickIndex = TickUtil.getStartTickIndex(
+      const nextStartTickIndex = TickUtil.getStartTickIndex(
         currentTickIndex,
         tickSpacing,
         offset * count
       );
-      tickArrayAddresses[count] = getTickArrayPda(
+      const nextTickArrayAddress = getTickArrayPda(
         programId,
         poolAddress,
-        currentStartTickIndex
+        nextStartTickIndex
       ).publicKey;
+
+      const nextTickArray = await this.dal.getTickArray(nextTickArrayAddress, false);
+      if (!nextTickArray) {
+        break;
+      }
+
+      tickArrayAddresses[count] = nextTickArrayAddress;
       count++;
+      currentStartTickIndex = nextStartTickIndex;
     }
 
     while (count < 3) {
