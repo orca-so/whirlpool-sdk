@@ -11,6 +11,7 @@ import {
   SetRewardAuthorityBySuperAuthorityTxParam,
   SetRewardEmissionsBySuperAuthorityTxParam,
   SetFeeRateTxParam,
+  SetProtocolFeeRateTxParam,
 } from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
@@ -19,7 +20,6 @@ import {
   WhirlpoolContext,
   WhirlpoolClient,
   getWhirlpoolPda,
-  toX64,
   NUM_REWARDS,
   TickSpacing,
   getFeeTierPda,
@@ -115,6 +115,28 @@ export class OrcaAdmin {
       whirlpoolsConfig,
       feeAuthority: whirlpoolsConfigAccount.feeAuthority,
       feeRate,
+    });
+  }
+
+  public async getSetProtocolFeeRateTx(
+    param: SetProtocolFeeRateTxParam
+  ): Promise<TransactionBuilder> {
+    const { provider, protocolFeeRate, poolAddress } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const whirlpoolsConfigAccount = await this.dal.getConfig(whirlpoolsConfig, true);
+    invariant(
+      !!whirlpoolsConfigAccount,
+      `OrcaAdmin - Whirlpool config doesn't exist ${whirlpoolsConfig.toBase58()}`
+    );
+
+    return client.setProtocolFeeRateIx({
+      whirlpool: toPubKey(poolAddress),
+      whirlpoolsConfig,
+      feeAuthority: whirlpoolsConfigAccount.feeAuthority,
+      protocolFeeRate,
     });
   }
 

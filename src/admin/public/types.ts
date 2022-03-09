@@ -26,6 +26,12 @@ export type SetFeeRateTxParam = {
   feeRate: number;
 };
 
+export type SetProtocolFeeRateTxParam = {
+  provider: Provider;
+  poolAddress: Address;
+  protocolFeeRate: number;
+};
+
 export type SetCollectProtocolFeesAuthorityTxParam = {
   provider: Provider;
   newCollectProtocolFeesAuthority: Address;
