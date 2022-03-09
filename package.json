@@ -1,20 +1,12 @@
 {
   "name": "@orca-so/whirlpool-sdk",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Whirlpool SDK for the Orca protocol.",
   "main": "dist/index.js",
-  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.ts"
-    }
-  },
   "license": "MIT",
   "dependencies": {
-    "@orca-so/whirlpool-client-sdk": "0.0.3",
+    "@orca-so/whirlpool-client-sdk": "0.0.4",
     "@project-serum/anchor": "^0.20.1",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.31.0",
@@ -44,7 +36,7 @@
     "watch": "tsc -w -p src",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "prepare": "husky install",
-    "prepublishOnly": "tsc -p src",
+    "prepublishOnly": "yarn build",
     "test": "jest"
   },
   "lint-staged": {
