@@ -10,6 +10,7 @@ import {
   SetRewardEmissionsTxParam,
   SetRewardAuthorityBySuperAuthorityTxParam,
   SetRewardEmissionsBySuperAuthorityTxParam,
+  SetFeeRateTxParam,
 } from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
@@ -94,6 +95,26 @@ export class OrcaAdmin {
       whirlpoolsConfig,
       feeAuthority: provider.wallet.publicKey,
       newFeeAuthority: toPubKey(newFeeAuthority),
+    });
+  }
+
+  public async getSetFeeRateTx(param: SetFeeRateTxParam): Promise<TransactionBuilder> {
+    const { provider, feeRate, poolAddress } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const whirlpoolsConfigAccount = await this.dal.getConfig(whirlpoolsConfig, true);
+    invariant(
+      !!whirlpoolsConfigAccount,
+      `OrcaAdmin - Whirlpool config doesn't exist ${whirlpoolsConfig.toBase58()}`
+    );
+
+    return client.setFeeRateIx({
+      whirlpool: toPubKey(poolAddress),
+      whirlpoolsConfig,
+      feeAuthority: whirlpoolsConfigAccount.feeAuthority,
+      feeRate,
     });
   }
 
