@@ -1,8 +1,7 @@
-import { fromX64, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { Address, translateAddress } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import { hasUncaughtExceptionCaptureCallback } from "process";
 import { sqrtPriceX64ToPrice, tickIndexToPrice } from "../..";
 import { OrcaDAL } from "../../dal/orca-dal";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
@@ -21,7 +20,8 @@ export type LiquidityDistribution = {
 export async function getLiquidityDistribution(
   dal: OrcaDAL,
   poolAddress: Address,
-  width: number,
+  tickLower: number,
+  tickUpper: number,
   refresh: boolean
 ): Promise<LiquidityDistribution> {
   const datapoints: LiquidityDataPoint[] = [];
@@ -44,7 +44,8 @@ export async function getLiquidityDistribution(
   const tickArrayAddresses = getSurroundingTickArrayAddresses(
     pool,
     poolAddress,
-    width,
+    tickLower,
+    tickUpper,
     dal.programId
   );
   const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
@@ -74,20 +75,23 @@ export async function getLiquidityDistribution(
 function getSurroundingTickArrayAddresses(
   pool: WhirlpoolData,
   poolAddress: Address,
-  width: number,
+  tickLower: number,
+  tickUpper: number,
   programId: PublicKey
 ): PublicKey[] {
   const tickArrayAddresses: PublicKey[] = [];
 
-  for (let i = -width; i < width + 1; i++) {
+  let startTickIndex = TickUtil.getStartTickIndex(tickLower, pool.tickSpacing);
+  while (startTickIndex <= tickUpper) {
     const address = TickUtil.getPdaWithTickIndex(
       pool.tickCurrentIndex,
       pool.tickSpacing,
       poolAddress,
-      programId,
-      i
+      programId
     ).publicKey;
     tickArrayAddresses.push(address);
+
+    startTickIndex = TickUtil.getStartTickIndex(startTickIndex, pool.tickSpacing, 1);
   }
 
   return tickArrayAddresses;
