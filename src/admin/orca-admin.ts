@@ -88,7 +88,7 @@ export class OrcaAdmin {
     let tokenDestinationA = tokenDestinationTokenAAccount;
     let tokenDestinationB = tokenDestinationTokenBAccount;
 
-    if (!tokenDestinationSystemAccount || !tokenDestinationTokenBAccount) {
+    if (!tokenDestinationTokenAAccount || !tokenDestinationTokenBAccount) {
       invariant(!!tokenDestinationSystemAccount, "Token destination system account not specified");
 
       const { address: tokenAAta, ...tokenAAtaIx } = await resolveOrCreateATA(
