@@ -23,7 +23,9 @@ import {
   NUM_REWARDS,
   TickSpacing,
   getFeeTierPda,
+  Instruction,
 } from "@orca-so/whirlpool-client-sdk";
+import { resolveOrCreateATA } from "../utils/web3/ata-utils";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -66,7 +68,13 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTx(
     param: CollectProtocolFeesTxParam
   ): Promise<TransactionBuilder> {
-    const { provider, poolAddress, tokenDestinationA, tokenDestinationB } = param;
+    const {
+      provider,
+      poolAddress,
+      tokenDestinationSystemAccount,
+      tokenDestinationTokenAAccount,
+      tokenDestinationTokenBAccount,
+    } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -74,15 +82,60 @@ export class OrcaAdmin {
     const whirlpool = await this.dal.getPool(poolAddress, true);
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
-    return client.collectProtocolFeesTx({
-      whirlpoolsConfig,
-      whirlpool: toPubKey(poolAddress),
-      collectProtocolFeesAuthority: provider.wallet.publicKey,
-      tokenVaultA: whirlpool.tokenVaultA,
-      tokenVaultB: whirlpool.tokenVaultB,
-      tokenDestinationA: toPubKey(tokenDestinationA),
-      tokenDestinationB: toPubKey(tokenDestinationB),
-    });
+    let createTokenAAtaIx: Instruction | undefined = undefined;
+    let createTokenBAtaIx: Instruction | undefined = undefined;
+
+    let tokenDestinationA = tokenDestinationTokenAAccount;
+    let tokenDestinationB = tokenDestinationTokenBAccount;
+
+    if (!tokenDestinationSystemAccount || !tokenDestinationTokenBAccount) {
+      invariant(!!tokenDestinationSystemAccount, "Token destination system account not specified");
+
+      const { address: tokenAAta, ...tokenAAtaIx } = await resolveOrCreateATA(
+        provider.connection,
+        toPubKey(tokenDestinationSystemAccount),
+        whirlpool.tokenMintA
+      );
+      tokenDestinationA = tokenAAta;
+      createTokenAAtaIx = tokenAAtaIx;
+
+      const { address: tokenBAta, ...tokenBAtaIx } = await resolveOrCreateATA(
+        provider.connection,
+        toPubKey(tokenDestinationSystemAccount),
+        whirlpool.tokenMintB
+      );
+      tokenDestinationB = tokenBAta;
+      createTokenBAtaIx = tokenBAtaIx;
+    }
+
+    invariant(!!tokenDestinationA, "Token A destination not specified");
+    invariant(!!tokenDestinationB, "Token B destination not specified");
+
+    const collectFeesIx = client
+      .collectProtocolFeesTx({
+        whirlpoolsConfig,
+        whirlpool: toPubKey(poolAddress),
+        collectProtocolFeesAuthority: provider.wallet.publicKey,
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tokenDestinationA: toPubKey(tokenDestinationA),
+        tokenDestinationB: toPubKey(tokenDestinationB),
+      })
+      .compressIx(false);
+
+    let txBuilder = new TransactionBuilder(provider);
+
+    if (createTokenAAtaIx) {
+      txBuilder = txBuilder.addInstruction(createTokenAAtaIx);
+    }
+
+    if (createTokenBAtaIx) {
+      txBuilder = txBuilder.addInstruction(createTokenBAtaIx);
+    }
+
+    txBuilder = txBuilder.addInstruction(collectFeesIx);
+
+    return txBuilder;
   }
 
   public getSetFeeAuthorityTx(param: SetFeeAuthorityTxParam): TransactionBuilder {
