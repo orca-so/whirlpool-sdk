@@ -133,9 +133,7 @@ export class OrcaAdmin {
       txBuilder = txBuilder.addInstruction(createTokenBAtaIx);
     }
 
-    txBuilder = txBuilder.addInstruction(collectFeesIx);
-
-    return txBuilder;
+    return txBuilder.addInstruction(collectFeesIx);
   }
 
   public getSetFeeAuthorityTx(param: SetFeeAuthorityTxParam): TransactionBuilder {
