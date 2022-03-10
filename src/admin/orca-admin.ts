@@ -23,7 +23,6 @@ import {
   NUM_REWARDS,
   TickSpacing,
   getFeeTierPda,
-  Instruction,
 } from "@orca-so/whirlpool-client-sdk";
 import { resolveOrCreateATA } from "../utils/web3/ata-utils";
 
