@@ -34,6 +34,7 @@ export type PoolData = {
 
 export type PoolRewardInfo = {
   mint: PublicKey;
+  vault: PublicKey;
   vaultAmount?: BN;
   emissionsPerSecondX64: BN;
 

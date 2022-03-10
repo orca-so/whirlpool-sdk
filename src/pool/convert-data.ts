@@ -84,6 +84,7 @@ export async function convertWhirlpoolDataToPoolData(
 
       rewards.push({
         mint,
+        vault,
         vaultAmount: amount,
         decimalVaultAmount: decimals && amount ? DecimalUtil.fromU64(amount, decimals) : undefined,
         emissionsPerSecondX64,

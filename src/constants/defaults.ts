@@ -20,7 +20,7 @@ export function getDefaultConnection(network: OrcaNetwork): Connection {
 export function getDefaultOffchainDataURI(network: OrcaNetwork): string {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      throw new Error("TODO");
+      return "https://mainnet-zp2.orca.so";
     case OrcaNetwork.DEVNET:
       return "https://devnet-zp2.orca.so";
     default:

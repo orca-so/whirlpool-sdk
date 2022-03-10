@@ -4,7 +4,7 @@ import { OrcaNetwork } from "./public/network";
 export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      throw new Error("TODO");
+      return new PublicKey("4NPRn2WVyyCrKEQBFaog8dvTjPLK8ETddrZUyRLq61Bo");
     case OrcaNetwork.DEVNET:
       return new PublicKey("7ZCKtGzzNw4F2qJUm3muJEtJuUD9892YAEZqq3cmZ5QV");
     default:
@@ -15,7 +15,7 @@ export function getWhirlpoolsConfig(network: OrcaNetwork): PublicKey {
 export function getWhirlpoolProgramId(network: OrcaNetwork): PublicKey {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      return new PublicKey("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc");
+      return new PublicKey("4NPRn2WVyyCrKEQBFaog8dvTjPLK8ETddrZUyRLq61Bo");
     case OrcaNetwork.DEVNET:
       return new PublicKey("6cnzkt2ooxusZ2CErhcggzkTW12LjPdZkN8jB9TAGaTj");
     default:
