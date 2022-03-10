@@ -11,9 +11,7 @@ export type InitPoolTxParam = {
 export type CollectProtocolFeesTxParam = {
   provider: Provider;
   poolAddress: Address;
-  tokenDestinationSystemAccount?: Address;
-  tokenDestinationTokenAAccount?: Address;
-  tokenDestinationTokenBAccount?: Address;
+  tokenDestinationSystemAccount: Address;
 };
 
 export type SetFeeAuthorityTxParam = {
