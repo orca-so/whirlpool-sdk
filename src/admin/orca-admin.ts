@@ -67,7 +67,7 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTx(
     param: CollectProtocolFeesTxParam
   ): Promise<TransactionBuilder> {
-    const { provider, poolAddress, tokenDestinationSystemAccount } = param;
+    const { provider, poolAddress } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -77,13 +77,13 @@ export class OrcaAdmin {
 
     const { address: tokenDestinationA, ...createTokenAAtaIx } = await resolveOrCreateATA(
       provider.connection,
-      toPubKey(tokenDestinationSystemAccount),
+      provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
 
     const { address: tokenDestinationB, ...createTokenBAtaIx } = await resolveOrCreateATA(
       provider.connection,
-      toPubKey(tokenDestinationSystemAccount),
+      provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
 
