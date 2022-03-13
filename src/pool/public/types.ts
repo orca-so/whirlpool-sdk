@@ -20,6 +20,11 @@ export type SwapTxParam = {
   quote: SwapQuote;
 };
 
+export type FillTickArraysParam = {
+  provider: Provider;
+  poolAddress: Address;
+};
+
 /*** Quotes ***/
 
 export type OpenPositionQuoteParam = OpenPositionQuoteByPrice | OpenPositionQuoteByTickIndex;

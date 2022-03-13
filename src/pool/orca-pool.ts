@@ -1,11 +1,12 @@
 import { Address, BN, Provider, translateAddress } from "@project-serum/anchor";
-import { NATIVE_MINT, u64 } from "@solana/spl-token";
+import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
   ClosePositionQuote,
   ClosePositionQuoteParam,
   ClosePositionTxParam,
+  FillTickArraysParam,
   isQuoteByPrice,
   isQuoteByTickIndex,
   OpenPositionQuote,
@@ -43,6 +44,8 @@ import {
   InitTickArrayParams,
   MIN_SQRT_PRICE,
   MAX_SQRT_PRICE,
+  MIN_TICK_INDEX,
+  MAX_TICK_INDEX,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
@@ -325,6 +328,147 @@ export class OrcaPool {
     txBuilder.addInstruction(positionIx);
 
     return txBuilder;
+  }
+
+  async getLowestInitializedTickArrayTickIndex(
+    poolAddress: Address,
+    tickSpacing: number
+  ): Promise<number> {
+    let offset = 1;
+    while (true) {
+      let tickArrayPda;
+      try {
+        tickArrayPda = TickUtil.getPdaWithTickIndex(
+          MIN_TICK_INDEX,
+          tickSpacing,
+          poolAddress,
+          this.dal.programId,
+          offset
+        );
+      } catch (e) {
+        console.error(e);
+        break;
+      }
+
+      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      if (!tickArray) {
+        offset++;
+        continue;
+      }
+
+      return TickUtil.getStartTickIndex(MIN_TICK_INDEX, tickSpacing, offset);
+    }
+
+    throw new Error("Initialized tick array not found");
+  }
+
+  async getHighestInitializedTickArrayTickIndex(
+    poolAddress: Address,
+    tickSpacing: number
+  ): Promise<number> {
+    let offset = -1;
+    while (true) {
+      let tickArrayPda;
+      try {
+        tickArrayPda = TickUtil.getPdaWithTickIndex(
+          MAX_TICK_INDEX,
+          tickSpacing,
+          poolAddress,
+          this.dal.programId,
+          offset
+        );
+      } catch (e) {
+        console.error(e);
+        break;
+      }
+
+      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      if (!tickArray) {
+        offset--;
+        continue;
+      }
+
+      return TickUtil.getStartTickIndex(MAX_TICK_INDEX, tickSpacing, offset);
+    }
+
+    throw new Error("Initialized tick array not found");
+  }
+
+  public async getInitializeAllTickArraysTx(
+    param: FillTickArraysParam
+  ): Promise<MultiTransactionBuilder> {
+    const { provider, poolAddress } = param;
+
+    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
+    const client = new WhirlpoolClient(ctx);
+
+    const whirlpool = await this.dal.getPool(poolAddress, true);
+    if (!whirlpool) {
+      throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
+    }
+
+    // get all lowest and highest tick array
+    let numIxs = 0;
+    let txBuilder = new TransactionBuilder(provider);
+    const multiTxBuilder = new MultiTransactionBuilder(provider, []);
+
+    const firstTickIndex = await this.getLowestInitializedTickArrayTickIndex(
+      poolAddress,
+      whirlpool.tickSpacing
+    );
+    const lastTickIndex = await this.getHighestInitializedTickArrayTickIndex(
+      poolAddress,
+      whirlpool.tickSpacing
+    );
+
+    let offset = 1;
+    while (true) {
+      let tickArrayPda;
+      try {
+        tickArrayPda = TickUtil.getPdaWithTickIndex(
+          firstTickIndex,
+          whirlpool.tickSpacing,
+          poolAddress,
+          this.dal.programId,
+          offset
+        );
+      } catch (e) {
+        console.error(e);
+        break;
+      }
+
+      const startTick = TickUtil.getStartTickIndex(firstTickIndex, whirlpool.tickSpacing, offset);
+      if (startTick === lastTickIndex) {
+        break;
+      }
+
+      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      if (!tickArray) {
+        txBuilder.addInstruction(
+          client
+            .initTickArrayTx({
+              whirlpool: toPubKey(poolAddress),
+              tickArrayPda,
+              startTick,
+              funder: provider.wallet.publicKey,
+            })
+            .compressIx(false)
+        );
+
+        numIxs++;
+
+        if (!(numIxs % 7)) {
+          multiTxBuilder.addTxBuilder(txBuilder);
+          txBuilder = new TransactionBuilder(provider);
+        }
+      }
+
+      offset++;
+    }
+
+    multiTxBuilder.addTxBuilder(txBuilder);
+
+    return multiTxBuilder;
   }
 
   /**
