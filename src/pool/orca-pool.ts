@@ -394,7 +394,9 @@ export class OrcaPool {
     throw new Error("Initialized tick array not found");
   }
 
-  public async getInitializeAllTickArraysTx(
+  // Finds all uninitialized tick arrays inbetween the lowest and highest
+  // initialized tick arrays for a given pool
+  public async getInitializeGapTickArraysTx(
     param: FillTickArraysParam
   ): Promise<MultiTransactionBuilder> {
     const { provider, poolAddress } = param;
