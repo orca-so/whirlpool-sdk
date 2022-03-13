@@ -709,7 +709,8 @@ export class OrcaPool {
 
     const swapSimulator = new SwapSimulator();
 
-    const { amountIn, amountOut } = await swapSimulator.simulateSwap(
+    // Return sqrtPriceLimit
+    const { amountIn, amountOut, sqrtPriceLimitX64 } = await swapSimulator.simulateSwap(
       {
         refresh,
         dal: this.dal,
@@ -736,6 +737,7 @@ export class OrcaPool {
     return {
       poolAddress,
       otherAmountThreshold,
+      sqrtPriceLimitX64,
       amountIn,
       amountOut,
       aToB: swapDirection === SwapDirection.AtoB,
