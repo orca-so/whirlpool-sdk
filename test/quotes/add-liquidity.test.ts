@@ -23,7 +23,7 @@ const WhirlpoolsJSON = require("./fixtures/add-liquidity/Whirlpools.json");
 const TickArraysJSON = require("./fixtures/add-liquidity/TickArrays.json");
 const PositionsJSON = require("./fixtures/add-liquidity/Positions.json");
 
-Decimal.set({ precision: 40 });
+Decimal.set({ precision: 40, toExpPos: 40, toExpNeg: -20, rounding: 1 });
 
 function deserializeWhirlpool(whirlpoolJson: Record<string, any>): WhirlpoolData {
   return {
