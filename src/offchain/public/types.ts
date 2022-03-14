@@ -22,24 +22,30 @@ export type OffchainPoolData = {
   lpsFeeRate: number;
   protocolFeeRate: number;
 
+  priceHistory?: DayWeekMonthData<MinMax>;
   tokenAPriceUSD?: CombinedTokenPrice;
   tokenBPriceUSD?: CombinedTokenPrice;
   tvl?: number;
-  volume?: DayWeekMonthData;
-  feeApr?: DayWeekMonthData;
-  reward0Apr?: DayWeekMonthData;
-  reward1Apr?: DayWeekMonthData;
-  reward2Apr?: DayWeekMonthData;
+  volume?: DayWeekMonthData<number>;
+  feeApr?: DayWeekMonthData<number>;
+  reward0Apr?: DayWeekMonthData<number>;
+  reward1Apr?: DayWeekMonthData<number>;
+  reward2Apr?: DayWeekMonthData<number>;
 };
 
-export type DayWeekMonthData = {
-  day: number;
-  week: number;
-  month: number;
-};
+export interface DayWeekMonthData<T> {
+  day: T;
+  week: T;
+  month: T;
+}
 
 export type CombinedTokenPrice = {
   price?: number;
   dex?: number;
   coingecko?: number;
+};
+
+export type MinMax = {
+  min: number;
+  max: number;
 };
