@@ -14,6 +14,8 @@ export type PoolData = {
   liquidity: BN;
   sqrtPrice: BN;
   tickCurrentIndex: number;
+  feeGrowthGlobalA: BN;
+  feeGrowthGlobalB: BN;
   protocolFeeOwedA: BN;
   protocolFeeOwedB: BN;
   tokenVaultAmountA: BN;
@@ -24,6 +26,8 @@ export type PoolData = {
   feePercentage: Decimal;
   protocolFeePercentage: Decimal;
   price: Decimal;
+  decimalFeeGrowthGlobalA: Decimal;
+  decimalFeeGrowthGlobalB: Decimal;
   decimalProtocolFeeOwedA: Decimal;
   decimalProtocolFeeOwedB: Decimal;
   decimalTokenVaultAmountA: Decimal;
