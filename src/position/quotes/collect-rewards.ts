@@ -1,6 +1,7 @@
 import { NUM_REWARDS, PositionData, TickData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import invariant from "tiny-invariant";
+import { subUnderflowU128, U128, ZERO } from "../../utils/web3/math-utils";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { CollectRewardsQuote } from "../public";
 
@@ -62,7 +63,10 @@ export function getCollectRewardsQuoteInternal(
       invariant(!!growthBelowX64, "growthBelowX64 cannot be undefined");
       invariant(!!growthAboveX64, "growthAboveX64 cannot be undefined");
 
-      const growthInsde = rewardInfo.growthGlobalX64.sub(growthBelowX64).sub(growthAboveX64);
+      const growthInsde = subUnderflowU128(
+        rewardInfo.growthGlobalX64.sub(growthBelowX64),
+        growthAboveX64
+      );
       rewardGrowthsInsideX64[i] = [growthInsde, true];
     }
   }
@@ -84,7 +88,7 @@ export function getCollectRewardsQuoteInternal(
       const amountOwedX64 = rewardInfo.amountOwed.shln(64);
       const growthInsideCheckpointX64 = rewardInfo.growthInsideCheckpoint;
       updatedRewardInfosX64[i] = amountOwedX64.add(
-        liquidity.mul(rewardGrowthInsideX64.sub(growthInsideCheckpointX64))
+        subUnderflowU128(rewardGrowthInsideX64, growthInsideCheckpointX64).mul(liquidity)
       );
     }
   }
