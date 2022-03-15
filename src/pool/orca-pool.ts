@@ -337,19 +337,13 @@ export class OrcaPool {
   ): Promise<number> {
     let offset = 1;
     while (true) {
-      let tickArrayPda;
-      try {
-        tickArrayPda = TickUtil.getPdaWithTickIndex(
-          MIN_TICK_INDEX,
-          tickSpacing,
-          poolAddress,
-          this.dal.programId,
-          offset
-        );
-      } catch (e) {
-        console.error(e);
-        break;
-      }
+      const tickArrayPda = TickUtil.getPdaWithTickIndex(
+        MIN_TICK_INDEX,
+        tickSpacing,
+        poolAddress,
+        this.dal.programId,
+        offset
+      );
 
       const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
@@ -359,8 +353,6 @@ export class OrcaPool {
 
       return TickUtil.getStartTickIndex(MIN_TICK_INDEX, tickSpacing, offset);
     }
-
-    throw new Error("Initialized tick array not found");
   }
 
   async getHighestInitializedTickArrayTickIndex(
@@ -369,19 +361,13 @@ export class OrcaPool {
   ): Promise<number> {
     let offset = -1;
     while (true) {
-      let tickArrayPda;
-      try {
-        tickArrayPda = TickUtil.getPdaWithTickIndex(
-          MAX_TICK_INDEX,
-          tickSpacing,
-          poolAddress,
-          this.dal.programId,
-          offset
-        );
-      } catch (e) {
-        console.error(e);
-        break;
-      }
+      const tickArrayPda = TickUtil.getPdaWithTickIndex(
+        MAX_TICK_INDEX,
+        tickSpacing,
+        poolAddress,
+        this.dal.programId,
+        offset
+      );
 
       const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
@@ -391,8 +377,6 @@ export class OrcaPool {
 
       return TickUtil.getStartTickIndex(MAX_TICK_INDEX, tickSpacing, offset);
     }
-
-    throw new Error("Initialized tick array not found");
   }
 
   // Finds all uninitialized tick arrays inbetween the lowest and highest
@@ -410,11 +394,6 @@ export class OrcaPool {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
-    // get all lowest and highest tick array
-    let numIxs = 0;
-    let txBuilder = new TransactionBuilder(provider);
-    const multiTxBuilder = new MultiTransactionBuilder(provider, []);
-
     const firstTickIndex = await this.getLowestInitializedTickArrayTickIndex(
       poolAddress,
       whirlpool.tickSpacing
@@ -424,21 +403,19 @@ export class OrcaPool {
       whirlpool.tickSpacing
     );
 
+    // get all lowest and highest tick array
+    let numIxs = 0;
+    let txBuilder = new TransactionBuilder(provider);
+    const multiTxBuilder = new MultiTransactionBuilder(provider, []);
     let offset = 1;
     while (true) {
-      let tickArrayPda;
-      try {
-        tickArrayPda = TickUtil.getPdaWithTickIndex(
-          firstTickIndex,
-          whirlpool.tickSpacing,
-          poolAddress,
-          this.dal.programId,
-          offset
-        );
-      } catch (e) {
-        console.error(e);
-        break;
-      }
+      const tickArrayPda = TickUtil.getPdaWithTickIndex(
+        firstTickIndex,
+        whirlpool.tickSpacing,
+        poolAddress,
+        this.dal.programId,
+        offset
+      );
 
       const startTick = TickUtil.getStartTickIndex(firstTickIndex, whirlpool.tickSpacing, offset);
       if (startTick === lastTickIndex) {
