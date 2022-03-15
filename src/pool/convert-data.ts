@@ -105,7 +105,7 @@ export async function convertWhirlpoolDataToPoolData(
       sqrtPrice: pool.sqrtPrice,
       tickCurrentIndex: pool.tickCurrentIndex,
       protocolFeeOwedA: pool.protocolFeeOwedA,
-      protocolFeeOwedB: pool.protocolFeeOwedA,
+      protocolFeeOwedB: pool.protocolFeeOwedB,
       tokenVaultAmountA: amountA,
       tokenVaultAmountB: amountB,
       rewards,
