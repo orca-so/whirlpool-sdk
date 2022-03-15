@@ -46,6 +46,7 @@ import {
   MAX_SQRT_PRICE,
   MIN_TICK_INDEX,
   MAX_TICK_INDEX,
+  getOraclePda,
 } from "@orca-so/whirlpool-client-sdk";
 import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
@@ -525,6 +526,8 @@ export class OrcaPool {
       this.dal.programId
     );
 
+    const oraclePda = getOraclePda(ctx.program.programId, translateAddress(poolAddress));
+
     txBuilder.addInstruction(
       client
         .swapTx({
@@ -542,6 +545,7 @@ export class OrcaPool {
           tickArray0: tickArrayAddresses[0],
           tickArray1: tickArrayAddresses[1],
           tickArray2: tickArrayAddresses[2],
+          oracle: oraclePda.publicKey,
         })
         .compressIx(false)
     );

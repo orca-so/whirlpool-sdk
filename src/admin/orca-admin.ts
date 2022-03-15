@@ -24,6 +24,7 @@ import {
   TickSpacing,
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
+import { resolveOrCreateATA } from "../utils/web3/ata-utils";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -66,7 +67,7 @@ export class OrcaAdmin {
   public async getCollectProtocolFeesTx(
     param: CollectProtocolFeesTxParam
   ): Promise<TransactionBuilder> {
-    const { provider, poolAddress, tokenDestinationA, tokenDestinationB } = param;
+    const { provider, poolAddress } = param;
     const { programId, whirlpoolsConfig } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
@@ -74,15 +75,34 @@ export class OrcaAdmin {
     const whirlpool = await this.dal.getPool(poolAddress, true);
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
-    return client.collectProtocolFeesTx({
-      whirlpoolsConfig,
-      whirlpool: toPubKey(poolAddress),
-      collectProtocolFeesAuthority: provider.wallet.publicKey,
-      tokenVaultA: whirlpool.tokenVaultA,
-      tokenVaultB: whirlpool.tokenVaultB,
-      tokenDestinationA: toPubKey(tokenDestinationA),
-      tokenDestinationB: toPubKey(tokenDestinationB),
-    });
+    const { address: tokenDestinationA, ...createTokenAAtaIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
+    );
+
+    const { address: tokenDestinationB, ...createTokenBAtaIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
+
+    const collectFeesIx = client
+      .collectProtocolFeesTx({
+        whirlpoolsConfig,
+        whirlpool: toPubKey(poolAddress),
+        collectProtocolFeesAuthority: provider.wallet.publicKey,
+        tokenVaultA: whirlpool.tokenVaultA,
+        tokenVaultB: whirlpool.tokenVaultB,
+        tokenDestinationA: toPubKey(tokenDestinationA),
+        tokenDestinationB: toPubKey(tokenDestinationB),
+      })
+      .compressIx(false);
+
+    return new TransactionBuilder(provider)
+      .addInstruction(createTokenAAtaIx)
+      .addInstruction(createTokenBAtaIx)
+      .addInstruction(collectFeesIx);
   }
 
   public getSetFeeAuthorityTx(param: SetFeeAuthorityTxParam): TransactionBuilder {

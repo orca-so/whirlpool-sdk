@@ -475,7 +475,6 @@ describe.skip("Swap", () => {
 });
 
 function expectSwapOutput(pool: PoolData, oldPool: PoolData, quote: SwapQuote) {
-  expect(pool.sqrtPrice.eq(quote.sqrtPriceLimitX64)).toBeTruthy();
   if (quote.aToB) {
     expect(oldPool.tokenVaultAmountA.add(quote.amountIn).eq(pool.tokenVaultAmountA)).toBeTruthy();
     expect(oldPool.tokenVaultAmountB.sub(quote.amountOut).eq(pool.tokenVaultAmountB)).toBeTruthy();
