@@ -1,7 +1,7 @@
 import { NUM_REWARDS, PositionData, TickData, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import invariant from "tiny-invariant";
-import { subUnderflowU128, U128, ZERO } from "../../utils/web3/math-utils";
+import { subUnderflowU128 } from "../../utils/web3/math-utils";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { CollectRewardsQuote } from "../public";
 
@@ -37,7 +37,7 @@ export function getCollectRewardsQuoteInternal(
     invariant(!!upperRewardGrowthsOutside, "upperRewardGrowthsOutside cannot be undefined");
 
     if (tickCurrentIndex < tickLowerIndex) {
-      rewardGrowthsBelowX64[i] = growthGlobalX64.sub(lowerRewardGrowthsOutside);
+      rewardGrowthsBelowX64[i] = subUnderflowU128(growthGlobalX64, lowerRewardGrowthsOutside);
     } else {
       rewardGrowthsBelowX64[i] = lowerRewardGrowthsOutside;
     }
@@ -45,7 +45,7 @@ export function getCollectRewardsQuoteInternal(
     if (tickCurrentIndex < tickUpperIndex) {
       rewardGrowthsAboveX64[i] = upperRewardGrowthsOutside;
     } else {
-      rewardGrowthsAboveX64[i] = growthGlobalX64.sub(upperRewardGrowthsOutside);
+      rewardGrowthsAboveX64[i] = subUnderflowU128(growthGlobalX64, upperRewardGrowthsOutside);
     }
   }
 
@@ -64,7 +64,7 @@ export function getCollectRewardsQuoteInternal(
       invariant(!!growthAboveX64, "growthAboveX64 cannot be undefined");
 
       const growthInsde = subUnderflowU128(
-        rewardInfo.growthGlobalX64.sub(growthBelowX64),
+        subUnderflowU128(rewardInfo.growthGlobalX64, growthBelowX64),
         growthAboveX64
       );
       rewardGrowthsInsideX64[i] = [growthInsde, true];
