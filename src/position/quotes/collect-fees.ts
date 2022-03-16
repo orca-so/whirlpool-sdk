@@ -1,5 +1,6 @@
 import { WhirlpoolData, PositionData, TickData } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
+import { subUnderflowU128, U128, ZERO } from "../../utils/web3/math-utils";
 import { CollectFeesQuote } from "../public";
 
 export type InternalGetCollectFeesQuoteParam = {
@@ -61,13 +62,22 @@ export function getCollectFeesQuoteInternal(
     feeGrowthAboveBX64 = feeGrowthGlobalBX64.sub(tickUpperFeeGrowthOutsideBX64);
   }
 
-  const feeGrowthInsideAX64 = feeGrowthGlobalAX64.sub(feeGrowthBelowAX64).sub(feeGrowthAboveAX64);
-  const feeGrowthInsideBX64 = feeGrowthGlobalBX64.sub(feeGrowthBelowBX64).sub(feeGrowthAboveBX64);
+  const feeGrowthInsideAX64 = subUnderflowU128(
+    feeGrowthGlobalAX64.sub(feeGrowthBelowAX64),
+    feeGrowthAboveAX64
+  );
+  const feeGrowthInsideBX64 = subUnderflowU128(
+    feeGrowthGlobalBX64.sub(feeGrowthBelowBX64),
+    feeGrowthAboveBX64
+  );
 
   // Calculate the updated fees owed
-
-  const feeOwedADelta = liquidity.mul(feeGrowthInsideAX64).sub(feeGrowthCheckpointAX64).shrn(64);
-  const feeOwedBDelta = liquidity.mul(feeGrowthInsideBX64).sub(feeGrowthCheckpointBX64).shrn(64);
+  const feeOwedADelta = subUnderflowU128(feeGrowthInsideAX64, feeGrowthCheckpointAX64)
+    .mul(liquidity)
+    .shrn(64);
+  const feeOwedBDelta = subUnderflowU128(feeGrowthInsideBX64, feeGrowthCheckpointBX64)
+    .mul(liquidity)
+    .shrn(64);
 
   const updatedFeeOwedA = feeOwedA.add(feeOwedADelta);
   const updatedFeeOwedB = feeOwedB.add(feeOwedBDelta);

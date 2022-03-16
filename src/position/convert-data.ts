@@ -59,7 +59,6 @@ export async function convertPositionDataToUserPositionData(
       whirlpool.tickSpacing
     );
     const quoteParam = { whirlpool, position, tickLower, tickUpper };
-
     const feesQuote = getCollectFeesQuoteInternal(quoteParam);
     const decimalsA = (await dal.getMintInfo(whirlpool.tokenMintA, false))?.decimals;
     const decimalsB = (await dal.getMintInfo(whirlpool.tokenMintB, false))?.decimals;
