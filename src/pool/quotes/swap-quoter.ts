@@ -97,6 +97,10 @@ export class SwapSimulator {
     let sqrtPriceLimitX64;
 
     while (specifiedAmountLeft.gt(ZERO)) {
+      if (tickArraysCrossed > MAX_TICK_ARRAY_CROSSINGS) {
+        throw Error("Crossed the maximum number of tick arrays");
+      }
+
       const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
         baseInput,
         {
@@ -134,7 +138,7 @@ export class SwapSimulator {
       currentSqrtPriceX64 = nextSqrtPriceX64;
       tickArraysCrossed = swapStepSimulationOutput.tickArraysCrossed;
 
-      if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
+      if (tickArraysCrossed > MAX_TICK_ARRAY_CROSSINGS) {
         sqrtPriceLimitX64 = tickIndexToSqrtPriceX64(nextTickIndex);
       }
     }
@@ -303,7 +307,7 @@ async function getNextInitializedTickIndex(
   } = baseInput;
   let nextInitializedTickIndex: number | undefined = undefined;
 
-  while (!nextInitializedTickIndex) {
+  while (nextInitializedTickIndex === undefined) {
     const currentTickArray = await fetchTickArray(baseInput, currentTickIndex);
 
     let temp;
@@ -315,8 +319,6 @@ async function getNextInitializedTickIndex(
 
     if (temp) {
       nextInitializedTickIndex = temp;
-    } else if (tickArraysCrossed > MAX_TICK_ARRAY_CROSSINGS) {
-      throw Error("Crossed the maximum number of tick arrays");
     } else if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
       if (swapDirection === SwapDirection.AtoB) {
         nextInitializedTickIndex = currentTickArray.startTickIndex;
