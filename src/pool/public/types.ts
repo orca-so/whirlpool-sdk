@@ -20,6 +20,11 @@ export type SwapTxParam = {
   quote: SwapQuote;
 };
 
+export type FillTickArraysParam = {
+  provider: Provider;
+  poolAddress: Address;
+};
+
 /*** Quotes ***/
 
 export type OpenPositionQuoteParam = OpenPositionQuoteByPrice | OpenPositionQuoteByTickIndex;
@@ -77,7 +82,7 @@ export type SwapQuoteParam = {
 export type SwapQuote = {
   poolAddress: Address;
   otherAmountThreshold: u64;
-  sqrtPriceLimitX64?: BN;
+  sqrtPriceLimitX64: BN;
   amountIn: u64;
   amountOut: u64;
   aToB: boolean;

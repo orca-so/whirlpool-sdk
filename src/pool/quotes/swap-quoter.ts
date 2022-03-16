@@ -5,6 +5,7 @@ import {
   tickIndexToSqrtPriceX64,
   WhirlpoolData,
   TICK_ARRAY_SIZE,
+  MAX_TICK_INDEX,
 } from "@orca-so/whirlpool-client-sdk";
 import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
@@ -51,6 +52,7 @@ type SwapSimulationInput = {
 type SwapSimulationOutput = {
   amountIn: BN;
   amountOut: BN;
+  sqrtPriceLimitX64: BN;
 };
 
 type SwapStepSimulationInput = {
@@ -92,6 +94,7 @@ export class SwapSimulator {
     let otherAmountCalculated = ZERO;
 
     let tickArraysCrossed = 0;
+    let sqrtPriceLimitX64;
 
     while (specifiedAmountLeft.gt(ZERO)) {
       const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
@@ -130,6 +133,10 @@ export class SwapSimulator {
 
       currentSqrtPriceX64 = nextSqrtPriceX64;
       tickArraysCrossed = swapStepSimulationOutput.tickArraysCrossed;
+
+      if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
+        sqrtPriceLimitX64 = tickIndexToSqrtPriceX64(nextTickIndex);
+      }
     }
 
     const [inputAmount, outputAmount] = resolveTokenAmounts(
@@ -138,9 +145,19 @@ export class SwapSimulator {
       amountSpecified
     );
 
+    if (!sqrtPriceLimitX64) {
+      if (swapDirection === SwapDirection.AtoB) {
+        sqrtPriceLimitX64 = new BN(MIN_SQRT_PRICE);
+      } else {
+        sqrtPriceLimitX64 = new BN(MAX_SQRT_PRICE);
+      }
+    }
+
+    // Return sqrtPriceLimit if 3 tick arrays crossed
     return {
       amountIn: inputAmount,
       amountOut: outputAmount,
+      sqrtPriceLimitX64,
     };
   }
 
@@ -157,6 +174,8 @@ export class SwapSimulator {
     const { amountRemaining, liquidity, sqrtPriceX64, tickIndex, tickArraysCrossed } = input;
 
     const { tickIndex: nextTickIndex, tickArraysCrossed: tickArraysCrossedUpdate } =
+      // Return last tick in tick array if max tick arrays crossed
+      // Error out of this gets called for another iteration
       await getNextInitializedTickIndex(baseInput, tickIndex, tickArraysCrossed);
 
     const targetSqrtPriceX64 = tickIndexToSqrtPriceX64(nextTickIndex);
@@ -296,20 +315,22 @@ async function getNextInitializedTickIndex(
 
     if (temp) {
       nextInitializedTickIndex = temp;
-    } else {
-      let nextTick;
+    } else if (tickArraysCrossed > MAX_TICK_ARRAY_CROSSINGS) {
+      throw Error("Crossed the maximum number of tick arrays");
+    } else if (tickArraysCrossed === MAX_TICK_ARRAY_CROSSINGS) {
       if (swapDirection === SwapDirection.AtoB) {
-        nextTick = currentTickArray.startTickIndex - 1;
+        nextInitializedTickIndex = currentTickArray.startTickIndex;
       } else {
-        nextTick = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
+        nextInitializedTickIndex = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
       }
-
-      if (tickArraysCrossed == MAX_TICK_ARRAY_CROSSINGS) {
-        throw Error("Crossed the maximum number of tick arrays");
+      tickArraysCrossed++;
+    } else {
+      if (swapDirection === SwapDirection.AtoB) {
+        currentTickIndex = currentTickArray.startTickIndex - 1;
       } else {
-        currentTickIndex = nextTick;
-        tickArraysCrossed++;
+        currentTickIndex = currentTickArray.startTickIndex + TICK_ARRAY_SIZE * tickSpacing;
       }
+      tickArraysCrossed++;
     }
   }
 
