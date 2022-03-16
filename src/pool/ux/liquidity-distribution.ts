@@ -1,9 +1,10 @@
-import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
+import { getTickArrayPda, WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { Address, translateAddress } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { sqrtPriceX64ToPrice, tickIndexToPrice } from "../..";
 import { OrcaDAL } from "../../dal/orca-dal";
+import { toPubKey } from "../../utils/address";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 
 export type LiquidityDataPoint = {
@@ -50,6 +51,7 @@ export async function getLiquidityDistribution(
   );
   const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
 
+  let absoluteLiquidity = new Decimal(pool.liquidity.toString());
   let liquidity = new Decimal(0);
   tickArrays.forEach((tickArray) => {
     if (!tickArray) {
@@ -60,9 +62,18 @@ export async function getLiquidityDistribution(
     tickArray.ticks.forEach((tick, index) => {
       const tickIndex = startIndex + index * pool.tickSpacing;
       const price = tickIndexToPrice(tickIndex, tokenDecimalsA, tokenDecimalsB);
-      liquidity = liquidity.add(new Decimal(tick.liquidityNet.toString()));
+      const liquidityNet = new Decimal(tick.liquidityNet.toString());
+      liquidity = liquidity.add(liquidityNet);
       datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
+
+      if (tickIndex === pool.tickCurrentIndex) {
+        absoluteLiquidity = absoluteLiquidity.sub(liquidityNet);
+      }
     });
+  });
+
+  datapoints.forEach((datapoint) => {
+    datapoint.liquidity = datapoint.liquidity.add(absoluteLiquidity);
   });
 
   return {
@@ -81,18 +92,20 @@ function getSurroundingTickArrayAddresses(
 ): PublicKey[] {
   const tickArrayAddresses: PublicKey[] = [];
 
-  let startTickIndex = TickUtil.getStartTickIndex(tickLower, pool.tickSpacing);
-  while (startTickIndex <= tickUpper) {
-    const address = TickUtil.getPdaWithTickIndex(
-      pool.tickCurrentIndex,
-      pool.tickSpacing,
-      poolAddress,
-      programId
+  let startIndex = TickUtil.getStartTickIndex(tickLower, pool.tickSpacing);
+  while (startIndex <= tickUpper) {
+    const address = getTickArrayPda(
+      toPubKey(programId),
+      toPubKey(poolAddress),
+      startIndex
     ).publicKey;
     tickArrayAddresses.push(address);
 
-    startTickIndex = TickUtil.getStartTickIndex(startTickIndex, pool.tickSpacing, 1);
+    try {
+      startIndex = TickUtil.getStartTickIndex(startIndex, pool.tickSpacing, 1);
+    } catch (_e) {
+      return tickArrayAddresses;
+    }
   }
-
   return tickArrayAddresses;
 }

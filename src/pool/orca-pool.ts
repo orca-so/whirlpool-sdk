@@ -168,6 +168,7 @@ export class OrcaPool {
       poolAddress,
       this.dal.programId
     );
+
     const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
       [tickArrayLowerPda.publicKey, tickArrayUpperPda.publicKey],
       true
