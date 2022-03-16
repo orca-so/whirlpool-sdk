@@ -345,6 +345,9 @@ export class OrcaPool {
         offset
       );
 
+      // Throttle to prevent being rate-limited
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
         offset++;
@@ -368,6 +371,8 @@ export class OrcaPool {
         this.dal.programId,
         offset
       );
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
@@ -422,6 +427,9 @@ export class OrcaPool {
         break;
       }
 
+      // Throttle to prevent being rate-limited
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
         txBuilder.addInstruction(
@@ -446,7 +454,9 @@ export class OrcaPool {
       offset++;
     }
 
-    multiTxBuilder.addTxBuilder(txBuilder);
+    if (numIxs % 7) {
+      multiTxBuilder.addTxBuilder(txBuilder);
+    }
 
     return multiTxBuilder;
   }
