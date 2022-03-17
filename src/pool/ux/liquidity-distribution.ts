@@ -51,7 +51,8 @@ export async function getLiquidityDistribution(
   );
   const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
 
-  let absoluteLiquidity = new Decimal(pool.liquidity.toString());
+  const currentLiquidity = new Decimal(pool.liquidity.toString());
+  let relativeLiquidity = currentLiquidity;
   let liquidity = new Decimal(0);
   tickArrays.forEach((tickArray) => {
     if (!tickArray) {
@@ -67,14 +68,16 @@ export async function getLiquidityDistribution(
       datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
 
       if (tickIndex === pool.tickCurrentIndex) {
-        absoluteLiquidity = absoluteLiquidity.sub(liquidityNet);
+        relativeLiquidity = relativeLiquidity.sub(liquidityNet);
       }
     });
   });
 
-  datapoints.forEach((datapoint) => {
-    datapoint.liquidity = datapoint.liquidity.add(absoluteLiquidity);
-  });
+  if (!relativeLiquidity.eq(currentLiquidity)) {
+    datapoints.forEach((datapoint) => {
+      datapoint.liquidity = datapoint.liquidity.add(relativeLiquidity);
+    });
+  }
 
   return {
     currentPrice: sqrtPriceX64ToPrice(pool.sqrtPrice, tokenDecimalsA, tokenDecimalsB),
