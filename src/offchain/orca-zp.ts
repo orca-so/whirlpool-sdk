@@ -75,6 +75,7 @@ export class OrcaZooplankton {
           price: pool.price,
           lpsFeeRate: pool.lpsFeeRate,
           protocolFeeRate: pool.protocolFeeRate,
+          priceHistory: pool.priceHistory,
           tokenAPriceUSD: pool.tokenAPriceUSD,
           tokenBPriceUSD: pool.tokenBPriceUSD,
           tvl: pool.tvl,
