@@ -53,6 +53,7 @@ export async function getLiquidityDistribution(
 
   const currentLiquidity = new Decimal(pool.liquidity.toString());
   let relativeLiquidity = currentLiquidity;
+  let minLiquidity = new Decimal(0);
   let liquidity = new Decimal(0);
   tickArrays.forEach((tickArray) => {
     if (!tickArray) {
@@ -67,6 +68,8 @@ export async function getLiquidityDistribution(
       liquidity = liquidity.add(liquidityNet);
       datapoints.push({ liquidity: new Decimal(liquidity), price, tickIndex });
 
+      minLiquidity = liquidity.lt(minLiquidity) ? liquidity : minLiquidity;
+
       if (tickIndex === pool.tickCurrentIndex) {
         relativeLiquidity = relativeLiquidity.sub(liquidityNet);
       }
@@ -74,8 +77,15 @@ export async function getLiquidityDistribution(
   });
 
   if (!relativeLiquidity.eq(currentLiquidity)) {
+    minLiquidity = minLiquidity.add(relativeLiquidity);
     datapoints.forEach((datapoint) => {
       datapoint.liquidity = datapoint.liquidity.add(relativeLiquidity);
+    });
+  }
+
+  if (minLiquidity.lt(0)) {
+    datapoints.forEach((datapoint) => {
+      datapoint.liquidity = datapoint.liquidity.add(minLiquidity.neg());
     });
   }
 
