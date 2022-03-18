@@ -74,7 +74,7 @@ export async function convertWhirlpoolDataToPoolData(
     const protocolFeePercentage = DecimalUtil.fromNumber(pool.protocolFeeRate, 4);
 
     const rewards: PoolRewardInfo[] = [];
-    for (const { mint, vault, emissionsPerSecondX64 } of pool.rewardInfos) {
+    for (const { mint, vault, emissionsPerSecondX64, growthGlobalX64 } of pool.rewardInfos) {
       let amount = undefined;
       let decimals = undefined;
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
@@ -88,6 +88,7 @@ export async function convertWhirlpoolDataToPoolData(
         vaultAmount: amount,
         decimalVaultAmount: decimals && amount ? DecimalUtil.fromU64(amount, decimals) : undefined,
         emissionsPerSecondX64,
+        growthGlobalX64,
         emissionsPerSecond: decimals
           ? DecimalUtil.adjustDecimals(fromX64(emissionsPerSecondX64), decimals)
           : undefined,
@@ -109,6 +110,8 @@ export async function convertWhirlpoolDataToPoolData(
       tokenVaultAmountA: amountA,
       tokenVaultAmountB: amountB,
       rewards,
+      feeGrowthGlobalAX64: pool.feeGrowthGlobalA,
+      feeGrowthGlobalBX64: pool.feeGrowthGlobalB,
 
       // Derived helper fields
       feePercentage,

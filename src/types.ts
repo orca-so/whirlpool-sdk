@@ -19,6 +19,8 @@ export type PoolData = {
   tokenVaultAmountA: BN;
   tokenVaultAmountB: BN;
   rewards: PoolRewardInfo[];
+  feeGrowthGlobalAX64: BN;
+  feeGrowthGlobalBX64: BN;
 
   // Derived helper fields
   feePercentage: Decimal;
@@ -37,6 +39,7 @@ export type PoolRewardInfo = {
   vault: PublicKey;
   vaultAmount?: BN;
   emissionsPerSecondX64: BN;
+  growthGlobalX64: BN;
 
   // Derived helper fields
   decimalVaultAmount?: Decimal;
