@@ -48,7 +48,7 @@ import {
   MAX_TICK_INDEX,
   getOraclePda,
 } from "@orca-so/whirlpool-client-sdk";
-import { getMultipleCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
+import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
 import { ZERO } from "../utils/web3/math-utils";
 
@@ -279,19 +279,27 @@ export class OrcaPool {
 
     const txBuilder = new TransactionBuilder(provider);
 
-    /* Collect fees and rewards from the position */
-
-    const collectTx = await getMultipleCollectFeesAndRewardsTx(this.dal, {
-      provider,
-      positionAddresses: [quote.positionAddress],
-    });
-    collectTx.tx.txBuilders.forEach((builder) =>
-      txBuilder.addInstruction(builder.compressIx(false))
+    const resolvedAssociatedTokenAddresses: Record<string, PublicKey> = {};
+    const { address: tokenOwnerAccountA, ...createTokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintA
     );
-    const tokenOwnerAccountA = collectTx.ataMap[whirlpool.tokenMintA.toBase58()]?.address;
-    const tokenOwnerAccountB = collectTx.ataMap[whirlpool.tokenMintB.toBase58()]?.address;
-    invariant(tokenOwnerAccountA, "tokenOwnerAccountA doesn't exist");
-    invariant(tokenOwnerAccountB, "tokenOwnerAccountB doesn't exist");
+    const { address: tokenOwnerAccountB, ...createTokenOwnerAccountBIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      whirlpool.tokenMintB
+    );
+    txBuilder.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
+    resolvedAssociatedTokenAddresses[whirlpool.tokenMintA.toBase58()] = tokenOwnerAccountA;
+    resolvedAssociatedTokenAddresses[whirlpool.tokenMintB.toBase58()] = tokenOwnerAccountB;
+
+    const collectTx = await buildCollectFeesAndRewardsTx(this.dal, {
+      provider,
+      positionAddress: quote.positionAddress,
+      resolvedAssociatedTokenAddresses,
+    });
+    txBuilder.addInstruction(collectTx.compressIx(false));
 
     /* Remove all liquidity remaining in the position */
 
