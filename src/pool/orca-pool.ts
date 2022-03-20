@@ -52,6 +52,9 @@ import {
 import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/public/position-util";
 import { ZERO } from "../utils/web3/math-utils";
+import { PoolData } from "..";
+import { TokenUSDPrices } from "../utils/token-price";
+import { EstimatedAprs, getEstimatedAprForPriceRange } from "./ux/estimated-apr";
 
 export class OrcaPool {
   constructor(private readonly dal: OrcaDAL) {}
@@ -75,6 +78,16 @@ export class OrcaPool {
     refresh = true
   ): Promise<LiquidityDistribution> {
     return getLiquidityDistribution(this.dal, poolAddress, tickLower, tickUpper, refresh);
+  }
+
+  public getEstimatedAprForPriceRange(
+    fees24h: number,
+    tickLower: number,
+    tickUpper: number,
+    pool: PoolData,
+    tokenPrices: TokenUSDPrices
+  ): EstimatedAprs {
+    return getEstimatedAprForPriceRange(fees24h, tickLower, tickUpper, pool, tokenPrices);
   }
 
   /**
