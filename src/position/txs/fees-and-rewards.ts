@@ -5,6 +5,7 @@ import {
 } from "../public/types";
 import { OrcaDAL } from "../../dal/orca-dal";
 import {
+  EMPTY_INSTRUCTION,
   Instruction,
   NUM_REWARDS,
   PositionData,
@@ -20,7 +21,6 @@ import invariant from "tiny-invariant";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { Address } from "@project-serum/anchor/dist/cjs/program/common";
 import { Provider } from "@project-serum/anchor";
-import { emptyInstruction } from "@orca-so/sdk";
 import { NATIVE_MINT } from "@solana/spl-token";
 
 export async function buildMultipleCollectFeesAndRewardsTx(
@@ -201,7 +201,7 @@ async function getTokenAtaAndPopulateATAMap(
   let _tokenMintA = tokenMint.toBase58();
 
   let tokenOwnerAccount: PublicKey;
-  let createTokenOwnerAccountIx: Instruction = emptyInstruction;
+  let createTokenOwnerAccountIx: Instruction = EMPTY_INSTRUCTION;
   const mappedTokenAAddress = ataMap[_tokenMintA];
 
   if (!mappedTokenAAddress) {

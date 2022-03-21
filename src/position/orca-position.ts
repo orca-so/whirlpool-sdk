@@ -182,7 +182,7 @@ export class OrcaPosition {
   public async getCollectFeesAndRewardsTx(
     param: CollectFeesAndRewardsTxParam
   ): Promise<TransactionBuilder> {
-    return await buildCollectFeesAndRewardsTx(this.dal, {
+    return buildCollectFeesAndRewardsTx(this.dal, {
       provider: param.provider,
       positionAddress: param.positionAddress,
     });
@@ -194,7 +194,7 @@ export class OrcaPosition {
   public async getCollectMultipleFeesAndRewardsTx(
     param: CollectMultipleFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder> {
-    return await buildMultipleCollectFeesAndRewardsTx(this.dal, param);
+    return buildMultipleCollectFeesAndRewardsTx(this.dal, param);
   }
 
   /*** Quotes ***/
