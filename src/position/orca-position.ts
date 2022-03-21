@@ -24,7 +24,10 @@ import {
   WhirlpoolContext,
   WhirlpoolClient,
 } from "@orca-so/whirlpool-client-sdk";
-import { getMultipleCollectFeesAndRewardsTx } from "./txs/fees-and-rewards";
+import {
+  buildCollectFeesAndRewardsTx,
+  buildMultipleCollectFeesAndRewardsTx,
+} from "./txs/fees-and-rewards";
 
 export class OrcaPosition {
   constructor(private readonly dal: OrcaDAL) {}
@@ -178,12 +181,11 @@ export class OrcaPosition {
    */
   public async getCollectFeesAndRewardsTx(
     param: CollectFeesAndRewardsTxParam
-  ): Promise<MultiTransactionBuilder> {
-    const result = await getMultipleCollectFeesAndRewardsTx(this.dal, {
+  ): Promise<TransactionBuilder> {
+    return buildCollectFeesAndRewardsTx(this.dal, {
       provider: param.provider,
-      positionAddresses: [param.positionAddress],
+      positionAddress: param.positionAddress,
     });
-    return result.tx;
   }
 
   /**
@@ -192,8 +194,7 @@ export class OrcaPosition {
   public async getCollectMultipleFeesAndRewardsTx(
     param: CollectMultipleFeesAndRewardsTxParam
   ): Promise<MultiTransactionBuilder> {
-    const result = await getMultipleCollectFeesAndRewardsTx(this.dal, param);
-    return result.tx;
+    return buildMultipleCollectFeesAndRewardsTx(this.dal, param);
   }
 
   /*** Quotes ***/

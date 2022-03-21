@@ -1,9 +1,14 @@
 import { MultiTransactionBuilder } from "../../utils/public/multi-transaction-builder";
-import { CollectMultipleFeesAndRewardsTxParam } from "../public/types";
+import {
+  CollectFeesAndRewardsTxParam,
+  CollectMultipleFeesAndRewardsTxParam,
+} from "../public/types";
 import { OrcaDAL } from "../../dal/orca-dal";
 import {
+  EMPTY_INSTRUCTION,
   Instruction,
   NUM_REWARDS,
+  PositionData,
   TransactionBuilder,
   WhirlpoolClient,
   WhirlpoolContext,
@@ -14,74 +19,131 @@ import { toPubKey } from "../../utils/address";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
+import { Address } from "@project-serum/anchor/dist/cjs/program/common";
+import { Provider } from "@project-serum/anchor";
+import { NATIVE_MINT } from "@solana/spl-token";
 
-export async function getMultipleCollectFeesAndRewardsTx(
+export async function buildMultipleCollectFeesAndRewardsTx(
   dal: OrcaDAL,
   param: CollectMultipleFeesAndRewardsTxParam
-): Promise<{ tx: MultiTransactionBuilder; ataMap: Record<string, { address: PublicKey }> }> {
-  const { provider, positionAddresses } = param;
+): Promise<MultiTransactionBuilder> {
+  const { provider, positionAddresses, resolvedAssociatedTokenAddresses } = param;
 
   const ctx = WhirlpoolContext.withProvider(provider, dal.programId);
   const client = new WhirlpoolClient(ctx);
 
-  const collectInstructions: Instruction[] = [];
-  const ataMap: Record<string, { address: PublicKey; ix: Instruction }> = {};
+  const collectPositionTransactions: TransactionBuilder[] = [];
 
   for (const positionAddress of positionAddresses) {
-    const position = await dal.getPosition(positionAddress, false);
-    if (!position) {
-      continue;
-    }
-
-    const whirlpool = await dal.getPool(position.whirlpool, false);
-    if (!whirlpool) {
-      continue;
-    }
-
-    const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
-      position.tickLowerIndex,
-      position.tickUpperIndex,
-      whirlpool.tickSpacing,
-      position.whirlpool,
-      dal.programId
+    const txn = await buildSingleCollectFeeAndRewardsTx(
+      positionAddress,
+      dal,
+      client,
+      provider,
+      resolvedAssociatedTokenAddresses
     );
-    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
-
-    /* Get user's associated token accounts. Create them if they don't exist.  */
-
-    const tokenMintA = whirlpool.tokenMintA.toBase58();
-    const tokenMintB = whirlpool.tokenMintB.toBase58();
-    const { address: _tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintA
-    );
-    const { address: _tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
-    const tokenOwnerAccountA = ataMap[tokenMintA]?.address || _tokenOwnerAccountA;
-    const tokenOwnerAccountB = ataMap[tokenMintB]?.address || _tokenOwnerAccountB;
-    if (!ataMap[tokenMintA]) {
-      ataMap[tokenMintA] = { address: tokenOwnerAccountA, ix: tokenOwnerAccountAIx };
+    if (!txn.isEmpty()) {
+      collectPositionTransactions.push(txn);
     }
-    if (!ataMap[tokenMintB]) {
-      ataMap[tokenMintB] = { address: tokenOwnerAccountB, ix: tokenOwnerAccountBIx };
-    }
+  }
 
-    /* Update the states of owed fees and rewards */
-    const updateIx = client
-      .updateFeesAndRewards({
-        whirlpool: position.whirlpool,
-        position: toPubKey(positionAddress),
-        tickArrayLower,
-        tickArrayUpper,
-      })
-      .compressIx(false);
-    collectInstructions.push(updateIx);
+  /**
+   * TODO: Find the maximum number of collect position calls we can fit in a transaction.
+   * Note that the calls may not be the same size. The maximum size is a collect ix where
+   * 1. TokenMintA requires a create ATA ix
+   * 2. TokenMintB is a SOL account. Requires the create & clean up WSOL ATA ix
+   * 3. Position liquidity is not null. updateFee Ix is required
+   * 4. Need to collect fees
+   * 5. Need to collect all 3 rewards
+   *  */
 
-    const feeIx = client
+  const collectAllTransactionBuilder = new MultiTransactionBuilder(provider, []);
+
+  collectPositionTransactions.forEach((collectTxn) =>
+    collectAllTransactionBuilder.addTxBuilder(collectTxn)
+  );
+
+  return collectAllTransactionBuilder;
+}
+
+export async function buildCollectFeesAndRewardsTx(
+  dal: OrcaDAL,
+  param: CollectFeesAndRewardsTxParam
+): Promise<TransactionBuilder> {
+  const { provider, positionAddress, resolvedAssociatedTokenAddresses } = param;
+
+  const ctx = WhirlpoolContext.withProvider(provider, dal.programId);
+  const client = new WhirlpoolClient(ctx);
+
+  return await buildSingleCollectFeeAndRewardsTx(
+    positionAddress,
+    dal,
+    client,
+    provider,
+    resolvedAssociatedTokenAddresses
+  );
+}
+
+async function buildSingleCollectFeeAndRewardsTx(
+  positionAddress: Address,
+  dal: OrcaDAL,
+  client: WhirlpoolClient,
+  provider: Provider,
+  ataMap?: Record<string, PublicKey>
+): Promise<TransactionBuilder> {
+  const txn: TransactionBuilder = new TransactionBuilder(provider);
+  const positionInfo = await derivePositionInfo(positionAddress, dal, provider.wallet.publicKey);
+  if (positionInfo == null) {
+    return txn;
+  }
+
+  const {
+    position,
+    whirlpool,
+    tickArrayLower,
+    tickArrayUpper,
+    positionTokenAccount,
+    nothingToCollect,
+  } = positionInfo;
+
+  if (nothingToCollect) {
+    return txn;
+  }
+
+  if (!ataMap) {
+    ataMap = {};
+  }
+
+  // Derive and add the createATA instructions for each token mint. Note that
+  // if the user already has the token ATAs, the instructions will be empty.
+  const {
+    tokenOwnerAccount: tokenOwnerAccountA,
+    createTokenOwnerAccountIx: createTokenOwnerAccountAIx,
+  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintA, ataMap);
+  const {
+    tokenOwnerAccount: tokenOwnerAccountB,
+    createTokenOwnerAccountIx: createTokenOwnerAccountBIx,
+  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintB, ataMap);
+  txn.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
+
+  // If the position has zero liquidity, then the fees are already the most up to date.
+  // No need to make an update call here.
+  if (!position.liquidity.isZero()) {
+    txn.addInstruction(
+      client
+        .updateFeesAndRewards({
+          whirlpool: position.whirlpool,
+          position: toPubKey(positionAddress),
+          tickArrayLower,
+          tickArrayUpper,
+        })
+        .compressIx(false)
+    );
+  }
+
+  // Add a collectFee ix for this position
+  txn.addInstruction(
+    client
       .collectFeesTx({
         whirlpool: position.whirlpool,
         positionAuthority: provider.wallet.publicKey,
@@ -92,82 +154,112 @@ export async function getMultipleCollectFeesAndRewardsTx(
         tokenVaultA: whirlpool.tokenVaultA,
         tokenVaultB: whirlpool.tokenVaultB,
       })
-      .compressIx(false);
-    collectInstructions.push(feeIx);
+      .compressIx(false)
+  );
 
-    /* Collect rewards */
-    for (const i of [...Array(NUM_REWARDS).keys()]) {
-      const rewardInfo = whirlpool.rewardInfos[i];
-      invariant(!!rewardInfo, "rewardInfo cannot be undefined");
+  // Add a collectReward ix for a reward mint if the particular reward is initialized.
+  for (const i of [...Array(NUM_REWARDS).keys()]) {
+    const rewardInfo = whirlpool.rewardInfos[i];
+    invariant(!!rewardInfo, "rewardInfo cannot be undefined");
 
-      if (PoolUtil.isRewardInitialized(rewardInfo)) {
-        const { address: _rewardOwnerAccount, ...rewardOwnerAccountIx } = await resolveOrCreateATA(
-          provider.connection,
-          provider.wallet.publicKey,
-          rewardInfo.mint
-        );
-        const rewardMint = rewardInfo.mint.toBase58();
-        const rewardOwnerAccount = ataMap[rewardMint]?.address || _rewardOwnerAccount;
-        if (!ataMap[rewardMint]) {
-          ataMap[rewardMint] = { address: rewardOwnerAccount, ix: rewardOwnerAccountIx };
-        }
-
-        const rewardTx = client
-          .collectRewardTx({
-            whirlpool: position.whirlpool,
-            positionAuthority: provider.wallet.publicKey,
-            position: toPubKey(positionAddress),
-            positionTokenAccount,
-            rewardOwnerAccount,
-            rewardVault: rewardInfo.vault,
-            rewardIndex: i,
-          })
-          .compressIx(false);
-        collectInstructions.push(rewardTx);
-      }
+    if (!PoolUtil.isRewardInitialized(rewardInfo)) {
+      continue;
     }
+
+    const {
+      tokenOwnerAccount: rewardOwnerAccount,
+      createTokenOwnerAccountIx: createRewardTokenOwnerAccountIx,
+    } = await getTokenAtaAndPopulateATAMap(provider, rewardInfo.mint, ataMap);
+
+    if (createRewardTokenOwnerAccountIx) {
+      txn.addInstruction(createRewardTokenOwnerAccountIx);
+    }
+
+    txn.addInstruction(
+      client
+        .collectRewardTx({
+          whirlpool: position.whirlpool,
+          positionAuthority: provider.wallet.publicKey,
+          position: toPubKey(positionAddress),
+          positionTokenAccount,
+          rewardOwnerAccount,
+          rewardVault: rewardInfo.vault,
+          rewardIndex: i,
+        })
+        .compressIx(false)
+    );
   }
 
-  const tx = new MultiTransactionBuilder(provider, []);
+  return txn;
+}
 
-  let ataTxBuilder = new TransactionBuilder(provider);
-  let ataTxBuilderSize = 0;
-  Object.values(ataMap).forEach(({ ix }) => {
-    if (ix.instructions.length === 0) {
-      return;
+async function getTokenAtaAndPopulateATAMap(
+  provider: Provider,
+  tokenMint: PublicKey,
+  ataMap: Record<string, PublicKey>
+) {
+  let _tokenMintA = tokenMint.toBase58();
+
+  let tokenOwnerAccount: PublicKey;
+  let createTokenOwnerAccountIx: Instruction = EMPTY_INSTRUCTION;
+  const mappedTokenAAddress = ataMap[_tokenMintA];
+
+  if (!mappedTokenAAddress) {
+    const { address: _tokenOwnerAccount, ..._tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      provider.connection,
+      provider.wallet.publicKey,
+      tokenMint
+    );
+    tokenOwnerAccount = _tokenOwnerAccount;
+    createTokenOwnerAccountIx = _tokenOwnerAccountAIx;
+
+    if (!tokenMint.equals(NATIVE_MINT)) {
+      ataMap[_tokenMintA] = _tokenOwnerAccount;
     }
-
-    ataTxBuilder.addInstruction(ix);
-    ataTxBuilderSize += 1;
-
-    if (ataTxBuilderSize % 6 === 0) {
-      // TODO: figure out the optimal transaction size
-      tx.addTxBuilder(ataTxBuilder);
-      ataTxBuilder = new TransactionBuilder(provider);
-    }
-  });
-  if (ataTxBuilderSize > 0) {
-    tx.addTxBuilder(ataTxBuilder);
+  } else {
+    tokenOwnerAccount = mappedTokenAAddress;
   }
 
-  let collectTxBuilder = new TransactionBuilder(provider);
-  let collectTxBuilderSize = 0;
-  collectInstructions.forEach((ix) => {
-    if (ix.instructions.length === 0) {
-      return;
-    }
+  return { tokenOwnerAccount, createTokenOwnerAccountIx };
+}
 
-    collectTxBuilder.addInstruction(ix);
-    collectTxBuilderSize += 1;
-    if (collectTxBuilderSize % 6 === 0) {
-      // TODO: figure out the optimal transaction size
-      tx.addTxBuilder(collectTxBuilder);
-      collectTxBuilder = new TransactionBuilder(provider);
-    }
-  });
-  if (collectTxBuilderSize > 0) {
-    tx.addTxBuilder(collectTxBuilder);
+async function derivePositionInfo(positionAddress: Address, dal: OrcaDAL, walletKey: PublicKey) {
+  const position = await dal.getPosition(positionAddress, false);
+  if (!position) {
+    return null;
   }
 
-  return { tx, ataMap };
+  const whirlpool = await dal.getPool(position.whirlpool, false);
+  if (!whirlpool) {
+    return null;
+  }
+
+  const [tickArrayLower, tickArrayUpper] = TickUtil.getLowerAndUpperTickArrayAddresses(
+    position.tickLowerIndex,
+    position.tickUpperIndex,
+    whirlpool.tickSpacing,
+    position.whirlpool,
+    dal.programId
+  );
+
+  const positionTokenAccount = await deriveATA(walletKey, position.positionMint);
+
+  const nothingToCollect =
+    position.liquidity.isZero() && !hasOwedFees(position) && !hasOwedRewards(position);
+  return {
+    position,
+    whirlpool,
+    tickArrayLower,
+    tickArrayUpper,
+    positionTokenAccount,
+    nothingToCollect,
+  };
+}
+
+function hasOwedFees(position: PositionData) {
+  return !(position.feeOwedA.isZero() && position.feeOwedB.isZero());
+}
+
+function hasOwedRewards(position: PositionData) {
+  return position.rewardInfos.some((rewardInfo) => !rewardInfo.amountOwed.isZero());
 }

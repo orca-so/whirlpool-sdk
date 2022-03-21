@@ -531,10 +531,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@orca-so/whirlpool-client-sdk@0.0.5":
-  version "0.0.5"
-  resolved "https://npm.pkg.github.com/download/@orca-so/whirlpool-client-sdk/0.0.5/18a3cbf63f9500f7cc23a62948b9cc45d441583f1e19b20ad9f961e6d23bca0f#663dfdd2e1209e60f9122eeaffb2fa9450957f42"
-  integrity sha512-S+IOnHAFvvMrxuJM5hkwAVQxwQi9O1A3bGFQt7J0I3ZyHmo1lqSu5mE9uNIW4/qOF/7Gk5twE9s0H86LJuljaA==
+"@orca-so/whirlpool-client-sdk@0.0.6":
+  version "0.0.6"
+  resolved "https://npm.pkg.github.com/download/@orca-so/whirlpool-client-sdk/0.0.6/f78711cf916ed95c38d77fe162bb2118765e55144913ddea551c7603bb6a12a1#659fcdb0c72de768e254d49c6988168d98fd4e40"
+  integrity sha512-gF79ZYM84EGtLUtAp8ohEacJdJpGKK2a1kbKABxsTDKOTOdS0D1dVygb65kiv46/Nkg4j1R8ALyioJ5DLwYHcw==
   dependencies:
     "@project-serum/anchor" "^0.20.1"
     "@solana/spl-token" "^0.1.8"

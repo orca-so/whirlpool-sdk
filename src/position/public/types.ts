@@ -1,4 +1,5 @@
 import { Address, BN, Provider } from "@project-serum/anchor";
+import { PublicKey } from "@solana/web3.js";
 import { Percentage } from "../../utils/public/percentage";
 
 /*** Transactions ***/
@@ -16,11 +17,13 @@ export type RemoveLiquidityTxParam = {
 export type CollectFeesAndRewardsTxParam = {
   provider: Provider;
   positionAddress: Address;
+  resolvedAssociatedTokenAddresses?: Record<string, PublicKey>;
 };
 
 export type CollectMultipleFeesAndRewardsTxParam = {
   provider: Provider;
   positionAddresses: Address[];
+  resolvedAssociatedTokenAddresses?: Record<string, PublicKey>;
 };
 
 /*** Quotes ***/
