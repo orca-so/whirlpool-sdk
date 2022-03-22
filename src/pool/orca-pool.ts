@@ -47,6 +47,7 @@ import {
   MIN_TICK_INDEX,
   MAX_TICK_INDEX,
   getOraclePda,
+  getPositionMetadataPda,
 } from "@orca-so/whirlpool-client-sdk";
 import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
@@ -103,6 +104,25 @@ export class OrcaPool {
   public async getOpenPositionTx(
     param: OpenPositionTxParam
   ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
+    return this.getOpenPositionWithOptMetadataTx(param);
+  }
+
+  /**
+   * Construct a transaction for opening an new position
+   */
+  public async getOpenPositionWithMetadataTx(
+    param: OpenPositionTxParam
+  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
+    return this.getOpenPositionWithOptMetadataTx(param, true);
+  }
+
+  /**
+   * Construct a transaction for opening an new position with optional metadata
+   */
+  async getOpenPositionWithOptMetadataTx(
+    param: OpenPositionTxParam,
+    withMetadata: boolean = false
+  ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
     const {
       provider,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
@@ -119,6 +139,7 @@ export class OrcaPool {
 
     const positionMintKeypair = Keypair.generate();
     const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
+    const metadataPda = getPositionMetadataPda(positionMintKeypair.publicKey);
     const positionTokenAccountAddress = await deriveATA(
       provider.wallet.publicKey,
       positionMintKeypair.publicKey
@@ -127,18 +148,17 @@ export class OrcaPool {
     const txBuilder = new TransactionBuilder(provider);
     const preTxBuilder = new TransactionBuilder(provider);
 
-    const positionIx = client
-      .openPositionTx({
-        funder: provider.wallet.publicKey,
-        ownerKey: provider.wallet.publicKey,
-        positionPda,
-        positionMintAddress: positionMintKeypair.publicKey,
-        positionTokenAccountAddress,
-        whirlpoolKey: toPubKey(poolAddress),
-        tickLowerIndex,
-        tickUpperIndex,
-      })
-      .compressIx(false);
+    const positionIx = (withMetadata ? client.openPositionWithMetadataTx : client.openPositionTx)({
+      funder: provider.wallet.publicKey,
+      ownerKey: provider.wallet.publicKey,
+      positionPda,
+      metadataPda,
+      positionMintAddress: positionMintKeypair.publicKey,
+      positionTokenAccountAddress,
+      whirlpoolKey: toPubKey(poolAddress),
+      tickLowerIndex,
+      tickUpperIndex,
+    }).compressIx(false);
     txBuilder.addInstruction(positionIx).addSigner(positionMintKeypair);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
