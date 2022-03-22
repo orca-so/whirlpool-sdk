@@ -8,7 +8,7 @@ import {
   RemoveLiquidityQuoteParam,
   RemoveLiquidityTxParam,
 } from "./public/types";
-import { defaultSlippagePercentage } from "../constants/defaults";
+import { defaultSlippagePercentage } from "../constants/public/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";

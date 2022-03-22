@@ -10,7 +10,7 @@ import {
   getTokenBFromLiquidity,
   PositionStatus,
   PositionUtil,
-} from "../../utils/whirlpool/position-util";
+} from "../../utils/public/position-util";
 import { RemoveLiquidityQuote } from "../public";
 
 export type InternalRemoveLiquidityQuoteParam = {

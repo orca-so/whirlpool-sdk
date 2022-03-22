@@ -18,7 +18,7 @@ import {
   getAmountFixedDelta,
   getAmountUnfixedDelta,
   getNextSqrtPrice,
-} from "../../utils/whirlpool/position-util";
+} from "../../utils/public/position-util";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 
 export const MAX_TICK_ARRAY_CROSSINGS = 2;

@@ -9,7 +9,7 @@ import {
   defaultNetwork,
   getDefaultConnection,
   getDefaultOffchainDataURI,
-} from "./constants/defaults";
+} from "./constants/public/defaults";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
 import { OrcaDAL } from "./dal/orca-dal";
 import { OrcaPool } from "./pool/orca-pool";

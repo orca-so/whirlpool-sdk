@@ -1,13 +1,13 @@
 import { BN } from "@project-serum/anchor";
 import { AmountSpecified, SwapDirection } from "../../pool/quotes/swap-quoter";
-import { Percentage } from "../public";
+import { Percentage } from ".";
 import { divRoundUp, shiftRightRoundUp } from "../web3/math-utils";
 import {
   getLowerSqrtPriceFromTokenA,
   getLowerSqrtPriceFromTokenB,
   getUpperSqrtPriceFromTokenA,
   getUpperSqrtPriceFromTokenB,
-} from "./swap-util";
+} from "../whirlpool/swap-util";
 
 export enum PositionStatus {
   BelowRange,
