@@ -4,7 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { OrcaNetwork, OrcaWhirlpoolClient, Percentage } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { OrcaDAL } from "../../src/dal/orca-dal";
-import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
+import { getDefaultOffchainDataURI } from "../../src/constants/public/defaults";
 import { getPositionPda, toX64 } from "@orca-so/whirlpool-client-sdk";
 import { initPool, initWhirlpoolsConfig, zeroSlippage } from "../utils/setup";
 

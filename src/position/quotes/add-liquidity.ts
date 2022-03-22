@@ -11,7 +11,7 @@ import {
   getTokenBFromLiquidity,
   PositionStatus,
   PositionUtil,
-} from "../../utils/whirlpool/position-util";
+} from "../../utils/public/position-util";
 import { tickIndexToSqrtPriceX64 } from "@orca-so/whirlpool-client-sdk";
 import { ZERO } from "../../utils/web3/math-utils";
 

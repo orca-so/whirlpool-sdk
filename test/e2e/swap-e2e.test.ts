@@ -5,7 +5,7 @@ import { Decimal } from "decimal.js";
 import invariant from "tiny-invariant";
 import { OrcaNetwork, OrcaWhirlpoolClient, Percentage, PoolData, SwapQuote } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
-import { getDefaultOffchainDataURI } from "../../src/constants/defaults";
+import { getDefaultOffchainDataURI } from "../../src/constants/public/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { ZERO } from "../../src/utils/web3/math-utils";
 import {

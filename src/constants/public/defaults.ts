@@ -1,6 +1,6 @@
 import { Connection } from "@solana/web3.js";
-import { Percentage } from "../utils/public/percentage";
-import { OrcaNetwork } from "./public/network";
+import { Percentage } from "../../utils/public/percentage";
+import { OrcaNetwork } from "./network";
 
 export const defaultSlippagePercentage = Percentage.fromFraction(1, 1000); // 0.1%
 

@@ -16,7 +16,7 @@ import {
   SwapQuoteParam,
   SwapTxParam,
 } from "./public/types";
-import { defaultSlippagePercentage } from "../constants/defaults";
+import { defaultSlippagePercentage } from "../constants/public/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import {
   getAddLiquidityQuote,
@@ -49,7 +49,7 @@ import {
   getOraclePda,
 } from "@orca-so/whirlpool-client-sdk";
 import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
-import { adjustAmountForSlippage } from "../utils/whirlpool/position-util";
+import { adjustAmountForSlippage } from "../utils/public/position-util";
 import { ZERO } from "../utils/web3/math-utils";
 
 export class OrcaPool {

@@ -11,7 +11,7 @@ import { u64 } from "@solana/spl-token";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { OrcaPosition } from "../../src/position/orca-position";
 import { AddLiquidityQuote, AddLiquidityQuoteParam } from "../../src";
-import { defaultSlippagePercentage } from "../../src/constants/defaults";
+import { defaultSlippagePercentage } from "../../src/constants/public/defaults";
 import {
   PositionData,
   PositionRewardInfoData,
