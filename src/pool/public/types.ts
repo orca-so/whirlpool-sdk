@@ -70,7 +70,6 @@ export type ClosePositionQuote = {
 };
 
 export type SwapQuoteParam = {
-  // TODO(atamari)
   poolAddress: Address;
   tokenMint: Address;
   tokenAmount: u64;
