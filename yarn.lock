@@ -510,6 +510,23 @@
     "@types/yargs" "^16.0.0"
     chalk "^4.0.0"
 
+"@metaplex-foundation/mpl-core@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-core/-/mpl-core-0.0.2.tgz#17ee2cc216e17629d6df1dbba75964625ebbd603"
+  integrity sha512-UUJ4BlYiWdDegAWmjsNQiNehwYU3QfSFWs3sv4VX0J6/ZrQ28zqosGhQ+I2ZCTEy216finJ82sZWNjuwSWCYyQ==
+  dependencies:
+    "@solana/web3.js" "^1.31.0"
+    bs58 "^4.0.1"
+
+"@metaplex-foundation/mpl-token-metadata@1.2.5":
+  version "1.2.5"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/mpl-token-metadata/-/mpl-token-metadata-1.2.5.tgz#1a927b1c7d30cd634a1e4782022712a02f6865c2"
+  integrity sha512-pxRG53JsTSwXpiJJMHNulJhH8kO3hHztQ3QxslUoKw2hBYKXsg9TGsiHgNIhN2MPZGBJ2pDeK6kNGv0sd54HhA==
+  dependencies:
+    "@metaplex-foundation/mpl-core" "^0.0.2"
+    "@solana/spl-token" "^0.1.8"
+    "@solana/web3.js" "^1.31.0"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -531,11 +548,12 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@orca-so/whirlpool-client-sdk@0.0.6":
-  version "0.0.6"
-  resolved "https://npm.pkg.github.com/download/@orca-so/whirlpool-client-sdk/0.0.6/f78711cf916ed95c38d77fe162bb2118765e55144913ddea551c7603bb6a12a1#659fcdb0c72de768e254d49c6988168d98fd4e40"
-  integrity sha512-gF79ZYM84EGtLUtAp8ohEacJdJpGKK2a1kbKABxsTDKOTOdS0D1dVygb65kiv46/Nkg4j1R8ALyioJ5DLwYHcw==
+"@orca-so/whirlpool-client-sdk@0.0.7":
+  version "0.0.7"
+  resolved "https://npm.pkg.github.com/download/@orca-so/whirlpool-client-sdk/0.0.7/8ace0c52d2940ac1e6268433080a2aa28237d35f30ccef8e5af7e03aef2c0e63#44b7d4c03da6aa90cf5ff567b9b08bcbb0d223f9"
+  integrity sha512-buGM4u2fiZVYBA6X9QeVGvPWArwDmaCAOKXtLYz9EedVot6mt0gt+gqntkdEED/Fii3gK9xWjdCtThYOp5jBXA==
   dependencies:
+    "@metaplex-foundation/mpl-token-metadata" "1.2.5"
     "@project-serum/anchor" "^0.20.1"
     "@solana/spl-token" "^0.1.8"
     decimal.js "^10.3.1"
