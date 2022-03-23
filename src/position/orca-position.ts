@@ -9,7 +9,7 @@ import {
   RemoveLiquidityTxParam,
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/public/defaults";
-import { AccountFetcher } from "../accounts/fetch";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";

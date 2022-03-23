@@ -3,7 +3,7 @@ import {
   CollectFeesAndRewardsTxParam,
   CollectMultipleFeesAndRewardsTxParam,
 } from "../public/types";
-import { AccountFetcher } from "../../accounts/fetch";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 import {
   EMPTY_INSTRUCTION,
   Instruction,

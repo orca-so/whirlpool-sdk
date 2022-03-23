@@ -4,7 +4,7 @@ import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import { UserPositionData, UserPositionRewardInfo } from "../types";
 import { DecimalUtil } from "../utils/public/decimal-utils";
-import { AccountFetcher } from "../accounts/fetch";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";

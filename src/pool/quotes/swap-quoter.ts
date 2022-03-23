@@ -10,7 +10,7 @@ import {
 import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { AccountFetcher } from "../../accounts/fetch";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 import { Percentage } from "../../utils/public/percentage";
 import { divRoundUp, ZERO } from "../../utils/web3/math-utils";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";

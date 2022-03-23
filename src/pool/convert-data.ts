@@ -2,7 +2,7 @@ import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { PoolRewardInfo } from "../types";
-import { AccountFetcher } from "../accounts/fetch";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
