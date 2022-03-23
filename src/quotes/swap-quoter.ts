@@ -10,17 +10,17 @@ import {
 import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { AccountFetcher } from "../../accounts/account-fetcher";
-import { Percentage } from "../../utils/public/percentage";
-import { divRoundUp, ZERO } from "../../utils/web3/math-utils";
-import { PoolUtil } from "../../utils/whirlpool/pool-util";
+import { AccountFetcher } from "../accounts/account-fetcher";
+import { Percentage } from "../utils/public/percentage";
+import { divRoundUp, ZERO } from "../utils/web3/math-utils";
+import { PoolUtil } from "../utils/whirlpool/pool-util";
 import {
   getAmountFixedDelta,
   getAmountUnfixedDelta,
   getNextSqrtPrice,
-} from "../../utils/public/position-util";
-import { TickUtil } from "../../utils/whirlpool/tick-util";
-import { WhirlpoolContext } from "../../context";
+} from "../utils/public/position-util";
+import { TickUtil } from "../utils/whirlpool/tick-util";
+import { WhirlpoolContext } from "../context";
 
 export const MAX_TICK_ARRAY_CROSSINGS = 2;
 

@@ -15,18 +15,18 @@ import {
   SwapQuote,
   SwapQuoteParam,
   SwapTxParam,
-} from "./public/types";
-import { defaultSlippagePercentage } from "../constants/public/defaults";
+} from "./pool/public/types";
+import { defaultSlippagePercentage } from "./constants/public/defaults";
 import {
   getAddLiquidityQuote,
   InternalAddLiquidityQuoteParam,
-} from "../position/quotes/add-liquidity";
-import { getRemoveLiquidityQuote } from "../position/quotes/remove-liquidity";
-import { toPubKey } from "../utils/address";
-import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
-import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
-import { TickUtil } from "../utils/whirlpool/tick-util";
-import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
+} from "./position/quotes/add-liquidity";
+import { getRemoveLiquidityQuote } from "./position/quotes/remove-liquidity";
+import { toPubKey } from "./utils/address";
+import { MultiTransactionBuilder } from "./utils/public/multi-transaction-builder";
+import { deriveATA, resolveOrCreateATA } from "./utils/web3/ata-utils";
+import { TickUtil } from "./utils/whirlpool/tick-util";
+import { getLiquidityDistribution, LiquidityDistribution } from "./pool/ux/liquidity-distribution";
 import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 import {
   getTickArrayPda,
@@ -46,11 +46,11 @@ import {
   TickSpacing,
   getWhirlpoolPda,
 } from "@orca-so/whirlpool-client-sdk";
-import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
-import { adjustAmountForSlippage } from "../utils/public/position-util";
-import { ZERO } from "../utils/web3/math-utils";
-import { WhirlpoolContext } from "../context";
-import { PoolUtil } from "../utils/whirlpool/pool-util";
+import { buildCollectFeesAndRewardsTx } from "./position/txs/fees-and-rewards";
+import { adjustAmountForSlippage } from "./utils/public/position-util";
+import { ZERO } from "./utils/web3/math-utils";
+import { WhirlpoolContext } from "./context";
+import { PoolUtil } from "./utils/whirlpool/pool-util";
 
 export class OrcaPool {
   /*** Utilities ***/
