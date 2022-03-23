@@ -148,17 +148,19 @@ export class OrcaPool {
     const txBuilder = new TransactionBuilder(provider);
     const preTxBuilder = new TransactionBuilder(provider);
 
-    const positionIx = (withMetadata ? client.openPositionWithMetadataTx : client.openPositionTx)({
-      funder: provider.wallet.publicKey,
-      ownerKey: provider.wallet.publicKey,
-      positionPda,
-      metadataPda,
-      positionMintAddress: positionMintKeypair.publicKey,
-      positionTokenAccountAddress,
-      whirlpoolKey: toPubKey(poolAddress),
-      tickLowerIndex,
-      tickUpperIndex,
-    }).compressIx(false);
+    const positionIx = (withMetadata ? client.openPositionWithMetadataTx : client.openPositionTx)
+      .bind(client)({
+        funder: provider.wallet.publicKey,
+        ownerKey: provider.wallet.publicKey,
+        positionPda,
+        metadataPda,
+        positionMintAddress: positionMintKeypair.publicKey,
+        positionTokenAccountAddress,
+        whirlpoolKey: toPubKey(poolAddress),
+        tickLowerIndex,
+        tickUpperIndex,
+      })
+      .compressIx(false);
     txBuilder.addInstruction(positionIx).addSigner(positionMintKeypair);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
