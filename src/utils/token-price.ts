@@ -3,7 +3,7 @@ import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import Decimal from "decimal.js";
 import { sqrtPriceX64ToPrice } from "..";
-import { AccountFetcher } from "../accounts/fetch";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { toPubKey, toPubKeys } from "./address";
 
 type TokenMint = string;

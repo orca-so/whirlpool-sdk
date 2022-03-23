@@ -1,5 +1,5 @@
 import { Address } from "@project-serum/anchor";
-import { AccountFetcher } from "../../accounts/fetch";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 
 export type PriceRange = {};
 

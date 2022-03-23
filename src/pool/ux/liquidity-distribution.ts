@@ -3,7 +3,7 @@ import { Address, translateAddress } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { sqrtPriceX64ToPrice, tickIndexToPrice } from "../..";
-import { AccountFetcher } from "../../accounts/fetch";
+import { WhirlpoolContext } from "../../context";
 import { toPubKey } from "../../utils/address";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 
@@ -19,7 +19,7 @@ export type LiquidityDistribution = {
 };
 
 export async function getLiquidityDistribution(
-  dal: AccountFetcher,
+  ctx: WhirlpoolContext,
   poolAddress: Address,
   tickLower: number,
   tickUpper: number,
@@ -27,17 +27,17 @@ export async function getLiquidityDistribution(
 ): Promise<LiquidityDistribution> {
   const datapoints: LiquidityDataPoint[] = [];
 
-  const pool = await dal.getPool(poolAddress, refresh);
+  const pool = await ctx.accountFetcher.getPool(poolAddress, refresh);
   if (!pool) {
     throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
   }
 
-  const tokenDecimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
+  const tokenDecimalsA = (await ctx.accountFetcher.getMintInfo(pool.tokenMintA, false))?.decimals;
   if (!tokenDecimalsA) {
     throw new Error(`Token mint not found: ${pool.tokenMintA.toBase58()}`);
   }
 
-  const tokenDecimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
+  const tokenDecimalsB = (await ctx.accountFetcher.getMintInfo(pool.tokenMintB, false))?.decimals;
   if (!tokenDecimalsB) {
     throw new Error(`Token mint not found: ${pool.tokenMintB.toBase58()}`);
   }
@@ -47,9 +47,9 @@ export async function getLiquidityDistribution(
     poolAddress,
     tickLower,
     tickUpper,
-    dal.programId
+    ctx.program.programId
   );
-  const tickArrays = await dal.listTickArrays(tickArrayAddresses, refresh);
+  const tickArrays = await ctx.accountFetcher.listTickArrays(tickArrayAddresses, refresh);
 
   const currentLiquidity = new Decimal(pool.liquidity.toString());
   let relativeLiquidity = currentLiquidity;

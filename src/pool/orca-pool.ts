@@ -1,4 +1,4 @@
-import { Address, BN, Provider, translateAddress } from "@project-serum/anchor";
+import { Address, BN, translateAddress } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -17,7 +17,6 @@ import {
   SwapTxParam,
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/public/defaults";
-import { AccountFetcher } from "../accounts/fetch";
 import {
   getAddLiquidityQuote,
   InternalAddLiquidityQuoteParam,
@@ -26,21 +25,16 @@ import { getRemoveLiquidityQuote } from "../position/quotes/remove-liquidity";
 import { toPubKey } from "../utils/address";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
-import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
 import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 import {
-  TickSpacing,
-  PDA,
-  getWhirlpoolPda,
   getTickArrayPda,
   getPositionPda,
   TransactionBuilder,
   sqrtPriceX64ToTickIndex,
   toX64,
   WhirlpoolClient,
-  WhirlpoolContext,
   InitTickArrayParams,
   MIN_SQRT_PRICE,
   MAX_SQRT_PRICE,
@@ -48,14 +42,17 @@ import {
   MAX_TICK_INDEX,
   getOraclePda,
   getPositionMetadataPda,
+  PDA,
+  TickSpacing,
+  getWhirlpoolPda,
 } from "@orca-so/whirlpool-client-sdk";
 import { buildCollectFeesAndRewardsTx } from "../position/txs/fees-and-rewards";
 import { adjustAmountForSlippage } from "../utils/public/position-util";
 import { ZERO } from "../utils/web3/math-utils";
+import { WhirlpoolContext } from "../context";
+import { PoolUtil } from "../utils/whirlpool/pool-util";
 
 export class OrcaPool {
-  constructor(private readonly dal: AccountFetcher) {}
-
   /*** Utilities ***/
 
   /**
@@ -69,27 +66,34 @@ export class OrcaPool {
    * @returns liquidity distribution
    */
   public async getLiquidityDistribution(
+    ctx: WhirlpoolContext,
     poolAddress: Address,
     tickLower: number,
     tickUpper: number,
     refresh = true
   ): Promise<LiquidityDistribution> {
-    return getLiquidityDistribution(this.dal, poolAddress, tickLower, tickUpper, refresh);
+    return getLiquidityDistribution(ctx, poolAddress, tickLower, tickUpper, refresh);
   }
 
   /**
    * Derive the pool pda given token mints and tick spacing
+   * // TODO: Remove stable
    *
    * @param tokenMintA
    * @param tokenMintB
    * @param stable
    * @returns
    */
-  public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
+  public derivePDA(
+    ctx: WhirlpoolContext,
+    tokenMintA: Address,
+    tokenMintB: Address,
+    stable: boolean
+  ): PDA {
     const [_tokenMintA, _tokenMintB] = PoolUtil.orderMints(tokenMintA, tokenMintB);
     return getWhirlpoolPda(
-      this.dal.programId,
-      this.dal.whirlpoolsConfig,
+      ctx.program.programId,
+      ctx.configAddress,
       toPubKey(_tokenMintA),
       toPubKey(_tokenMintB),
       stable ? TickSpacing.Stable : TickSpacing.Standard
@@ -102,55 +106,56 @@ export class OrcaPool {
    * Construct a transaction for opening an new position
    */
   public async getOpenPositionTx(
+    ctx: WhirlpoolContext,
     param: OpenPositionTxParam
   ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
-    return this.getOpenPositionWithOptMetadataTx(param);
+    return this.getOpenPositionWithOptMetadataTx(ctx, param);
   }
 
   /**
    * Construct a transaction for opening an new position
    */
   public async getOpenPositionWithMetadataTx(
+    ctx: WhirlpoolContext,
     param: OpenPositionTxParam
   ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
-    return this.getOpenPositionWithOptMetadataTx(param, true);
+    return this.getOpenPositionWithOptMetadataTx(ctx, param, true);
   }
 
   /**
    * Construct a transaction for opening an new position with optional metadata
    */
   async getOpenPositionWithOptMetadataTx(
+    ctx: WhirlpoolContext,
     param: OpenPositionTxParam,
     withMetadata: boolean = false
   ): Promise<{ tx: MultiTransactionBuilder; mint: PublicKey }> {
     const {
-      provider,
       quote: { maxTokenA, maxTokenB, liquidity, tickLowerIndex, tickUpperIndex, poolAddress },
     } = param;
     invariant(liquidity.gt(new u64(0)), "liquidity must be greater than zero");
 
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.dal.getPool(poolAddress, false);
+    const whirlpool = await ctx.accountFetcher.getPool(poolAddress, false);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     const positionMintKeypair = Keypair.generate();
-    const positionPda = getPositionPda(this.dal.programId, positionMintKeypair.publicKey);
+    const positionPda = getPositionPda(ctx.program.programId, positionMintKeypair.publicKey);
     const metadataPda = getPositionMetadataPda(positionMintKeypair.publicKey);
     const positionTokenAccountAddress = await deriveATA(
-      provider.wallet.publicKey,
+      ctx.provider.wallet.publicKey,
       positionMintKeypair.publicKey
     );
 
-    const txBuilder = new TransactionBuilder(provider);
-    const preTxBuilder = new TransactionBuilder(provider);
+    const txBuilder = new TransactionBuilder(ctx.provider);
+    const preTxBuilder = new TransactionBuilder(ctx.provider);
 
     const positionIx = (withMetadata ? client.openPositionWithMetadataTx : client.openPositionTx)({
-      funder: provider.wallet.publicKey,
-      ownerKey: provider.wallet.publicKey,
+      funder: ctx.provider.wallet.publicKey,
+      ownerKey: ctx.provider.wallet.publicKey,
       positionPda,
       metadataPda,
       positionMintAddress: positionMintKeypair.publicKey,
@@ -162,14 +167,14 @@ export class OrcaPool {
     txBuilder.addInstruction(positionIx).addSigner(positionMintKeypair);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintA,
       maxTokenA
     );
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintB,
       maxTokenB
     );
@@ -180,16 +185,16 @@ export class OrcaPool {
       tickLowerIndex,
       whirlpool.tickSpacing,
       poolAddress,
-      this.dal.programId
+      ctx.program.programId
     );
     const tickArrayUpperPda = TickUtil.getPdaWithTickIndex(
       tickUpperIndex,
       whirlpool.tickSpacing,
       poolAddress,
-      this.dal.programId
+      ctx.program.programId
     );
 
-    const [tickArrayLower, tickArrayUpper] = await this.dal.listTickArrays(
+    const [tickArrayLower, tickArrayUpper] = await ctx.accountFetcher.listTickArrays(
       [tickArrayLowerPda.publicKey, tickArrayUpperPda.publicKey],
       true
     );
@@ -201,7 +206,7 @@ export class OrcaPool {
           whirlpool: toPubKey(poolAddress),
           tickArrayPda: tickArrayLowerPda,
           startTick: TickUtil.getStartTickIndex(tickLowerIndex, whirlpool.tickSpacing),
-          funder: provider.wallet.publicKey,
+          funder: ctx.provider.wallet.publicKey,
         })
         .compressIx(false);
       preTxBuilder.addInstruction(tickArrayIx);
@@ -217,7 +222,7 @@ export class OrcaPool {
           whirlpool: toPubKey(poolAddress),
           tickArrayPda: tickArrayUpperPda,
           startTick: TickUtil.getStartTickIndex(tickUpperIndex, whirlpool.tickSpacing),
-          funder: provider.wallet.publicKey,
+          funder: ctx.provider.wallet.publicKey,
         })
         .compressIx(false);
       preTxBuilder.addInstruction(tickArrayIx);
@@ -230,7 +235,7 @@ export class OrcaPool {
         tokenMaxA: maxTokenA,
         tokenMaxB: maxTokenB,
         whirlpool: toPubKey(poolAddress),
-        positionAuthority: provider.wallet.publicKey,
+        positionAuthority: ctx.provider.wallet.publicKey,
         position: positionPda.publicKey,
         positionTokenAccount: positionTokenAccountAddress,
         tokenOwnerAccountA,
@@ -243,7 +248,7 @@ export class OrcaPool {
       .compressIx(false);
     txBuilder.addInstruction(liquidityIx);
 
-    const tx = new MultiTransactionBuilder(provider, []);
+    const tx = new MultiTransactionBuilder(ctx.provider, []);
     if (requirePreTx) {
       tx.addTxBuilder(preTxBuilder);
     }
@@ -256,10 +261,9 @@ export class OrcaPool {
   }
 
   public async getInitTickArrayTx(
-    provider: Provider,
+    ctx: WhirlpoolContext,
     param: InitTickArrayParams
   ): Promise<TransactionBuilder> {
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
     return client.initTickArrayTx(param);
   }
@@ -267,17 +271,20 @@ export class OrcaPool {
   /**
    * Construct a transaction for closing an existing position
    */
-  public async getClosePositionTx(param: ClosePositionTxParam): Promise<TransactionBuilder> {
-    const { provider, quote } = param;
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
+  public async getClosePositionTx(
+    ctx: WhirlpoolContext,
+    param: ClosePositionTxParam
+  ): Promise<TransactionBuilder> {
+    const { quote } = param;
+
     const client = new WhirlpoolClient(ctx);
 
-    const position = await this.dal.getPosition(quote.positionAddress, true);
+    const position = await ctx.accountFetcher.getPosition(quote.positionAddress, true);
     if (!position) {
       throw new Error(`Position not found: ${translateAddress(quote.positionAddress).toBase58()}`);
     }
 
-    const whirlpool = await this.dal.getPool(position.whirlpool, false);
+    const whirlpool = await ctx.accountFetcher.getPool(position.whirlpool, false);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
@@ -286,36 +293,38 @@ export class OrcaPool {
       position.tickLowerIndex,
       whirlpool.tickSpacing,
       position.whirlpool,
-      this.dal.programId
+      ctx.program.programId
     ).publicKey;
     const tickArrayUpper = TickUtil.getPdaWithTickIndex(
       position.tickUpperIndex,
       whirlpool.tickSpacing,
       position.whirlpool,
-      this.dal.programId
+      ctx.program.programId
     ).publicKey;
 
-    const positionTokenAccount = await deriveATA(provider.wallet.publicKey, position.positionMint);
+    const positionTokenAccount = await deriveATA(
+      ctx.provider.wallet.publicKey,
+      position.positionMint
+    );
 
-    const txBuilder = new TransactionBuilder(provider);
+    const txBuilder = new TransactionBuilder(ctx.provider);
 
     const resolvedAssociatedTokenAddresses: Record<string, PublicKey> = {};
     const { address: tokenOwnerAccountA, ...createTokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintA
     );
     const { address: tokenOwnerAccountB, ...createTokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintB
     );
     txBuilder.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
     resolvedAssociatedTokenAddresses[whirlpool.tokenMintA.toBase58()] = tokenOwnerAccountA;
     resolvedAssociatedTokenAddresses[whirlpool.tokenMintB.toBase58()] = tokenOwnerAccountB;
 
-    const collectTx = await buildCollectFeesAndRewardsTx(this.dal, {
-      provider,
+    const collectTx = await buildCollectFeesAndRewardsTx(ctx, {
       positionAddress: quote.positionAddress,
       resolvedAssociatedTokenAddresses,
     });
@@ -330,7 +339,7 @@ export class OrcaPool {
           tokenMinA: quote.minTokenA,
           tokenMinB: quote.minTokenB,
           whirlpool: position.whirlpool,
-          positionAuthority: provider.wallet.publicKey,
+          positionAuthority: ctx.provider.wallet.publicKey,
           position: toPubKey(quote.positionAddress),
           positionTokenAccount,
           tokenOwnerAccountA,
@@ -348,8 +357,8 @@ export class OrcaPool {
 
     const positionIx = client
       .closePositionTx({
-        positionAuthority: provider.wallet.publicKey,
-        receiver: provider.wallet.publicKey,
+        positionAuthority: ctx.provider.wallet.publicKey,
+        receiver: ctx.provider.wallet.publicKey,
         positionTokenAccount,
         position: toPubKey(quote.positionAddress),
         positionMint: position.positionMint,
@@ -361,6 +370,7 @@ export class OrcaPool {
   }
 
   async getLowestInitializedTickArrayTickIndex(
+    ctx: WhirlpoolContext,
     poolAddress: Address,
     tickSpacing: number
   ): Promise<number> {
@@ -370,14 +380,14 @@ export class OrcaPool {
         MIN_TICK_INDEX,
         tickSpacing,
         poolAddress,
-        this.dal.programId,
+        ctx.program.programId,
         offset
       );
 
       // Throttle to prevent being rate-limited
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      const tickArray = await ctx.accountFetcher.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
         offset++;
         continue;
@@ -388,6 +398,7 @@ export class OrcaPool {
   }
 
   async getHighestInitializedTickArrayTickIndex(
+    ctx: WhirlpoolContext,
     poolAddress: Address,
     tickSpacing: number
   ): Promise<number> {
@@ -397,13 +408,13 @@ export class OrcaPool {
         MAX_TICK_INDEX,
         tickSpacing,
         poolAddress,
-        this.dal.programId,
+        ctx.program.programId,
         offset
       );
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      const tickArray = await ctx.accountFetcher.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
         offset--;
         continue;
@@ -416,38 +427,39 @@ export class OrcaPool {
   // Finds all uninitialized tick arrays inbetween the lowest and highest
   // initialized tick arrays for a given pool
   public async getInitializeGapTickArraysTx(
+    ctx: WhirlpoolContext,
     param: FillTickArraysParam
   ): Promise<MultiTransactionBuilder> {
-    const { provider, poolAddress } = param;
-
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
+    const { poolAddress } = param;
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.dal.getPool(poolAddress, true);
+    const whirlpool = await ctx.accountFetcher.getPool(poolAddress, true);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
 
     const firstTickIndex = await this.getLowestInitializedTickArrayTickIndex(
+      ctx,
       poolAddress,
       whirlpool.tickSpacing
     );
     const lastTickIndex = await this.getHighestInitializedTickArrayTickIndex(
+      ctx,
       poolAddress,
       whirlpool.tickSpacing
     );
 
     // get all lowest and highest tick array
     let numIxs = 0;
-    let txBuilder = new TransactionBuilder(provider);
-    const multiTxBuilder = new MultiTransactionBuilder(provider, []);
+    let txBuilder = new TransactionBuilder(ctx.provider);
+    const multiTxBuilder = new MultiTransactionBuilder(ctx.provider, []);
     let offset = 1;
     while (true) {
       const tickArrayPda = TickUtil.getPdaWithTickIndex(
         firstTickIndex,
         whirlpool.tickSpacing,
         poolAddress,
-        this.dal.programId,
+        ctx.program.programId,
         offset
       );
 
@@ -459,7 +471,7 @@ export class OrcaPool {
       // Throttle to prevent being rate-limited
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const tickArray = await this.dal.getTickArray(tickArrayPda.publicKey, false);
+      const tickArray = await ctx.accountFetcher.getTickArray(tickArrayPda.publicKey, false);
       if (!tickArray) {
         txBuilder.addInstruction(
           client
@@ -467,7 +479,7 @@ export class OrcaPool {
               whirlpool: toPubKey(poolAddress),
               tickArrayPda,
               startTick,
-              funder: provider.wallet.publicKey,
+              funder: ctx.provider.wallet.publicKey,
             })
             .compressIx(false)
         );
@@ -476,7 +488,7 @@ export class OrcaPool {
 
         if (!(numIxs % 7)) {
           multiTxBuilder.addTxBuilder(txBuilder);
-          txBuilder = new TransactionBuilder(provider);
+          txBuilder = new TransactionBuilder(ctx.provider);
         }
       }
 
@@ -493,9 +505,11 @@ export class OrcaPool {
   /**
    * Construct a transaction for a swap
    */
-  public async getSwapTx(param: SwapTxParam): Promise<MultiTransactionBuilder> {
+  public async getSwapTx(
+    ctx: WhirlpoolContext,
+    param: SwapTxParam
+  ): Promise<MultiTransactionBuilder> {
     const {
-      provider,
       quote: {
         sqrtPriceLimitX64,
         otherAmountThreshold,
@@ -506,10 +520,9 @@ export class OrcaPool {
         poolAddress,
       },
     } = param;
-    const ctx = WhirlpoolContext.withProvider(provider, this.dal.programId);
     const client = new WhirlpoolClient(ctx);
 
-    const whirlpool = await this.dal.getPool(poolAddress, true);
+    const whirlpool = await ctx.accountFetcher.getPool(poolAddress, true);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
@@ -517,16 +530,16 @@ export class OrcaPool {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintA,
       aToB ? amountIn : ZERO
     );
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
     const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
+      ctx.provider.connection,
+      ctx.provider.wallet.publicKey,
       whirlpool.tokenMintB,
       !aToB ? amountIn : ZERO
     );
@@ -535,11 +548,12 @@ export class OrcaPool {
     const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
 
     const tickArrayAddresses = await this.getTickArrayPublicKeysForSwap(
+      ctx,
       whirlpool.sqrtPrice,
       targetSqrtPriceLimitX64,
       whirlpool.tickSpacing,
       toPubKey(poolAddress),
-      this.dal.programId
+      ctx.program.programId
     );
 
     const oraclePda = getOraclePda(ctx.program.programId, translateAddress(poolAddress));
@@ -553,7 +567,7 @@ export class OrcaPool {
           amountSpecifiedIsInput: fixedInput,
           aToB,
           whirlpool: toPubKey(poolAddress),
-          tokenAuthority: provider.wallet.publicKey,
+          tokenAuthority: ctx.provider.wallet.publicKey,
           tokenOwnerAccountA,
           tokenVaultA: whirlpool.tokenVaultA,
           tokenOwnerAccountB,
@@ -566,7 +580,7 @@ export class OrcaPool {
         .compressIx(false)
     );
 
-    return new MultiTransactionBuilder(provider, [txBuilder]);
+    return new MultiTransactionBuilder(ctx.provider, [txBuilder]);
   }
 
   private getDefaultSqrtPriceLimit(aToB: boolean): BN {
@@ -574,6 +588,7 @@ export class OrcaPool {
   }
 
   private async getTickArrayPublicKeysForSwap(
+    ctx: WhirlpoolContext,
     currentSqrtPriceX64: BN,
     targetSqrtPriceX64: BN,
     tickSpacing: number,
@@ -607,7 +622,7 @@ export class OrcaPool {
         nextStartTickIndex
       ).publicKey;
 
-      const nextTickArray = await this.dal.getTickArray(nextTickArrayAddress, false);
+      const nextTickArray = await ctx.accountFetcher.getTickArray(nextTickArrayAddress, false);
       if (!nextTickArray) {
         break;
       }
@@ -634,9 +649,12 @@ export class OrcaPool {
   /**
    * Construct a quote for opening a new position
    */
-  public async getOpenPositionQuote(param: OpenPositionQuoteParam): Promise<OpenPositionQuote> {
+  public async getOpenPositionQuote(
+    ctx: WhirlpoolContext,
+    param: OpenPositionQuoteParam
+  ): Promise<OpenPositionQuote> {
     const { poolAddress, tokenMint, tokenAmount, slippageTolerance, refresh } = param;
-    const whirlpool = await this.dal.getPool(poolAddress, refresh);
+    const whirlpool = await ctx.accountFetcher.getPool(poolAddress, refresh);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
@@ -682,14 +700,17 @@ export class OrcaPool {
   /**
    * Construct a quote for closing an existing position
    */
-  public async getClosePositionQuote(param: ClosePositionQuoteParam): Promise<ClosePositionQuote> {
+  public async getClosePositionQuote(
+    ctx: WhirlpoolContext,
+    param: ClosePositionQuoteParam
+  ): Promise<ClosePositionQuote> {
     const { positionAddress, refresh, slippageTolerance } = param;
-    const position = await this.dal.getPosition(positionAddress, refresh);
+    const position = await ctx.accountFetcher.getPosition(positionAddress, refresh);
     if (!position) {
       throw new Error(`Position not found: ${translateAddress(positionAddress).toBase58()}`);
     }
 
-    const whirlpool = await this.dal.getPool(position.whirlpool, refresh);
+    const whirlpool = await ctx.accountFetcher.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(position.whirlpool).toBase58()}`);
     }
@@ -708,7 +729,7 @@ export class OrcaPool {
   /**
    * Construct a quote for swap
    */
-  public async getSwapQuote(param: SwapQuoteParam): Promise<SwapQuote> {
+  public async getSwapQuote(ctx: WhirlpoolContext, param: SwapQuoteParam): Promise<SwapQuote> {
     const {
       poolAddress,
       tokenMint,
@@ -718,7 +739,7 @@ export class OrcaPool {
       refresh,
     } = param;
 
-    const whirlpool = await this.dal.getPool(poolAddress, refresh);
+    const whirlpool = await ctx.accountFetcher.getPool(poolAddress, refresh);
     if (!whirlpool) {
       throw new Error(`Whirlpool not found: ${translateAddress(poolAddress).toBase58()}`);
     }
@@ -733,9 +754,10 @@ export class OrcaPool {
 
     // Return sqrtPriceLimit
     const { amountIn, amountOut, sqrtPriceLimitX64 } = await swapSimulator.simulateSwap(
+      ctx,
       {
         refresh,
-        dal: this.dal,
+        dal: ctx.accountFetcher,
         poolAddress,
         whirlpoolData: whirlpool,
         amountSpecified,

@@ -1,26 +1,14 @@
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
-import { Connection } from "@solana/web3.js";
 import Decimal from "decimal.js";
-import { OrcaNetwork } from "./constants/public/network";
 import { PoolData } from "./types";
-import { OrcaAdmin } from "./admin/orca-admin";
-import {
-  defaultNetwork,
-  getDefaultConnection,
-  getDefaultOffchainDataURI,
-} from "./constants/public/defaults";
-import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
-import { AccountFetcher } from "./accounts/fetch";
-import { OrcaPool } from "./pool/orca-pool";
-import { OrcaPosition } from "./position/orca-position";
 import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
-import { OrcaZooplankton } from "./offchain/orca-zp";
 import { toPubKey } from "./utils/address";
+import { WhirlpoolContext } from "./context";
 
 // Global rules for Decimals
 //  - 40 digits of precision for the largest number
@@ -28,33 +16,11 @@ import { toPubKey } from "./utils/address";
 //  - Always round towards 0 to mirror smart contract rules
 Decimal.set({ precision: 40, toExpPos: 40, toExpNeg: -20, rounding: 1 });
 
-export type OrcaWhirlpoolClientConfig = {
-  network?: OrcaNetwork;
-  connection?: Connection;
-  whirlpoolConfig?: Address;
-  programId?: Address;
-  offchainDataURI?: string;
-};
-
 export class OrcaWhirlpoolClient {
-  public readonly accounts: AccountFetcher;
-  public readonly admin: OrcaAdmin;
-  public readonly pool: OrcaPool;
-  public readonly position: OrcaPosition;
-  public readonly offchain: OrcaZooplankton;
+  public readonly ctx: WhirlpoolContext;
 
-  constructor(config?: OrcaWhirlpoolClientConfig) {
-    const network = config?.network || defaultNetwork;
-    const connection = config?.connection || getDefaultConnection(network);
-    const whirlpoolsConfig = config?.whirlpoolConfig || getWhirlpoolsConfig(network);
-    const programId = config?.programId || getWhirlpoolProgramId(network);
-    const offchainDataURI = config?.offchainDataURI || getDefaultOffchainDataURI(network);
-
-    this.accounts = new AccountFetcher(whirlpoolsConfig, programId, connection);
-    this.admin = new OrcaAdmin(this.accounts);
-    this.pool = new OrcaPool(this.accounts);
-    this.position = new OrcaPosition(this.accounts);
-    this.offchain = new OrcaZooplankton(offchainDataURI);
+  constructor(context: WhirlpoolContext) {
+    this.ctx = context;
   }
 
   /**
@@ -73,10 +39,10 @@ export class OrcaWhirlpoolClient {
     otherBaseTokenMints: Address[] = [NATIVE_MINT],
     refresh = true
   ): Promise<TokenUSDPrices> {
-    const allPools = await this.accounts.listPools(poolAddresses, refresh);
+    const allPools = await this.ctx.accountFetcher.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
     return getTokenUSDPrices(
-      this.accounts,
+      this.ctx.accountFetcher,
       pools,
       baseTokenMint,
       baseTokenUSDPrice,
@@ -95,7 +61,7 @@ export class OrcaWhirlpoolClient {
     walletAddress: Address,
     refresh = true
   ): Promise<Record<string, UserPositionData>> {
-    return convertPositionDataToUserPositionData(this.accounts, walletAddress, refresh);
+    return convertPositionDataToUserPositionData(this.ctx, walletAddress, refresh);
   }
 
   /**
@@ -109,7 +75,7 @@ export class OrcaWhirlpoolClient {
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
-    return convertWhirlpoolDataToPoolData(this.accounts, poolAddresses, refresh);
+    return convertWhirlpoolDataToPoolData(this.ctx, poolAddresses, refresh);
   }
 
   /**

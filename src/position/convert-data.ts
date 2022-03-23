@@ -11,24 +11,25 @@ import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
 import { getCollectRewardsQuoteInternal } from "./quotes/collect-rewards";
 import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
 import { tickIndexToPrice } from "..";
+import { WhirlpoolContext } from "../context";
 
 export async function convertPositionDataToUserPositionData(
-  dal: AccountFetcher,
+  ctx: WhirlpoolContext,
   walletAddress: Address,
   refresh: boolean
 ): Promise<Record<string, UserPositionData>> {
-  const positionAddresses = await getUserPositions(dal, walletAddress, refresh);
+  const positionAddresses = await getUserPositions(ctx, walletAddress, refresh);
 
   const result: Record<string, UserPositionData> = {};
   for (const address of positionAddresses) {
     const positionId = toPubKey(address).toBase58();
-    const position = await dal.getPosition(address, refresh);
+    const position = await ctx.accountFetcher.getPosition(address, refresh);
     if (!position) {
       console.error(`error - position not found`);
       continue;
     }
 
-    const whirlpool = await dal.getPool(position.whirlpool, refresh);
+    const whirlpool = await ctx.accountFetcher.getPool(position.whirlpool, refresh);
     if (!whirlpool) {
       console.error(`error - whirlpool not found`);
       continue;
@@ -39,10 +40,10 @@ export async function convertPositionDataToUserPositionData(
       position.tickUpperIndex,
       whirlpool.tickSpacing,
       position.whirlpool,
-      dal.programId
+      ctx.program.programId
     );
-    const tickArrayLower = await dal.getTickArray(tickLowerAddress, false);
-    const tickArrayUpper = await dal.getTickArray(tickUpperAddress, false);
+    const tickArrayLower = await ctx.accountFetcher.getTickArray(tickLowerAddress, false);
+    const tickArrayUpper = await ctx.accountFetcher.getTickArray(tickUpperAddress, false);
     if (!tickArrayLower || !tickArrayUpper) {
       console.error(`error - tick array not found`);
       continue;
@@ -60,8 +61,8 @@ export async function convertPositionDataToUserPositionData(
     );
     const quoteParam = { whirlpool, position, tickLower, tickUpper };
     const feesQuote = getCollectFeesQuoteInternal(quoteParam);
-    const decimalsA = (await dal.getMintInfo(whirlpool.tokenMintA, false))?.decimals;
-    const decimalsB = (await dal.getMintInfo(whirlpool.tokenMintB, false))?.decimals;
+    const decimalsA = (await ctx.accountFetcher.getMintInfo(whirlpool.tokenMintA, false))?.decimals;
+    const decimalsB = (await ctx.accountFetcher.getMintInfo(whirlpool.tokenMintB, false))?.decimals;
     if (decimalsA === undefined || decimalsB === undefined) {
       console.error(`error - decimals not found`);
       continue;
@@ -75,7 +76,7 @@ export async function convertPositionDataToUserPositionData(
       const amountOwed = rewardsQuote[index];
       const decimals =
         !mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)
-          ? (await dal.getMintInfo(mint, false))?.decimals
+          ? (await ctx.accountFetcher.getMintInfo(mint, false))?.decimals
           : undefined;
       const decimalAmountOwed =
         amountOwed && decimals ? DecimalUtil.fromU64(amountOwed, decimals) : undefined;
@@ -109,19 +110,21 @@ export async function convertPositionDataToUserPositionData(
 }
 
 async function getUserPositions(
-  dal: AccountFetcher,
+  ctx: WhirlpoolContext,
   walletAddress: Address,
   refresh: boolean
 ): Promise<Address[]> {
   const potentialPositionAddresses: Address[] = [];
-  const userTokens = await dal.listUserTokens(walletAddress, refresh);
+  const userTokens = await ctx.accountFetcher.listUserTokens(walletAddress, refresh);
   userTokens.forEach(({ amount, decimals, mint }) => {
     if (amount === "1" && decimals === 0 && !!mint) {
-      potentialPositionAddresses.push(getPositionPda(dal.programId, toPubKey(mint)).publicKey);
+      potentialPositionAddresses.push(
+        getPositionPda(ctx.program.programId, toPubKey(mint)).publicKey
+      );
     }
   });
 
-  const positions = await dal.listPositions(potentialPositionAddresses, refresh);
+  const positions = await ctx.accountFetcher.listPositions(potentialPositionAddresses, refresh);
   invariant(potentialPositionAddresses.length === positions.length, "not enough positions data");
 
   if (refresh) {
@@ -132,7 +135,7 @@ async function getUserPositions(
         whirlpoolAddresses.add(position.whirlpool.toBase58());
       }
     });
-    const pools = await dal.listPools(Array.from(whirlpoolAddresses), refresh);
+    const pools = await ctx.accountFetcher.listPools(Array.from(whirlpoolAddresses), refresh);
 
     /*** Refresh mint infos ***/
     const allMintInfos: Set<string> = new Set();
@@ -152,14 +155,14 @@ async function getUserPositions(
     const tickArrayAddresses: Set<string> = new Set();
     for (const position of positions) {
       if (position) {
-        const whirlpool = await dal.getPool(position.whirlpool, false);
+        const whirlpool = await ctx.accountFetcher.getPool(position.whirlpool, false);
         if (whirlpool) {
           const [tickLowerAddress, tickUpperAddress] = TickUtil.getLowerAndUpperTickArrayAddresses(
             position.tickLowerIndex,
             position.tickUpperIndex,
             whirlpool.tickSpacing,
             position.whirlpool,
-            dal.programId
+            ctx.program.programId
           );
           tickArrayAddresses.add(tickLowerAddress.toBase58());
           tickArrayAddresses.add(tickUpperAddress.toBase58());
@@ -168,8 +171,8 @@ async function getUserPositions(
     }
 
     await Promise.all([
-      dal.listMintInfos(Array.from(allMintInfos), false),
-      dal.listTickArrays(Array.from(tickArrayAddresses), true),
+      ctx.accountFetcher.listMintInfos(Array.from(allMintInfos), false),
+      ctx.accountFetcher.listTickArrays(Array.from(tickArrayAddresses), true),
     ]);
   }
 
