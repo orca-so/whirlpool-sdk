@@ -1,5 +1,7 @@
+import { Percentage } from "@orca-so/sdk";
 import { TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { Address, BN, Provider } from "@project-serum/anchor";
+import { Keypair } from "@solana/web3.js";
 
 export type InitPoolTxParam = {
   initSqrtPrice: BN;
@@ -8,8 +10,12 @@ export type InitPoolTxParam = {
   tickSpacing: TickSpacing;
 };
 
-export type SetFeeAuthorityTxParam = {
-  newFeeAuthority: Address;
+export type InitWhirlpoolConfigsTxParam = {
+  whirlpoolConfigKeypair: Keypair;
+  feeAuthority: Address;
+  collectProtocolFeesAuthority: Address;
+  rewardEmissionsSuperAuthority: Address;
+  defaultProtocolFeeRate: number;
 };
 
 export type SetCollectProtocolFeesAuthorityTxParam = {
@@ -30,12 +36,6 @@ export type SetRewardAuthorityTxParam = {
 export type SetRewardEmissionsTxParam = {
   rewardIndex: number;
   emissionsPerSecondX64: BN;
-};
-
-export type SetRewardAuthorityBySuperAuthorityTxParam = {
-  poolAddress: Address;
-  newRewardAuthority: Address;
-  rewardIndex: number;
 };
 
 export type SetRewardEmissionsBySuperAuthorityTxParam = {
