@@ -49,6 +49,10 @@ export type Whirlpool = {
   };
   setRewardAuthority(param: SetRewardAuthorityTxParam): TransactionBuilder;
   setRewardEmissions(param: SetRewardEmissionsTxParam): Promise<TransactionBuilder>;
+  setRewardAuthorityBySuperAuthority(
+    newRewardAuthority: Address,
+    rewardIndex: number
+  ): TransactionBuilder;
 };
 
 export class WhirlpoolInstance {

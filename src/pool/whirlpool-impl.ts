@@ -744,4 +744,19 @@ export class WhirlpoolImpl implements Whirlpool {
 
     return tickArrayAddresses;
   }
+
+  setRewardAuthorityBySuperAuthority(
+    newRewardAuthority: Address,
+    rewardIndex: number
+  ): TransactionBuilder {
+    invariant(rewardIndex < NUM_REWARDS, "invalid rewardIndex");
+    const client = new WhirlpoolClient(this.ctx);
+    return client.setRewardAuthorityBySuperAuthorityTx({
+      whirlpoolsConfig: this.ctx.configAddress,
+      whirlpool: this.address,
+      rewardEmissionsSuperAuthority: this.ctx.provider.wallet.publicKey,
+      newRewardAuthority: toPubKey(newRewardAuthority),
+      rewardIndex,
+    });
+  }
 }
