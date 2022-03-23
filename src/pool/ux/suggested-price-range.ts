@@ -1,5 +1,5 @@
 import { Address } from "@project-serum/anchor";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 
 export type PriceRange = {};
 
@@ -9,7 +9,7 @@ export type SuggestedPriceRanges = {
 };
 
 export async function getSuggestedPriceRanges(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   poolAddress: Address,
   refresh: boolean
 ): Promise<SuggestedPriceRanges> {

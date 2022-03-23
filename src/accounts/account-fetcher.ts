@@ -54,17 +54,12 @@ type GetMultipleAccountsResponse = {
  * The types of accounts that are being used are defined by CachedAccount.
  * Includes internal cache that can be refreshed by the client.
  */
-export class OrcaDAL {
-  public readonly whirlpoolsConfig: PublicKey;
-  public readonly programId: PublicKey;
-
+export class AccountFetcher {
   private readonly connection: Connection;
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
   private _userTokens: UserToken[] = [];
 
-  constructor(whirlpoolsConfig: Address, programId: Address, connection: Connection) {
-    this.whirlpoolsConfig = toPubKey(whirlpoolsConfig);
-    this.programId = toPubKey(programId);
+  constructor(connection: Connection) {
     this.connection = connection;
   }
 

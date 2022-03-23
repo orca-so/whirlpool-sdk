@@ -10,7 +10,7 @@ import {
 import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 import { Percentage } from "../../utils/public/percentage";
 import { divRoundUp, ZERO } from "../../utils/web3/math-utils";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
@@ -20,6 +20,7 @@ import {
   getNextSqrtPrice,
 } from "../../utils/public/position-util";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
+import { WhirlpoolContext } from "../../context";
 
 export const MAX_TICK_ARRAY_CROSSINGS = 2;
 
@@ -35,7 +36,7 @@ export enum AmountSpecified {
 
 type SwapSimulationBaseInput = {
   refresh: boolean;
-  dal: OrcaDAL;
+  dal: AccountFetcher;
   poolAddress: Address;
   whirlpoolData: WhirlpoolData;
   amountSpecified: AmountSpecified;
@@ -77,6 +78,7 @@ export class SwapSimulator {
 
   // ** METHODS **
   public async simulateSwap(
+    ctx: WhirlpoolContext,
     baseInput: SwapSimulationBaseInput,
     input: SwapSimulationInput
   ): Promise<SwapSimulationOutput> {
@@ -102,6 +104,7 @@ export class SwapSimulator {
       }
 
       const swapStepSimulationOutput: SwapStepSimulationOutput = await this.simulateSwapStep(
+        ctx,
         baseInput,
         {
           sqrtPriceX64: currentSqrtPriceX64,
@@ -125,7 +128,7 @@ export class SwapSimulator {
       otherAmountCalculated = otherAmountCalculated.add(otherAmount);
 
       if (hasReachedNextTick) {
-        const nextTick = await fetchTick(baseInput, nextTickIndex);
+        const nextTick = await fetchTick(ctx, baseInput, nextTickIndex);
 
         currentLiquidity = calculateNewLiquidity(
           currentLiquidity,
@@ -166,6 +169,7 @@ export class SwapSimulator {
   }
 
   public async simulateSwapStep(
+    ctx: WhirlpoolContext,
     baseInput: SwapSimulationBaseInput,
     input: SwapStepSimulationInput
   ): Promise<SwapStepSimulationOutput> {
@@ -180,7 +184,7 @@ export class SwapSimulator {
     const { tickIndex: nextTickIndex, tickArraysCrossed: tickArraysCrossedUpdate } =
       // Return last tick in tick array if max tick arrays crossed
       // Error out of this gets called for another iteration
-      await getNextInitializedTickIndex(baseInput, tickIndex, tickArraysCrossed);
+      await getNextInitializedTickIndex(ctx, baseInput, tickIndex, tickArraysCrossed);
 
     const targetSqrtPriceX64 = tickIndexToSqrtPriceX64(nextTickIndex);
 
@@ -273,7 +277,11 @@ function resolveTokenAmounts(
   }
 }
 
-async function fetchTickArray(baseInput: SwapSimulationBaseInput, tickIndex: number) {
+async function fetchTickArray(
+  ctx: WhirlpoolContext,
+  baseInput: SwapSimulationBaseInput,
+  tickIndex: number
+) {
   const {
     dal,
     poolAddress,
@@ -281,15 +289,20 @@ async function fetchTickArray(baseInput: SwapSimulationBaseInput, tickIndex: num
     whirlpoolData: { tickSpacing },
   } = baseInput;
   const tickArray = await dal.getTickArray(
-    TickUtil.getPdaWithTickIndex(tickIndex, tickSpacing, poolAddress, dal.programId).publicKey,
+    TickUtil.getPdaWithTickIndex(tickIndex, tickSpacing, poolAddress, ctx.program.programId)
+      .publicKey,
     refresh
   );
   invariant(!!tickArray, "tickArray is null");
   return tickArray;
 }
 
-async function fetchTick(baseInput: SwapSimulationBaseInput, tickIndex: number) {
-  const tickArray = await fetchTickArray(baseInput, tickIndex);
+async function fetchTick(
+  ctx: WhirlpoolContext,
+  baseInput: SwapSimulationBaseInput,
+  tickIndex: number
+) {
+  const tickArray = await fetchTickArray(ctx, baseInput, tickIndex);
   const {
     whirlpoolData: { tickSpacing },
   } = baseInput;
@@ -297,6 +310,7 @@ async function fetchTick(baseInput: SwapSimulationBaseInput, tickIndex: number) 
 }
 
 async function getNextInitializedTickIndex(
+  ctx: WhirlpoolContext,
   baseInput: SwapSimulationBaseInput,
   currentTickIndex: number,
   tickArraysCrossed: number
@@ -308,7 +322,7 @@ async function getNextInitializedTickIndex(
   let nextInitializedTickIndex: number | undefined = undefined;
 
   while (nextInitializedTickIndex === undefined) {
-    const currentTickArray = await fetchTickArray(baseInput, currentTickIndex);
+    const currentTickArray = await fetchTickArray(ctx, baseInput, currentTickIndex);
 
     let temp;
     if (swapDirection == SwapDirection.AtoB) {

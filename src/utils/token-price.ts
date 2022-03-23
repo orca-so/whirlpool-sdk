@@ -3,7 +3,7 @@ import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import Decimal from "decimal.js";
 import { sqrtPriceX64ToPrice } from "..";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { toPubKey, toPubKeys } from "./address";
 
 type TokenMint = string;
@@ -21,7 +21,7 @@ export type TokenUSDPrices = Record<TokenMint, Decimal>;
  * @param otherBaseTokenMints optional list of token mints to prioritize as base
  */
 export async function getTokenUSDPrices(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   pools: PoolData[],
   baseTokenMint: Address,
   baseTokenUSDPrice = new Decimal(1),

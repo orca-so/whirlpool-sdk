@@ -1,6 +1,6 @@
 import { getPoolMock, OrcaDALFileMock } from "../mocks/orca-dal";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { OrcaDAL } from "../../src/dal/orca-dal";
+import { AccountFetcher } from "../../src/accounts/fetch";
 import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 
 describe("Mocking Orca DAL", () => {
@@ -9,7 +9,7 @@ describe("Mocking Orca DAL", () => {
   });
 
   it("test", async () => {
-    const mockDal = new OrcaDAL(
+    const mockDal = new AccountFetcher(
       PublicKey.default,
       PublicKey.default,
       new Connection("http://google.com")

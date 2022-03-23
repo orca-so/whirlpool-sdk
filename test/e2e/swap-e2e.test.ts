@@ -6,7 +6,7 @@ import invariant from "tiny-invariant";
 import { OrcaNetwork, OrcaWhirlpoolClient, Percentage, PoolData, SwapQuote } from "../../src";
 import { OrcaAdmin } from "../../src/admin/orca-admin";
 import { getDefaultOffchainDataURI } from "../../src/constants/public/defaults";
-import { OrcaDAL } from "../../src/dal/orca-dal";
+import { AccountFetcher } from "../../src/accounts/fetch";
 import { ZERO } from "../../src/utils/web3/math-utils";
 import {
   DEFAULT_FEE_RATE,
@@ -33,7 +33,7 @@ describe.skip("Swap", () => {
   it("swaps left", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -81,7 +81,7 @@ describe.skip("Swap", () => {
   it("swaps right across a tick array with output", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -143,7 +143,7 @@ describe.skip("Swap", () => {
   it("swaps right across a tick array", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -206,7 +206,7 @@ describe.skip("Swap", () => {
   it("swaps left across a tick array with output", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -269,7 +269,7 @@ describe.skip("Swap", () => {
   it("swaps left across a tick array", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -332,7 +332,7 @@ describe.skip("Swap", () => {
   it("swaps right", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -380,7 +380,7 @@ describe.skip("Swap", () => {
   it("swaps left with output", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({
@@ -428,7 +428,7 @@ describe.skip("Swap", () => {
   it("swaps right with output", async () => {
     const whirlpoolsConfig = await initWhirlpoolsConfig(provider, PROGRAM_ID, owner);
 
-    const dal = new OrcaDAL(whirlpoolsConfig, PROGRAM_ID, provider.connection);
+    const dal = new AccountFetcher(whirlpoolsConfig, PROGRAM_ID, provider.connection);
     const orcaAdmin = new OrcaAdmin(dal);
 
     const client = new OrcaWhirlpoolClient({

@@ -3,7 +3,7 @@ import {
   CollectFeesAndRewardsTxParam,
   CollectMultipleFeesAndRewardsTxParam,
 } from "../public/types";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/account-fetcher";
 import {
   EMPTY_INSTRUCTION,
   Instruction,
@@ -11,7 +11,6 @@ import {
   PositionData,
   TransactionBuilder,
   WhirlpoolClient,
-  WhirlpoolContext,
 } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../../utils/web3/ata-utils";
@@ -22,24 +21,19 @@ import { PoolUtil } from "../../utils/whirlpool/pool-util";
 import { Address } from "@project-serum/anchor/dist/cjs/program/common";
 import { Provider } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
+import { WhirlpoolContext } from "../../context";
 
 export async function buildMultipleCollectFeesAndRewardsTx(
-  dal: OrcaDAL,
+  ctx: WhirlpoolContext,
   param: CollectMultipleFeesAndRewardsTxParam
 ): Promise<MultiTransactionBuilder> {
-  const { provider, positionAddresses, resolvedAssociatedTokenAddresses } = param;
-
-  const ctx = WhirlpoolContext.withProvider(provider, dal.programId);
-  const client = new WhirlpoolClient(ctx);
-
+  const { positionAddresses, resolvedAssociatedTokenAddresses } = param;
   const collectPositionTransactions: TransactionBuilder[] = [];
 
   for (const positionAddress of positionAddresses) {
     const txn = await buildSingleCollectFeeAndRewardsTx(
+      ctx,
       positionAddress,
-      dal,
-      client,
-      provider,
       resolvedAssociatedTokenAddresses
     );
     if (!txn.isEmpty()) {
@@ -57,7 +51,7 @@ export async function buildMultipleCollectFeesAndRewardsTx(
    * 5. Need to collect all 3 rewards
    *  */
 
-  const collectAllTransactionBuilder = new MultiTransactionBuilder(provider, []);
+  const collectAllTransactionBuilder = new MultiTransactionBuilder(ctx.provider, []);
 
   collectPositionTransactions.forEach((collectTxn) =>
     collectAllTransactionBuilder.addTxBuilder(collectTxn)
@@ -67,32 +61,26 @@ export async function buildMultipleCollectFeesAndRewardsTx(
 }
 
 export async function buildCollectFeesAndRewardsTx(
-  dal: OrcaDAL,
+  ctx: WhirlpoolContext,
   param: CollectFeesAndRewardsTxParam
 ): Promise<TransactionBuilder> {
-  const { provider, positionAddress, resolvedAssociatedTokenAddresses } = param;
-
-  const ctx = WhirlpoolContext.withProvider(provider, dal.programId);
-  const client = new WhirlpoolClient(ctx);
+  const { positionAddress, resolvedAssociatedTokenAddresses } = param;
 
   return await buildSingleCollectFeeAndRewardsTx(
+    ctx,
     positionAddress,
-    dal,
-    client,
-    provider,
     resolvedAssociatedTokenAddresses
   );
 }
 
 async function buildSingleCollectFeeAndRewardsTx(
+  ctx: WhirlpoolContext,
   positionAddress: Address,
-  dal: OrcaDAL,
-  client: WhirlpoolClient,
-  provider: Provider,
   ataMap?: Record<string, PublicKey>
 ): Promise<TransactionBuilder> {
-  const txn: TransactionBuilder = new TransactionBuilder(provider);
-  const positionInfo = await derivePositionInfo(positionAddress, dal, provider.wallet.publicKey);
+  const txn: TransactionBuilder = new TransactionBuilder(ctx.provider);
+  const client: WhirlpoolClient = new WhirlpoolClient(ctx);
+  const positionInfo = await derivePositionInfo(ctx, positionAddress);
   if (positionInfo == null) {
     return txn;
   }
@@ -119,11 +107,11 @@ async function buildSingleCollectFeeAndRewardsTx(
   const {
     tokenOwnerAccount: tokenOwnerAccountA,
     createTokenOwnerAccountIx: createTokenOwnerAccountAIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintA, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(ctx.provider, whirlpool.tokenMintA, ataMap);
   const {
     tokenOwnerAccount: tokenOwnerAccountB,
     createTokenOwnerAccountIx: createTokenOwnerAccountBIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintB, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(ctx.provider, whirlpool.tokenMintB, ataMap);
   txn.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
 
   // If the position has zero liquidity, then the fees are already the most up to date.
@@ -146,7 +134,7 @@ async function buildSingleCollectFeeAndRewardsTx(
     client
       .collectFeesTx({
         whirlpool: position.whirlpool,
-        positionAuthority: provider.wallet.publicKey,
+        positionAuthority: ctx.provider.wallet.publicKey,
         position: toPubKey(positionAddress),
         positionTokenAccount,
         tokenOwnerAccountA,
@@ -169,7 +157,7 @@ async function buildSingleCollectFeeAndRewardsTx(
     const {
       tokenOwnerAccount: rewardOwnerAccount,
       createTokenOwnerAccountIx: createRewardTokenOwnerAccountIx,
-    } = await getTokenAtaAndPopulateATAMap(provider, rewardInfo.mint, ataMap);
+    } = await getTokenAtaAndPopulateATAMap(ctx.provider, rewardInfo.mint, ataMap);
 
     if (createRewardTokenOwnerAccountIx) {
       txn.addInstruction(createRewardTokenOwnerAccountIx);
@@ -179,7 +167,7 @@ async function buildSingleCollectFeeAndRewardsTx(
       client
         .collectRewardTx({
           whirlpool: position.whirlpool,
-          positionAuthority: provider.wallet.publicKey,
+          positionAuthority: ctx.provider.wallet.publicKey,
           position: toPubKey(positionAddress),
           positionTokenAccount,
           rewardOwnerAccount,
@@ -223,13 +211,13 @@ async function getTokenAtaAndPopulateATAMap(
   return { tokenOwnerAccount, createTokenOwnerAccountIx };
 }
 
-async function derivePositionInfo(positionAddress: Address, dal: OrcaDAL, walletKey: PublicKey) {
-  const position = await dal.getPosition(positionAddress, false);
+async function derivePositionInfo(ctx: WhirlpoolContext, positionAddress: Address) {
+  const position = await ctx.accountFetcher.getPosition(positionAddress, false);
   if (!position) {
     return null;
   }
 
-  const whirlpool = await dal.getPool(position.whirlpool, false);
+  const whirlpool = await ctx.accountFetcher.getPool(position.whirlpool, false);
   if (!whirlpool) {
     return null;
   }
@@ -239,10 +227,10 @@ async function derivePositionInfo(positionAddress: Address, dal: OrcaDAL, wallet
     position.tickUpperIndex,
     whirlpool.tickSpacing,
     position.whirlpool,
-    dal.programId
+    ctx.program.programId
   );
 
-  const positionTokenAccount = await deriveATA(walletKey, position.positionMint);
+  const positionTokenAccount = await deriveATA(ctx.wallet.publicKey, position.positionMint);
 
   const nothingToCollect =
     position.liquidity.isZero() && !hasOwedFees(position) && !hasOwedRewards(position);

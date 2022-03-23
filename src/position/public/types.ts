@@ -5,23 +5,19 @@ import { Percentage } from "../../utils/public/percentage";
 /*** Transactions ***/
 
 export type AddLiquidityTxParam = {
-  provider: Provider;
   quote: AddLiquidityQuote;
 };
 
 export type RemoveLiquidityTxParam = {
-  provider: Provider;
   quote: RemoveLiquidityQuote;
 };
 
 export type CollectFeesAndRewardsTxParam = {
-  provider: Provider;
   positionAddress: Address;
   resolvedAssociatedTokenAddresses?: Record<string, PublicKey>;
 };
 
 export type CollectMultipleFeesAndRewardsTxParam = {
-  provider: Provider;
   positionAddresses: Address[];
   resolvedAssociatedTokenAddresses?: Record<string, PublicKey>;
 };

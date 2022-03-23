@@ -2,21 +2,22 @@ import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { PoolRewardInfo } from "../types";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/account-fetcher";
 import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
 import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { sqrtPriceX64ToPrice } from "../utils/public";
+import { WhirlpoolContext } from "../context";
 
 export async function convertWhirlpoolDataToPoolData(
-  dal: OrcaDAL,
+  ctx: WhirlpoolContext,
   poolAddresses: Address[],
   refresh: boolean
 ): Promise<Record<string, PoolData>> {
   if (refresh) {
-    const pools = await dal.listPools(poolAddresses, true);
+    const pools = await ctx.accountFetcher.listPools(poolAddresses, true);
 
     const allTokenAccounts: Set<string> = new Set();
     const allMintInfos: Set<string> = new Set();
@@ -33,7 +34,7 @@ export async function convertWhirlpoolDataToPoolData(
             pool.sqrtPrice,
             pool.tickSpacing,
             poolAddress,
-            dal.programId
+            ctx.program.programId
           ).publicKey.toBase58()
         );
 
@@ -46,25 +47,25 @@ export async function convertWhirlpoolDataToPoolData(
       }
     });
     await Promise.all([
-      dal.listTokenInfos(Array.from(allTokenAccounts), true),
-      dal.listMintInfos(Array.from(allMintInfos), false),
-      dal.listTickArrays(allTickArrays, true),
+      ctx.accountFetcher.listTokenInfos(Array.from(allTokenAccounts), true),
+      ctx.accountFetcher.listMintInfos(Array.from(allMintInfos), false),
+      ctx.accountFetcher.listTickArrays(allTickArrays, true),
     ]);
   }
 
   const result: Record<string, PoolData> = {};
   for (const address of poolAddresses) {
     const poolId = toPubKey(address).toBase58();
-    const pool = await dal.getPool(address, false);
+    const pool = await ctx.accountFetcher.getPool(address, false);
     if (!pool) {
       console.error(`error - pool not found`);
       continue;
     }
 
-    const amountA = (await dal.getTokenInfo(pool.tokenVaultA, false))?.amount;
-    const amountB = (await dal.getTokenInfo(pool.tokenVaultB, false))?.amount;
-    const decimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
-    const decimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
+    const amountA = (await ctx.accountFetcher.getTokenInfo(pool.tokenVaultA, false))?.amount;
+    const amountB = (await ctx.accountFetcher.getTokenInfo(pool.tokenVaultB, false))?.amount;
+    const decimalsA = (await ctx.accountFetcher.getMintInfo(pool.tokenMintA, false))?.decimals;
+    const decimalsB = (await ctx.accountFetcher.getMintInfo(pool.tokenMintB, false))?.decimals;
     if (!amountA || !amountB || decimalsA === undefined || decimalsB === undefined) {
       console.error(`error - amount or decimals not found`);
       continue;
@@ -78,8 +79,8 @@ export async function convertWhirlpoolDataToPoolData(
       let amount = undefined;
       let decimals = undefined;
       if (!mint.equals(PublicKey.default) && !vault.equals(PublicKey.default)) {
-        amount = (await dal.getTokenInfo(vault, false))?.amount;
-        decimals = (await dal.getMintInfo(mint, false))?.decimals;
+        amount = (await ctx.accountFetcher.getTokenInfo(vault, false))?.amount;
+        decimals = (await ctx.accountFetcher.getMintInfo(mint, false))?.decimals;
       }
 
       rewards.push({

@@ -6,22 +6,18 @@ import { Percentage } from "../../utils/public/percentage";
 /*** Transactions ***/
 
 export type OpenPositionTxParam = {
-  provider: Provider;
   quote: OpenPositionQuote;
 };
 
 export type ClosePositionTxParam = {
-  provider: Provider;
   quote: ClosePositionQuote;
 };
 
 export type SwapTxParam = {
-  provider: Provider;
   quote: SwapQuote;
 };
 
 export type FillTickArraysParam = {
-  provider: Provider;
   poolAddress: Address;
 };
 
