@@ -1,5 +1,5 @@
 import { BN } from "@project-serum/anchor";
-import { AmountSpecified, SwapDirection } from "../../pool/quotes/swap-quoter";
+import { AmountSpecified, SwapDirection } from "../../quotes/swap-quoter";
 import { Percentage } from ".";
 import { divRoundUp, shiftRightRoundUp } from "../web3/math-utils";
 import {
