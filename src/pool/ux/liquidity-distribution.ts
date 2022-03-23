@@ -3,7 +3,7 @@ import { Address, translateAddress } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { sqrtPriceX64ToPrice, tickIndexToPrice } from "../..";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/fetch";
 import { toPubKey } from "../../utils/address";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
 
@@ -19,7 +19,7 @@ export type LiquidityDistribution = {
 };
 
 export async function getLiquidityDistribution(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   poolAddress: Address,
   tickLower: number,
   tickUpper: number,

@@ -3,7 +3,7 @@ import {
   CollectFeesAndRewardsTxParam,
   CollectMultipleFeesAndRewardsTxParam,
 } from "../public/types";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/fetch";
 import {
   EMPTY_INSTRUCTION,
   Instruction,
@@ -24,7 +24,7 @@ import { Provider } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 
 export async function buildMultipleCollectFeesAndRewardsTx(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   param: CollectMultipleFeesAndRewardsTxParam
 ): Promise<MultiTransactionBuilder> {
   const { provider, positionAddresses, resolvedAssociatedTokenAddresses } = param;
@@ -67,7 +67,7 @@ export async function buildMultipleCollectFeesAndRewardsTx(
 }
 
 export async function buildCollectFeesAndRewardsTx(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   param: CollectFeesAndRewardsTxParam
 ): Promise<TransactionBuilder> {
   const { provider, positionAddress, resolvedAssociatedTokenAddresses } = param;
@@ -86,7 +86,7 @@ export async function buildCollectFeesAndRewardsTx(
 
 async function buildSingleCollectFeeAndRewardsTx(
   positionAddress: Address,
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   client: WhirlpoolClient,
   provider: Provider,
   ataMap?: Record<string, PublicKey>
@@ -223,7 +223,11 @@ async function getTokenAtaAndPopulateATAMap(
   return { tokenOwnerAccount, createTokenOwnerAccountIx };
 }
 
-async function derivePositionInfo(positionAddress: Address, dal: OrcaDAL, walletKey: PublicKey) {
+async function derivePositionInfo(
+  positionAddress: Address,
+  dal: AccountFetcher,
+  walletKey: PublicKey
+) {
   const position = await dal.getPosition(positionAddress, false);
   if (!position) {
     return null;

@@ -17,7 +17,7 @@ import {
   SwapTxParam,
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/public/defaults";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/fetch";
 import {
   getAddLiquidityQuote,
   InternalAddLiquidityQuoteParam,
@@ -54,7 +54,7 @@ import { adjustAmountForSlippage } from "../utils/public/position-util";
 import { ZERO } from "../utils/web3/math-utils";
 
 export class OrcaPool {
-  constructor(private readonly dal: OrcaDAL) {}
+  constructor(private readonly dal: AccountFetcher) {}
 
   /*** Utilities ***/
 

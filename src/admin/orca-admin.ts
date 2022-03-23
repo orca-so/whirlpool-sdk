@@ -13,7 +13,7 @@ import {
   SetFeeRateTxParam,
   SetProtocolFeeRateTxParam,
 } from "./public/types";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/fetch";
 import { toPubKey } from "../utils/address";
 import {
   TransactionBuilder,
@@ -27,7 +27,7 @@ import {
 import { resolveOrCreateATA } from "../utils/web3/ata-utils";
 
 export class OrcaAdmin {
-  constructor(private readonly dal: OrcaDAL) {}
+  constructor(private readonly dal: AccountFetcher) {}
 
   public getInitPoolTx(param: InitPoolTxParam): { tx: TransactionBuilder; address: PublicKey } {
     const { provider, initSqrtPrice, tokenMintA, tokenMintB, stable } = param;

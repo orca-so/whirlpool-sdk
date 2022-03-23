@@ -11,7 +11,7 @@ import {
   getDefaultOffchainDataURI,
 } from "./constants/public/defaults";
 import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs";
-import { OrcaDAL } from "./dal/orca-dal";
+import { AccountFetcher } from "./accounts/fetch";
 import { OrcaPool } from "./pool/orca-pool";
 import { OrcaPosition } from "./position/orca-position";
 import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
@@ -37,7 +37,7 @@ export type OrcaWhirlpoolClientConfig = {
 };
 
 export class OrcaWhirlpoolClient {
-  public readonly data: OrcaDAL;
+  public readonly accounts: AccountFetcher;
   public readonly admin: OrcaAdmin;
   public readonly pool: OrcaPool;
   public readonly position: OrcaPosition;
@@ -50,10 +50,10 @@ export class OrcaWhirlpoolClient {
     const programId = config?.programId || getWhirlpoolProgramId(network);
     const offchainDataURI = config?.offchainDataURI || getDefaultOffchainDataURI(network);
 
-    this.data = new OrcaDAL(whirlpoolsConfig, programId, connection);
-    this.admin = new OrcaAdmin(this.data);
-    this.pool = new OrcaPool(this.data);
-    this.position = new OrcaPosition(this.data);
+    this.accounts = new AccountFetcher(whirlpoolsConfig, programId, connection);
+    this.admin = new OrcaAdmin(this.accounts);
+    this.pool = new OrcaPool(this.accounts);
+    this.position = new OrcaPosition(this.accounts);
     this.offchain = new OrcaZooplankton(offchainDataURI);
   }
 
@@ -73,10 +73,10 @@ export class OrcaWhirlpoolClient {
     otherBaseTokenMints: Address[] = [NATIVE_MINT],
     refresh = true
   ): Promise<TokenUSDPrices> {
-    const allPools = await this.data.listPools(poolAddresses, refresh);
+    const allPools = await this.accounts.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
     return getTokenUSDPrices(
-      this.data,
+      this.accounts,
       pools,
       baseTokenMint,
       baseTokenUSDPrice,
@@ -95,7 +95,7 @@ export class OrcaWhirlpoolClient {
     walletAddress: Address,
     refresh = true
   ): Promise<Record<string, UserPositionData>> {
-    return convertPositionDataToUserPositionData(this.data, walletAddress, refresh);
+    return convertPositionDataToUserPositionData(this.accounts, walletAddress, refresh);
   }
 
   /**
@@ -109,7 +109,7 @@ export class OrcaWhirlpoolClient {
     poolAddresses: Address[],
     refresh = true
   ): Promise<Record<string, PoolData>> {
-    return convertWhirlpoolDataToPoolData(this.data, poolAddresses, refresh);
+    return convertWhirlpoolDataToPoolData(this.accounts, poolAddresses, refresh);
   }
 
   /**

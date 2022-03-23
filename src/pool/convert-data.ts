@@ -2,7 +2,7 @@ import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import { PoolRewardInfo } from "../types";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/fetch";
 import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
@@ -11,7 +11,7 @@ import { TickUtil } from "../utils/whirlpool/tick-util";
 import { sqrtPriceX64ToPrice } from "../utils/public";
 
 export async function convertWhirlpoolDataToPoolData(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   poolAddresses: Address[],
   refresh: boolean
 ): Promise<Record<string, PoolData>> {

@@ -10,7 +10,7 @@ import {
 import { Address, BN } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import invariant from "tiny-invariant";
-import { OrcaDAL } from "../../dal/orca-dal";
+import { AccountFetcher } from "../../accounts/fetch";
 import { Percentage } from "../../utils/public/percentage";
 import { divRoundUp, ZERO } from "../../utils/web3/math-utils";
 import { PoolUtil } from "../../utils/whirlpool/pool-util";
@@ -35,7 +35,7 @@ export enum AmountSpecified {
 
 type SwapSimulationBaseInput = {
   refresh: boolean;
-  dal: OrcaDAL;
+  dal: AccountFetcher;
   poolAddress: Address;
   whirlpoolData: WhirlpoolData;
   amountSpecified: AmountSpecified;

@@ -9,7 +9,7 @@ import {
   RemoveLiquidityTxParam,
 } from "./public/types";
 import { defaultSlippagePercentage } from "../constants/public/defaults";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/fetch";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
@@ -30,7 +30,7 @@ import {
 } from "./txs/fees-and-rewards";
 
 export class OrcaPosition {
-  constructor(private readonly dal: OrcaDAL) {}
+  constructor(private readonly dal: AccountFetcher) {}
 
   /*** Utilities ***/
 

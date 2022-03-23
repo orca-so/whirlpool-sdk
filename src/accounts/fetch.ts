@@ -54,7 +54,7 @@ type GetMultipleAccountsResponse = {
  * The types of accounts that are being used are defined by CachedAccount.
  * Includes internal cache that can be refreshed by the client.
  */
-export class OrcaDAL {
+export class AccountFetcher {
   public readonly whirlpoolsConfig: PublicKey;
   public readonly programId: PublicKey;
 

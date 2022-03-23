@@ -4,7 +4,7 @@ import Decimal from "decimal.js";
 import invariant from "tiny-invariant";
 import { UserPositionData, UserPositionRewardInfo } from "../types";
 import { DecimalUtil } from "../utils/public/decimal-utils";
-import { OrcaDAL } from "../dal/orca-dal";
+import { AccountFetcher } from "../accounts/fetch";
 import { toPubKey } from "../utils/address";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getCollectFeesQuoteInternal } from "./quotes/collect-fees";
@@ -13,7 +13,7 @@ import { getPositionPda } from "@orca-so/whirlpool-client-sdk";
 import { tickIndexToPrice } from "..";
 
 export async function convertPositionDataToUserPositionData(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   walletAddress: Address,
   refresh: boolean
 ): Promise<Record<string, UserPositionData>> {
@@ -109,7 +109,7 @@ export async function convertPositionDataToUserPositionData(
 }
 
 async function getUserPositions(
-  dal: OrcaDAL,
+  dal: AccountFetcher,
   walletAddress: Address,
   refresh: boolean
 ): Promise<Address[]> {

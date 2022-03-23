@@ -8,7 +8,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { u64 } from "@solana/spl-token";
-import { OrcaDAL } from "../../src/dal/orca-dal";
+import { AccountFetcher } from "../../src/accounts/fetch";
 import { OrcaPosition } from "../../src/position/orca-position";
 import { AddLiquidityQuote, AddLiquidityQuoteParam } from "../../src";
 import { defaultSlippagePercentage } from "../../src/constants/public/defaults";
@@ -155,7 +155,7 @@ describe("Add Liquidity", () => {
     const expectedLiquidityAmount = new BN("130386");
     const expectedTokenBAmount = new BN("16716");
 
-    const mockDal = new OrcaDAL(
+    const mockDal = new AccountFetcher(
       PublicKey.default,
       PublicKey.default,
       new Connection("http://google.com")
