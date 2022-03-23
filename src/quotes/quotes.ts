@@ -26,7 +26,7 @@ import { SwapDirection, AmountSpecified, SwapSimulator } from "./swap-quoter";
 /**
  * Construct a quote for opening a new position
  */
-async function getOpenPositionQuote(
+export async function getOpenPositionQuote(
   ctx: WhirlpoolContext,
   param: OpenPositionQuoteParam
 ): Promise<OpenPositionQuote> {
@@ -77,7 +77,7 @@ async function getOpenPositionQuote(
 /**
  * Construct a quote for closing an existing position
  */
-async function getClosePositionQuote(
+export async function getClosePositionQuote(
   ctx: WhirlpoolContext,
   param: ClosePositionQuoteParam
 ): Promise<ClosePositionQuote> {
@@ -106,7 +106,10 @@ async function getClosePositionQuote(
 /**
  * Construct a quote for swap
  */
-async function getSwapQuote(ctx: WhirlpoolContext, param: SwapQuoteParam): Promise<SwapQuote> {
+export async function getSwapQuote(
+  ctx: WhirlpoolContext,
+  param: SwapQuoteParam
+): Promise<SwapQuote> {
   const {
     poolAddress,
     tokenMint,
