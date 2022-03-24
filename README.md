@@ -108,7 +108,7 @@ You are welcome to source-dive into the SDK and the inner `@orca-so/whirlpool-cl
 
 **Issues / Bugs**
 
-If you found a bug, open up an issue on github with the prefix [ISSUE]. To help us be more effective in resolving the problem, be specific in the steps it took to reproduce the problem (ex. when did the issue occur, code samples, debug logs etc).
+If you found a bug, please message the team over at @integrations on Discord.
 
 # License
 
