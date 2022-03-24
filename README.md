@@ -1,8 +1,8 @@
+> Note: This is a pre-release. The public APIs are subject to change in the coming weeks.
+> 
 # Orca Whirlpool SDK
 
 The Orca Whirlpool SDK contains a set of simple to use APIs to allow developers to interact with the Orca concentrated liquidity pools.
-
-> Note: This is a pre-release. The public APIs are subject to change in the coming weeks.
 
 Learn more Orca [here](https://docs.orca.so).
 
