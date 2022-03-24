@@ -40,8 +40,11 @@ npm install @orca-so/whirlpool-sdk
   import { Connection, PublicKey } from "@solana/web3.js";
   
   // NOTE: The following code will work currently but the API will change in upcoming releases.
+
+  // You can use Anchor.Provider.env() and use env vars or pass in a custom Wallet implementation to do signing
+  const provider = new Provider(connection, wallet, Provider.defaultOptions());
+
   // Derive the Whirlpool address from token mints
-  const provider = Provider.env(); 
   const orca = new OrcaWhirlpoolClient({ network: OrcaNetwork.MAINNET });
   const poolAddress = await orca.pool.derivePDA(ORCA_MINT, USDC_MINT, false)
     .publicKey;
