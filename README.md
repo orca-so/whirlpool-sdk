@@ -36,40 +36,51 @@ npm install @orca-so/whirlpool-sdk
 # Sample Code
 
 ```typescript
-// Derive the Whirlpool address from token mints
-const orca = new OrcaWhirlpoolClient({ network: OrcaNetwork.MAINNET });
-const poolAddress = await orca.pool.deriveAddress(ORCA_MINT, USDC_MINT);
+  // NOTE: The following code will work currently but the API will change in upcoming releases.
+  // Derive the Whirlpool address from token mints
+  const provider = new Provider(connection, wallet, Provider.defaultOptions());
+  const orca = new OrcaWhirlpoolClient({ network: OrcaNetwork.MAINNET });
+  const poolAddress = await orca.pool.derivePDA(ORCA_MINT, USDC_MINT, false)
+    .publicKey;
 
-// Fetch an instance of the pool
-const poolData = await orca.getPool(poolAddress);
-console.log(poolData.liquidity);
-console.log(poolData.price);
-console.log(poolData.tokenVaultAmountA);
-console.log(poolData.tokenVaultAmountB);
+  // Fetch an instance of the pool
+  const poolData = await orca.getPool(poolAddress);
+  if (!poolData) {
+    return;
+  }
+  console.log(poolData.liquidity);
+  console.log(poolData.price);
+  console.log(poolData.tokenVaultAmountA);
+  console.log(poolData.tokenVaultAmountB);
 
-// Open a position
-const openPositionQuote = await orca.pool.getOpenPositionQuote({
-  poolAddress,
-  tokenMint: ORCA_MINT,
-  tokenAmount: new u64(1_000_000_000),
-});
-const openPositionTx = await orca.pool.getOpenPositionTx({
-  provider,
-  quote: openPositionQuote,
-});
-const openPositionTxId = await openPositionTx.buildAndExecute();
+  // Open a position
+  const openPositionQuote = await orca.pool.getOpenPositionQuote({
+    poolAddress,
+    tokenMint: ORCA_MINT,
+    tokenAmount: new u64(1_000_000_000),
+    refresh: true,
+    tickLowerIndex: priceToTickIndex(new Decimal(0), 6, 6),
+    tickUpperIndex: priceToTickIndex(new Decimal(100), 6, 6),
+  });
+  const openPositionTx = await orca.pool.getOpenPositionTx({
+    provider,
+    quote: openPositionQuote,
+  });
+  const openPositionTxId = await openPositionTx.tx.buildAndExecute();
 
-// Construct a swap instruction on this pool and execute.
-const swapQuote = await orca.pool.getSwapQuote({
-  poolAddress,
-  tokenMint: ORCA_MINT,
-  tokenAmount: new u64(1_000_000),
-});
-const swapTx = await orca.pool.getSwapTx({
-  provider,
-  quote: swapQuote,
-});
-const swapTxId = swapTx.buildAndExecute();
+  // Construct a swap instruction on this pool and execute.
+  const swapQuote = await orca.pool.getSwapQuote({
+    poolAddress,
+    tokenMint: ORCA_MINT,
+    tokenAmount: new u64(1_000_000),
+    isInput: true,
+    refresh: true,
+  });
+  const swapTx = await orca.pool.getSwapTx({
+    provider,
+    quote: swapQuote,
+  });
+  const swapTxId = swapTx.buildAndExecute();
 ```
 
 # Technical Notes
