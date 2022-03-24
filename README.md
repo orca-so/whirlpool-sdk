@@ -89,6 +89,11 @@ npm install @orca-so/whirlpool-sdk
   const swapTxId = swapTx.buildAndExecute();
 ```
 
+If you are using Provider.env(), you can invoke with the following:
+```bash
+ANCHOR_PROVIDER_URL=https://api.mainnet-beta.solana.com ANCHOR_WALLET=<Path to your keypair> ts-node <Path to file>.ts
+```
+
 # Technical Notes
 
 **Code is not stable**
