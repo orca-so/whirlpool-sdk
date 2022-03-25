@@ -537,11 +537,12 @@ export class OrcaPool {
     const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
 
     const tickArrayAddresses = await this.getTickArrayPublicKeysForSwap(
-      whirlpool.sqrtPrice,
+      whirlpool.tickCurrentIndex,
       targetSqrtPriceLimitX64,
       whirlpool.tickSpacing,
       toPubKey(poolAddress),
-      this.dal.programId
+      this.dal.programId,
+      aToB
     );
 
     const oraclePda = getOraclePda(ctx.program.programId, translateAddress(poolAddress));
@@ -575,14 +576,24 @@ export class OrcaPool {
     return new BN(aToB ? MIN_SQRT_PRICE : MAX_SQRT_PRICE);
   }
 
+  private adjustTickIndex(tickIndex: number, tickSpacing: number, aToB: boolean): number {
+    if (!aToB) {
+      return tickIndex + tickSpacing;
+    } else {
+      return tickIndex;
+    }
+  }
+
   private async getTickArrayPublicKeysForSwap(
-    currentSqrtPriceX64: BN,
+    tickCurrentIndex: number,
     targetSqrtPriceX64: BN,
     tickSpacing: number,
     poolAddress: PublicKey,
-    programId: PublicKey
+    programId: PublicKey,
+    aToB: boolean
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const currentTickIndex = sqrtPriceX64ToTickIndex(currentSqrtPriceX64);
+    console.log(tickCurrentIndex);
+    const currentTickIndex = this.adjustTickIndex(tickCurrentIndex, tickSpacing, aToB);
     const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
 
     let currentStartTickIndex = TickUtil.getStartTickIndex(currentTickIndex, tickSpacing);
@@ -597,7 +608,7 @@ export class OrcaPool {
       PublicKey.default,
     ];
 
-    while (currentStartTickIndex != targetStartTickIndex && count < 3) {
+    while (currentStartTickIndex < targetStartTickIndex && count < 3) {
       const nextStartTickIndex = TickUtil.getStartTickIndex(
         currentTickIndex,
         tickSpacing,
