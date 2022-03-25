@@ -606,7 +606,7 @@ export class OrcaPool {
       PublicKey.default,
     ];
 
-    while (currentStartTickIndex < targetStartTickIndex && count < 3) {
+    while (currentStartTickIndex !== targetStartTickIndex && count < 3) {
       const nextStartTickIndex = TickUtil.getStartTickIndex(
         nextInitiaizliableTickIndex,
         tickSpacing,
