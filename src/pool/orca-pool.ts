@@ -576,14 +576,6 @@ export class OrcaPool {
     return new BN(aToB ? MIN_SQRT_PRICE : MAX_SQRT_PRICE);
   }
 
-  private adjustTickIndex(tickIndex: number, tickSpacing: number, aToB: boolean): number {
-    if (!aToB) {
-      return tickIndex + tickSpacing;
-    } else {
-      return tickIndex;
-    }
-  }
-
   private async getTickArrayPublicKeysForSwap(
     tickCurrentIndex: number,
     targetSqrtPriceX64: BN,
@@ -592,14 +584,20 @@ export class OrcaPool {
     programId: PublicKey,
     aToB: boolean
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    console.log(tickCurrentIndex);
-    const currentTickIndex = this.adjustTickIndex(tickCurrentIndex, tickSpacing, aToB);
+    const nextInitiaizliableTickIndex = TickUtil.getNextInitializableTickIndex(
+      tickCurrentIndex,
+      tickSpacing,
+      aToB
+    );
     const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
 
-    let currentStartTickIndex = TickUtil.getStartTickIndex(currentTickIndex, tickSpacing);
+    let currentStartTickIndex = TickUtil.getStartTickIndex(
+      nextInitiaizliableTickIndex,
+      tickSpacing
+    );
     const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
 
-    const offset = currentTickIndex < targetTickIndex ? 1 : -1;
+    const offset = nextInitiaizliableTickIndex < targetTickIndex ? 1 : -1;
 
     let count = 1;
     const tickArrayAddresses: [PublicKey, PublicKey, PublicKey] = [
@@ -610,7 +608,7 @@ export class OrcaPool {
 
     while (currentStartTickIndex < targetStartTickIndex && count < 3) {
       const nextStartTickIndex = TickUtil.getStartTickIndex(
-        currentTickIndex,
+        nextInitiaizliableTickIndex,
         tickSpacing,
         offset * count
       );
