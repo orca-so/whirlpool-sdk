@@ -584,20 +584,17 @@ export class OrcaPool {
     programId: PublicKey,
     aToB: boolean
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const nextInitiaizliableTickIndex = TickUtil.getNextInitializableTickIndex(
+    const nextInitializableTickIndex = TickUtil.getNextInitializableTickIndex(
       tickCurrentIndex,
       tickSpacing,
       aToB
     );
     const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
 
-    let currentStartTickIndex = TickUtil.getStartTickIndex(
-      nextInitiaizliableTickIndex,
-      tickSpacing
-    );
+    let currentStartTickIndex = TickUtil.getStartTickIndex(nextInitializableTickIndex, tickSpacing);
     const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
 
-    const offset = nextInitiaizliableTickIndex < targetTickIndex ? 1 : -1;
+    const offset = nextInitializableTickIndex < targetTickIndex ? 1 : -1;
 
     let count = 1;
     const tickArrayAddresses: [PublicKey, PublicKey, PublicKey] = [
@@ -608,7 +605,7 @@ export class OrcaPool {
 
     while (currentStartTickIndex !== targetStartTickIndex && count < 3) {
       const nextStartTickIndex = TickUtil.getStartTickIndex(
-        nextInitiaizliableTickIndex,
+        nextInitializableTickIndex,
         tickSpacing,
         offset * count
       );
