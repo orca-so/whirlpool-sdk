@@ -191,4 +191,16 @@ export class TickUtil {
   ): number {
     return startTickIndex + tickArrayIndex * tickSpacing;
   }
+
+  public static getNextInitializableTickIndex(
+    tickIndex: number,
+    tickSpacing: number,
+    aToB: boolean
+  ): number {
+    if (!aToB) {
+      return tickIndex + tickSpacing;
+    } else {
+      return tickIndex;
+    }
+  }
 }
