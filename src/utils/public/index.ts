@@ -1,3 +1,4 @@
+export { TokenUSDPrices } from "../token-price";
 export * from "./apr";
 export * from "./decimal-utils";
 export * from "./multi-transaction-builder";

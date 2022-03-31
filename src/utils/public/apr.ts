@@ -20,6 +20,7 @@ export const ZERO_APR = {
 export function estimateAprsForPriceRange(
   pool: PoolData,
   // TODO: should this actually be fetched/shared?
+  // There's a weird in/out/in dependency here on prices/fees
   tokenPrices: TokenUSDPrices,
   fees24h: number,
   tickLowerIndex: number,
@@ -35,7 +36,6 @@ export function estimateAprsForPriceRange(
     tickCurrentIndex,
   } = pool;
 
-  // TODO: do we need to use non-whirlpool prices?
   const tokenPriceA = tokenPrices[tokenMintA.toBase58()];
   const tokenPriceB = tokenPrices[tokenMintB.toBase58()];
 
@@ -45,7 +45,6 @@ export function estimateAprsForPriceRange(
 
   // Value of liquidity if the entire liquidity were concentrated between tickLower/Upper
   // Since this is virtual liquidity, concentratedValue should actually be less than totalValue
-  // TODO(pax): check math
   const { minTokenA, minTokenB } = getRemoveLiquidityQuote({
     positionAddress: PublicKey.default,
     tickCurrentIndex,

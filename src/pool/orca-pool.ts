@@ -544,7 +544,6 @@ export class OrcaPool {
       this.dal.programId,
       aToB
     );
-    console.log(tickArrayAddresses);
 
     const oraclePda = getOraclePda(ctx.program.programId, translateAddress(poolAddress));
 
@@ -594,8 +593,6 @@ export class OrcaPool {
 
     let currentStartTickIndex = TickUtil.getStartTickIndex(nextInitializableTickIndex, tickSpacing);
     const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
-    console.log(currentTickIndex);
-    console.log(targetTickIndex);
 
     const offset = nextInitializableTickIndex < targetTickIndex ? 1 : -1;
 

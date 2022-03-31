@@ -89,6 +89,7 @@ export type SwapQuote = {
 };
 
 /*** Type Guards ***/
+
 export function isQuoteByPrice(param: OpenPositionQuoteParam): param is OpenPositionQuoteByPrice {
   return (
     (param as OpenPositionQuoteByPrice).priceLower != null &&
