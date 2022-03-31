@@ -537,11 +537,12 @@ export class OrcaPool {
     const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
 
     const tickArrayAddresses = await this.getTickArrayPublicKeysForSwap(
-      whirlpool.sqrtPrice,
+      whirlpool.tickCurrentIndex,
       targetSqrtPriceLimitX64,
       whirlpool.tickSpacing,
       toPubKey(poolAddress),
-      this.dal.programId
+      this.dal.programId,
+      aToB
     );
     console.log(tickArrayAddresses);
 
@@ -577,21 +578,26 @@ export class OrcaPool {
   }
 
   private async getTickArrayPublicKeysForSwap(
-    currentSqrtPriceX64: BN,
+    tickCurrentIndex: number,
     targetSqrtPriceX64: BN,
     tickSpacing: number,
     poolAddress: PublicKey,
-    programId: PublicKey
+    programId: PublicKey,
+    aToB: boolean
   ): Promise<[PublicKey, PublicKey, PublicKey]> {
-    const currentTickIndex = sqrtPriceX64ToTickIndex(currentSqrtPriceX64);
+    const nextInitializableTickIndex = TickUtil.getNextInitializableTickIndex(
+      tickCurrentIndex,
+      tickSpacing,
+      aToB
+    );
     const targetTickIndex = sqrtPriceX64ToTickIndex(targetSqrtPriceX64);
 
-    let currentStartTickIndex = TickUtil.getStartTickIndex(currentTickIndex, tickSpacing);
+    let currentStartTickIndex = TickUtil.getStartTickIndex(nextInitializableTickIndex, tickSpacing);
     const targetStartTickIndex = TickUtil.getStartTickIndex(targetTickIndex, tickSpacing);
     console.log(currentTickIndex);
     console.log(targetTickIndex);
 
-    const offset = currentTickIndex < targetTickIndex ? 1 : -1;
+    const offset = nextInitializableTickIndex < targetTickIndex ? 1 : -1;
 
     let count = 1;
     const tickArrayAddresses: [PublicKey, PublicKey, PublicKey] = [
@@ -600,9 +606,9 @@ export class OrcaPool {
       PublicKey.default,
     ];
 
-    while (currentStartTickIndex != targetStartTickIndex && count < 3) {
+    while (currentStartTickIndex !== targetStartTickIndex && count < 3) {
       const nextStartTickIndex = TickUtil.getStartTickIndex(
-        currentTickIndex,
+        nextInitializableTickIndex,
         tickSpacing,
         offset * count
       );
