@@ -550,8 +550,8 @@
 
 "@orca-so/whirlpool-client-sdk@0.0.7":
   version "0.0.7"
-  resolved "https://npm.pkg.github.com/download/@orca-so/whirlpool-client-sdk/0.0.7/8ace0c52d2940ac1e6268433080a2aa28237d35f30ccef8e5af7e03aef2c0e63#44b7d4c03da6aa90cf5ff567b9b08bcbb0d223f9"
-  integrity sha512-buGM4u2fiZVYBA6X9QeVGvPWArwDmaCAOKXtLYz9EedVot6mt0gt+gqntkdEED/Fii3gK9xWjdCtThYOp5jBXA==
+  resolved "https://registry.yarnpkg.com/@orca-so/whirlpool-client-sdk/-/whirlpool-client-sdk-0.0.7.tgz#a589a7437807d9840e1813961a4b17c7fe58f5f0"
+  integrity sha512-fmGQjdRkW2lX1GqZVvrkklYfk0VpXbwuOw8AZA05RrqMZtSL+ePNZMBjBztlccxqKulweCPRCEYFXC17ZdNbAQ==
   dependencies:
     "@metaplex-foundation/mpl-token-metadata" "1.2.5"
     "@project-serum/anchor" "^0.20.1"
