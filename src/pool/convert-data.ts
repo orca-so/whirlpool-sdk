@@ -1,6 +1,5 @@
 import { Address } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
-import Decimal from "decimal.js";
 import { PoolRewardInfo } from "../types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { PoolData } from "../types";

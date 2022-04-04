@@ -3,6 +3,7 @@ import { Percentage } from "../../utils/public/percentage";
 import { OrcaNetwork } from "./network";
 
 export const defaultSlippagePercentage = Percentage.fromFraction(1, 1000); // 0.1%
+export const ZERO_SLIPPAGE = Percentage.fromFraction(0, 1000);
 
 export const defaultNetwork: OrcaNetwork = OrcaNetwork.MAINNET;
 

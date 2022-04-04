@@ -1,4 +1,4 @@
-import { WhirlpoolData, fromX64 } from "@orca-so/whirlpool-client-sdk";
+import { WhirlpoolData } from "@orca-so/whirlpool-client-sdk";
 import { Address } from "@project-serum/anchor";
 import { NATIVE_MINT } from "@solana/spl-token";
 import Decimal from "decimal.js";
