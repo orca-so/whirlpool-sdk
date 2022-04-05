@@ -5,3 +5,4 @@ export * from "./multi-transaction-builder";
 export * from "./percentage";
 export * from "./position-util";
 export * from "./tick";
+export * from "../whirlpool/tick-util";
