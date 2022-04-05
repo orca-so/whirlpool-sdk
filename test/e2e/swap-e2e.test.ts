@@ -1,4 +1,4 @@
-import { TickSpacing, toX64 } from "@orca-so/whirlpool-client-sdk";
+import { toX64 } from "@orca-so/whirlpool-client-sdk";
 import { BN, Provider } from "@project-serum/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { Decimal } from "decimal.js";
@@ -9,7 +9,6 @@ import { getDefaultOffchainDataURI } from "../../src/constants/public/defaults";
 import { OrcaDAL } from "../../src/dal/orca-dal";
 import { ZERO } from "../../src/utils/web3/math-utils";
 import {
-  DEFAULT_FEE_RATE,
   initPoolWithLiquidity,
   initStandardPoolWithLiquidity,
   initWhirlpoolsConfig,
@@ -97,6 +96,7 @@ describe.skip("Swap", () => {
       orcaAdmin,
       provider,
       toX64(new Decimal(1.0005)),
+      64,
       [
         {
           tickLowerIndex: -128,
@@ -159,6 +159,7 @@ describe.skip("Swap", () => {
       orcaAdmin,
       provider,
       toX64(new Decimal(1.0005)),
+      64,
       [
         {
           tickLowerIndex: -128,
@@ -222,6 +223,7 @@ describe.skip("Swap", () => {
       orcaAdmin,
       provider,
       toX64(new Decimal(1.0005)),
+      64,
       [
         {
           tickLowerIndex: -128,
@@ -285,6 +287,7 @@ describe.skip("Swap", () => {
       orcaAdmin,
       provider,
       toX64(new Decimal(1.0005)),
+      64,
       [
         {
           tickLowerIndex: -128,

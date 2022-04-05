@@ -31,7 +31,6 @@ import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
 import { AmountSpecified, SwapDirection, SwapSimulator } from "./quotes/swap-quoter";
 import {
-  TickSpacing,
   PDA,
   getWhirlpoolPda,
   getTickArrayPda,
@@ -85,14 +84,14 @@ export class OrcaPool {
    * @param stable
    * @returns
    */
-  public derivePDA(tokenMintA: Address, tokenMintB: Address, stable: boolean): PDA {
+  public derivePDA(tokenMintA: Address, tokenMintB: Address, tickSpacing: number): PDA {
     const [_tokenMintA, _tokenMintB] = PoolUtil.orderMints(tokenMintA, tokenMintB);
     return getWhirlpoolPda(
       this.dal.programId,
       this.dal.whirlpoolsConfig,
       toPubKey(_tokenMintA),
       toPubKey(_tokenMintB),
-      stable ? TickSpacing.Stable : TickSpacing.Standard
+      tickSpacing
     );
   }
 

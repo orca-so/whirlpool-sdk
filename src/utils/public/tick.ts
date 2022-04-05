@@ -2,15 +2,13 @@ import {
   fromX64,
   sqrtPriceX64ToTickIndex,
   tickIndexToSqrtPriceX64,
-  TickSpacing,
   toX64,
 } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { TickUtil } from "../whirlpool/tick-util";
 
-export function getNearestValidTickIndexFromTickIndex(tickIndex: number, stable = false) {
-  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+export function getNearestValidTickIndexFromTickIndex(tickIndex: number, tickSpacing: number) {
   return TickUtil.toValid(tickIndex, tickSpacing);
 }
 
@@ -18,19 +16,16 @@ export function getNearestValidTickIndex(
   price: Decimal,
   decimalsA: number,
   decimalsB: number,
-  stable = false
+  tickSpacing: number
 ) {
-  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
   return TickUtil.toValid(priceToTickIndex(price, decimalsA, decimalsB), tickSpacing);
 }
 
-export function getNextValidTickIndex(tickIndex: number, stable = false) {
-  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+export function getNextValidTickIndex(tickIndex: number, tickSpacing: number) {
   return tickIndex + tickSpacing;
 }
 
-export function getPrevValidTickIndex(tickIndex: number, stable = false) {
-  const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
+export function getPrevValidTickIndex(tickIndex: number, tickSpacing: number) {
   return tickIndex - tickSpacing;
 }
 

@@ -5,7 +5,7 @@ export type InitPoolTxParam = {
   initSqrtPrice: BN;
   tokenMintA: Address;
   tokenMintB: Address;
-  stable: boolean;
+  tickSpacing: number;
 };
 
 export type CollectProtocolFeesTxParam = {

@@ -5,7 +5,7 @@ import { OrcaDAL } from "../dal/orca-dal";
 import { PoolData } from "../types";
 import { toPubKey } from "../utils/address";
 import { DecimalUtil } from "../utils/public/decimal-utils";
-import { fromX64, TickSpacing } from "@orca-so/whirlpool-client-sdk";
+import { fromX64 } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { sqrtPriceX64ToPrice } from "../utils/public";
 
@@ -98,7 +98,7 @@ export async function convertWhirlpoolDataToPoolData(
       address: toPubKey(address),
       tokenMintA: pool.tokenMintA,
       tokenMintB: pool.tokenMintB,
-      stable: pool.tickSpacing === TickSpacing.Stable,
+      tickSpacing: pool.tickSpacing,
       feeRate: pool.feeRate,
       protocolFeeRate: pool.protocolFeeRate,
       liquidity: pool.liquidity,

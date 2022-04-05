@@ -2,7 +2,6 @@ import {
   TransactionBuilder,
   WhirlpoolContext,
   WhirlpoolClient,
-  TickSpacing,
   InitFeeTierParams,
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
@@ -47,7 +46,7 @@ export type InitFeeTierConfigTxParam = {
   provider: Provider;
   whirlpoolConfigKey: Address;
   feeAuthority: Address;
-  tickSpacing: TickSpacing;
+  tickSpacing: number;
   defaultFeeRate: number;
 };
 
