@@ -21,7 +21,6 @@ import {
   WhirlpoolClient,
   getWhirlpoolPda,
   NUM_REWARDS,
-  TickSpacing,
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
 import { resolveOrCreateATA } from "../utils/web3/ata-utils";
@@ -30,12 +29,11 @@ export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
 
   public getInitPoolTx(param: InitPoolTxParam): { tx: TransactionBuilder; address: PublicKey } {
-    const { provider, initSqrtPrice, tokenMintA, tokenMintB, stable } = param;
+    const { provider, initSqrtPrice, tokenMintA, tokenMintB, tickSpacing } = param;
     const { programId, whirlpoolsConfig: whirlpoolConfigKey } = this.dal;
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
-    const tickSpacing = stable ? TickSpacing.Stable : TickSpacing.Standard;
     const whirlpoolPda = getWhirlpoolPda(
       programId,
       whirlpoolConfigKey,

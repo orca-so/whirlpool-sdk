@@ -1,4 +1,4 @@
-import { TickSpacing, toX64, WhirlpoolClient } from "@orca-so/whirlpool-client-sdk";
+import { toX64 } from "@orca-so/whirlpool-client-sdk";
 import { BN, Provider } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -21,7 +21,7 @@ export async function initWhirlpoolsConfig(
   provider: Provider,
   programId: PublicKey,
   owner: PublicKey,
-  initTickSpacing = TickSpacing.Standard,
+  initTickSpacing = 64,
   initDefaultFee = DEFAULT_FEE_RATE
 ) {
   const whirlpoolsConfigKeypair = Keypair.generate();
@@ -49,7 +49,12 @@ export async function initWhirlpoolsConfig(
   return whirlpoolsConfig;
 }
 
-export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider, initSqrtPrice: BN) {
+export async function initPool(
+  orcaAdmin: OrcaAdmin,
+  provider: Provider,
+  initSqrtPrice: BN,
+  tickSpacing: number
+) {
   const [tokenMintA, tokenMintB] = await createInOrderMints(provider);
   await createAndMintToTokenAccount(provider, tokenMintA, new u64("1000000000"));
   await createAndMintToTokenAccount(provider, tokenMintB, new u64("1000000000"));
@@ -59,7 +64,7 @@ export async function initPool(orcaAdmin: OrcaAdmin, provider: Provider, initSqr
     initSqrtPrice,
     tokenMintA,
     tokenMintB,
-    stable: false,
+    tickSpacing,
   });
 
   await tx.buildAndExecute();
@@ -82,7 +87,7 @@ export async function initStandardPoolWithLiquidity(
   orcaAdmin: OrcaAdmin,
   provider: Provider
 ) {
-  return initPoolWithLiquidity(client, orcaAdmin, provider, toX64(new Decimal(1.0005)), [
+  return initPoolWithLiquidity(client, orcaAdmin, provider, toX64(new Decimal(1.0005)), 64, [
     {
       tickLowerIndex: -128,
       tickUpperIndex: 128,
@@ -97,12 +102,14 @@ export async function initPoolWithLiquidity(
   orcaAdmin: OrcaAdmin,
   provider: Provider,
   initSqrtPrice: BN,
+  tickSpacing: number,
   poolLiquidityParams: PoolLiquidityParam[]
 ) {
   const { tokenMintA, tokenMintB, poolAddress } = await initPool(
     orcaAdmin,
     provider,
-    initSqrtPrice
+    initSqrtPrice,
+    tickSpacing
   );
 
   const positionMints = [];

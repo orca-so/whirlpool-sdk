@@ -8,7 +8,7 @@ export type PoolData = {
   address: PublicKey;
   tokenMintA: PublicKey;
   tokenMintB: PublicKey;
-  stable: boolean;
+  tickSpacing: number;
   feeRate: number;
   protocolFeeRate: number;
   liquidity: BN;

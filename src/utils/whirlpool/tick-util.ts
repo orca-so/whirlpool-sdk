@@ -2,7 +2,6 @@ import invariant from "tiny-invariant";
 import { Address, BN } from "@project-serum/anchor";
 import { toPubKey } from "../address";
 import {
-  TickSpacing,
   TickArrayData,
   TickData,
   PDA,
@@ -26,7 +25,7 @@ export class TickUtil {
    * Get the nearest (rounding down) valid tick index from the tickIndex.
    * A valid tick index is a point on the tick spacing grid line.
    */
-  public static toValid(tickIndex: number, tickSpacing: TickSpacing): number {
+  public static toValid(tickIndex: number, tickSpacing: number): number {
     return tickIndex - (tickIndex % tickSpacing);
   }
 
@@ -36,7 +35,7 @@ export class TickUtil {
   public static getTick(
     tickArray: TickArrayData,
     tickIndex: number,
-    tickSpacing: TickSpacing
+    tickSpacing: number
   ): TickData {
     const realIndex = TickUtil.tickIndexToTickArrayIndex(tickArray, tickIndex, tickSpacing);
     const tick = tickArray.ticks[realIndex];
@@ -47,7 +46,7 @@ export class TickUtil {
   public static getLowerAndUpperTickArrayAddresses(
     tickLowerIndex: number,
     tickUpperIndex: number,
-    tickSpacing: TickSpacing,
+    tickSpacing: number,
     whirlpool: PublicKey,
     programId: PublicKey
   ): [PublicKey, PublicKey] {
@@ -63,7 +62,7 @@ export class TickUtil {
    */
   public static getPdaWithTickIndex(
     tickIndex: number,
-    tickSpacing: TickSpacing,
+    tickSpacing: number,
     whirlpool: Address,
     programId: Address,
     tickArrayOffset = 0
@@ -74,7 +73,7 @@ export class TickUtil {
 
   public static getPDAWithSqrtPrice(
     sqrtPriceX64: BN,
-    tickSpacing: TickSpacing,
+    tickSpacing: number,
     whirlpool: Address,
     programId: Address,
     tickArrayOffset = 0
@@ -97,7 +96,7 @@ export class TickUtil {
    * @param offset can be used to get neighboring tick array startIndex.
    * @returns
    */
-  public static getStartTickIndex(tickIndex: number, tickSpacing: TickSpacing, offset = 0): number {
+  public static getStartTickIndex(tickIndex: number, tickSpacing: number, offset = 0): number {
     const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
     const startTickIndex = (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
 
@@ -114,7 +113,7 @@ export class TickUtil {
   public static getPrevInitializedTickIndex(
     account: TickArrayData,
     currentTickIndex: number,
-    tickSpacing: TickSpacing
+    tickSpacing: number
   ): number | null {
     return TickUtil.findInitializedTick(
       account,
@@ -130,7 +129,7 @@ export class TickUtil {
   public static getNextInitializedTickIndex(
     account: TickArrayData,
     currentTickIndex: number,
-    tickSpacing: TickSpacing
+    tickSpacing: number
   ): number | null {
     return TickUtil.findInitializedTick(
       account,
@@ -143,7 +142,7 @@ export class TickUtil {
   private static findInitializedTick(
     account: TickArrayData,
     currentTickIndex: number,
-    tickSpacing: TickSpacing,
+    tickSpacing: number,
     searchDirection: TickSearchDirection
   ): number | null {
     const currentTickArrayIndex = TickUtil.tickIndexToTickArrayIndex(
@@ -179,7 +178,7 @@ export class TickUtil {
   private static tickIndexToTickArrayIndex(
     { startTickIndex }: TickArrayData,
     tickIndex: number,
-    tickSpacing: TickSpacing
+    tickSpacing: number
   ): number {
     return Math.floor((tickIndex - startTickIndex) / tickSpacing);
   }
@@ -187,7 +186,7 @@ export class TickUtil {
   private static tickArrayIndexToTickIndex(
     { startTickIndex }: TickArrayData,
     tickArrayIndex: number,
-    tickSpacing: TickSpacing
+    tickSpacing: number
   ): number {
     return startTickIndex + tickArrayIndex * tickSpacing;
   }

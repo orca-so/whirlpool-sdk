@@ -33,7 +33,8 @@ describe.skip("Add liquidity", () => {
     const { tokenMintA, poolAddress } = await initPool(
       orcaAdmin,
       provider,
-      toX64(new Decimal(1.0005))
+      toX64(new Decimal(1.0005)),
+      64
     );
 
     // initialize client
