@@ -24,6 +24,7 @@ import {
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
 import { resolveOrCreateATA } from "../utils/web3/ata-utils";
+import { PoolUtil } from "../utils/whirlpool/pool-util";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -34,11 +35,12 @@ export class OrcaAdmin {
     const ctx = WhirlpoolContext.withProvider(provider, programId);
     const client = new WhirlpoolClient(ctx);
 
+    const [_tokenMintA, _tokenMintB] = PoolUtil.orderMints(tokenMintA, tokenMintB);
     const whirlpoolPda = getWhirlpoolPda(
       programId,
       whirlpoolConfigKey,
-      toPubKey(tokenMintA),
-      toPubKey(tokenMintB),
+      toPubKey(_tokenMintA),
+      toPubKey(_tokenMintB),
       tickSpacing
     );
 
@@ -47,8 +49,8 @@ export class OrcaAdmin {
     const tx = client.initPoolTx({
       initSqrtPrice,
       whirlpoolConfigKey,
-      tokenMintA: toPubKey(tokenMintA),
-      tokenMintB: toPubKey(tokenMintB),
+      tokenMintA: toPubKey(_tokenMintA),
+      tokenMintB: toPubKey(_tokenMintB),
       whirlpoolPda,
       tokenVaultAKeypair: Keypair.generate(),
       tokenVaultBKeypair: Keypair.generate(),
