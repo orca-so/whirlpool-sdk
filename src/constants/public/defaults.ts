@@ -10,7 +10,7 @@ export const defaultNetwork: OrcaNetwork = OrcaNetwork.MAINNET;
 export function getDefaultConnection(network: OrcaNetwork): Connection {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      return new Connection("https://api.mainnet-beta.solana.com", "processed");
+      return new Connection("https://ssc-dao.genesysgo.net", "processed");
     case OrcaNetwork.DEVNET:
       return new Connection("https://api.devnet.solana.com", "processed");
     default:
@@ -21,9 +21,9 @@ export function getDefaultConnection(network: OrcaNetwork): Connection {
 export function getDefaultOffchainDataURI(network: OrcaNetwork): string {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      return "https://mainnet-zp2.orca.so";
+      return "https://mainnet-zp2-v2.orca.so";
     case OrcaNetwork.DEVNET:
-      return "https://devnet-zp2.orca.so";
+      return "https://devnet-zp2-v2.orca.so";
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }
