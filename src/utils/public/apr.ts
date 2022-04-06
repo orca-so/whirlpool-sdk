@@ -39,7 +39,7 @@ export function estimateAprsForPriceRange(
   const tokenPriceA = tokenPrices[tokenMintA.toBase58()];
   const tokenPriceB = tokenPrices[tokenMintB.toBase58()];
 
-  if (!tokenPriceA || !tokenPriceB || tickLowerIndex >= tickUpperIndex) {
+  if (!fees24h || !tokenPriceA || !tokenPriceB || tickLowerIndex >= tickUpperIndex) {
     return ZERO_APR;
   }
 
