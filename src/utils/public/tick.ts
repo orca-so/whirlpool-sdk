@@ -2,6 +2,7 @@ import {
   fromX64,
   sqrtPriceX64ToTickIndex,
   tickIndexToSqrtPriceX64,
+  TICK_ARRAY_SIZE,
   toX64,
 } from "@orca-so/whirlpool-client-sdk";
 import { BN } from "@project-serum/anchor";
@@ -49,4 +50,18 @@ export function tickIndexToPrice(tickIndex: number, decimalsA: number, decimalsB
 
 export function priceToTickIndex(price: Decimal, decimalsA: number, decimalsB: number): number {
   return sqrtPriceX64ToTickIndex(priceToSqrtX64(price, decimalsA, decimalsB));
+}
+
+/**
+ * Get the startIndex of the tick array containing tickIndex.
+ *
+ * @param tickIndex
+ * @param tickSpacing
+ * @param offset can be used to get neighboring tick array startIndex.
+ * @returns
+ */
+export function getStartTickIndex(tickIndex: number, tickSpacing: number, offset = 0): number {
+  const realIndex = Math.floor(tickIndex / tickSpacing / TICK_ARRAY_SIZE);
+  const startTickIndex = (realIndex + offset) * tickSpacing * TICK_ARRAY_SIZE;
+  return startTickIndex;
 }
