@@ -23,7 +23,7 @@ import {
   NUM_REWARDS,
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
-import { resolveOrCreateATA } from "../utils/web3/ata-utils";
+import { resolveOrCreateATA, resolveOrCreateATAs } from "../utils/web3/ata-utils";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -73,17 +73,14 @@ export class OrcaAdmin {
     const whirlpool = await this.dal.getPool(poolAddress, true);
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
-    const { address: tokenDestinationA, ...createTokenAAtaIx } = await resolveOrCreateATA(
+    const [ataA, ataB] = await resolveOrCreateATAs(
+      this.dal,
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }]
     );
-
-    const { address: tokenDestinationB, ...createTokenBAtaIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
+    const { address: tokenDestinationA, ...createTokenAAtaIx } = ataA!;
+    const { address: tokenDestinationB, ...createTokenBAtaIx } = ataB!;
 
     const collectFeesIx = client
       .collectProtocolFeesTx({

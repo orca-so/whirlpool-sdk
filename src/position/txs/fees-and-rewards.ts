@@ -34,14 +34,16 @@ export async function buildMultipleCollectFeesAndRewardsTx(
 
   const collectPositionTransactions: TransactionBuilder[] = [];
 
+  const ataMap = resolvedAssociatedTokenAddresses ?? {};
   for (const positionAddress of positionAddresses) {
     const txn = await buildSingleCollectFeeAndRewardsTx(
       positionAddress,
       dal,
       client,
       provider,
-      resolvedAssociatedTokenAddresses
+      ataMap
     );
+
     if (!txn.isEmpty()) {
       collectPositionTransactions.push(txn);
     }
@@ -114,16 +116,14 @@ async function buildSingleCollectFeeAndRewardsTx(
     ataMap = {};
   }
 
-  // Derive and add the createATA instructions for each token mint. Note that
-  // if the user already has the token ATAs, the instructions will be empty.
   const {
     tokenOwnerAccount: tokenOwnerAccountA,
     createTokenOwnerAccountIx: createTokenOwnerAccountAIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintA, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(dal, provider, whirlpool.tokenMintA, ataMap);
   const {
     tokenOwnerAccount: tokenOwnerAccountB,
     createTokenOwnerAccountIx: createTokenOwnerAccountBIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintB, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(dal, provider, whirlpool.tokenMintB, ataMap);
   txn.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
 
   // If the position has zero liquidity, then the fees are already the most up to date.
@@ -169,7 +169,7 @@ async function buildSingleCollectFeeAndRewardsTx(
     const {
       tokenOwnerAccount: rewardOwnerAccount,
       createTokenOwnerAccountIx: createRewardTokenOwnerAccountIx,
-    } = await getTokenAtaAndPopulateATAMap(provider, rewardInfo.mint, ataMap);
+    } = await getTokenAtaAndPopulateATAMap(dal, provider, rewardInfo.mint, ataMap);
 
     if (createRewardTokenOwnerAccountIx) {
       txn.addInstruction(createRewardTokenOwnerAccountIx);
@@ -194,6 +194,7 @@ async function buildSingleCollectFeeAndRewardsTx(
 }
 
 async function getTokenAtaAndPopulateATAMap(
+  dal: OrcaDAL,
   provider: Provider,
   tokenMint: PublicKey,
   ataMap: Record<string, PublicKey>
@@ -206,6 +207,7 @@ async function getTokenAtaAndPopulateATAMap(
 
   if (!mappedTokenAAddress) {
     const { address: _tokenOwnerAccount, ..._tokenOwnerAccountAIx } = await resolveOrCreateATA(
+      dal,
       provider.connection,
       provider.wallet.publicKey,
       tokenMint
