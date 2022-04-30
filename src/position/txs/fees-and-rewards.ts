@@ -119,6 +119,8 @@ async function buildSingleCollectFeeAndRewardsTx(
     ataMap = {};
   }
 
+  // Derive and add the createATA instructions for each token mint. Note that
+  // if the user already has the token ATAs, the instructions will be empty.
   const {
     tokenOwnerAccount: tokenOwnerAccountA,
     createTokenOwnerAccountIx: createTokenOwnerAccountAIx,
