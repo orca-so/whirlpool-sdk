@@ -241,6 +241,8 @@ export class OrcaDAL {
    * @returns minimum balance for rent exemption
    */
   public async getAccountRentExempt(refresh: boolean = false) {
+    // This value should be relatively static or at least not break according to spec
+    // https://docs.solana.com/developing/programming-model/accounts#rent-exemption
     if (!this._accountRentExempt || refresh) {
       this._accountRentExempt = await this.connection.getMinimumBalanceForRentExemption(
         AccountLayout.span

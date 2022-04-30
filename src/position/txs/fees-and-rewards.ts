@@ -34,6 +34,9 @@ export async function buildMultipleCollectFeesAndRewardsTx(
 
   const collectPositionTransactions: TransactionBuilder[] = [];
 
+  // If we don't create an empty map here when resolvedAssociatedTokenAddresses is undefined,
+  // then the ataMap ends up getting set in the buildSingleCollectFeeAndRewardsTx
+  // and not shared across the multiple fee collection txs
   const ataMap = resolvedAssociatedTokenAddresses ?? {};
   for (const positionAddress of positionAddresses) {
     const txn = await buildSingleCollectFeeAndRewardsTx(
