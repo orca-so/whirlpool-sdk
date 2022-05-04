@@ -31,6 +31,7 @@ export type OffchainPoolData = {
   reward0Apr?: DayWeekMonthData<number>;
   reward1Apr?: DayWeekMonthData<number>;
   reward2Apr?: DayWeekMonthData<number>;
+  totalApr?: DayWeekMonthData<number>;
 };
 
 export interface DayWeekMonthData<T> {

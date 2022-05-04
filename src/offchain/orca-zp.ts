@@ -84,6 +84,7 @@ export class OrcaZooplankton {
           reward0Apr: pool.reward0Apr,
           reward1Apr: pool.reward1Apr,
           reward2Apr: pool.reward2Apr,
+          totalApr: pool.totalApr,
         };
       });
 
