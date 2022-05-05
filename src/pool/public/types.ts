@@ -66,10 +66,10 @@ export type ClosePositionQuoteParam = {
 
 export type ClosePositionQuote = {
   positionAddress: Address;
-  minTokenA: BN;
-  minTokenB: BN;
-  estTokenA: BN;
-  estTokenB: BN;
+  minTokenA: u64;
+  minTokenB: u64;
+  estTokenA: u64;
+  estTokenB: u64;
   liquidity: BN;
 };
 
