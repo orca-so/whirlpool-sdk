@@ -2,6 +2,7 @@ import { u64 } from "@solana/spl-token";
 import { Address, BN, Provider } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import { Percentage } from "../../utils/public/percentage";
+import { RemoveLiquidityQuote } from "../../position/public";
 
 /*** Transactions ***/
 
@@ -53,6 +54,8 @@ export type OpenPositionQuote = {
   tickUpperIndex: number;
   maxTokenA: u64;
   maxTokenB: u64;
+  estTokenA: u64;
+  estTokenB: u64;
   liquidity: BN;
 };
 
@@ -64,8 +67,10 @@ export type ClosePositionQuoteParam = {
 
 export type ClosePositionQuote = {
   positionAddress: Address;
-  minTokenA: u64;
-  minTokenB: u64;
+  minTokenA: BN;
+  minTokenB: BN;
+  estTokenA: BN;
+  estTokenB: BN;
   liquidity: BN;
 };
 

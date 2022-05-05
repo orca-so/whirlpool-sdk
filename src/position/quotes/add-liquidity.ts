@@ -70,6 +70,8 @@ function getAddLiquidityQuoteWhenPositionIsBelowRange(
     return {
       maxTokenA: ZERO,
       maxTokenB: ZERO,
+      estTokenA: ZERO,
+      estTokenB: ZERO,
       liquidity: ZERO,
     };
   }
@@ -84,16 +86,14 @@ function getAddLiquidityQuoteWhenPositionIsBelowRange(
     false
   );
 
-  const maxTokenA = adjustForSlippage(
-    getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true),
-    slippageTolerance,
-    true
-  );
-  const maxTokenB = ZERO;
+  const estTokenA = getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
+  const maxTokenA = adjustForSlippage(estTokenA, slippageTolerance, true);
 
   return {
     maxTokenA,
-    maxTokenB,
+    maxTokenB: ZERO,
+    estTokenA,
+    estTokenB: ZERO,
     liquidity,
   };
 }
@@ -115,30 +115,32 @@ function getAddLiquidityQuoteWhenPositionIsInRange(
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  let [tokenAmountA, tokenAmountB] = tokenMintA.equals(inputTokenMint)
+  let [estTokenA, estTokenB] = tokenMintA.equals(inputTokenMint)
     ? [inputTokenAmount, undefined]
     : [undefined, inputTokenAmount];
 
   let liquidity: BN;
 
-  if (tokenAmountA) {
-    liquidity = getLiquidityFromTokenA(tokenAmountA, sqrtPriceX64, sqrtPriceUpperX64, false);
-    tokenAmountA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
-    tokenAmountB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
-  } else if (tokenAmountB) {
-    liquidity = getLiquidityFromTokenB(tokenAmountB, sqrtPriceLowerX64, sqrtPriceX64, false);
-    tokenAmountA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
-    tokenAmountB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
+  if (estTokenA) {
+    liquidity = getLiquidityFromTokenA(estTokenA, sqrtPriceX64, sqrtPriceUpperX64, false);
+    estTokenA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
+    estTokenB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
+  } else if (estTokenB) {
+    liquidity = getLiquidityFromTokenB(estTokenB, sqrtPriceLowerX64, sqrtPriceX64, false);
+    estTokenA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, true);
+    estTokenB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, true);
   } else {
     throw new Error("invariant violation");
   }
 
-  const maxTokenA = adjustForSlippage(tokenAmountA, slippageTolerance, true);
-  const maxTokenB = adjustForSlippage(tokenAmountB, slippageTolerance, true);
+  const maxTokenA = adjustForSlippage(estTokenA, slippageTolerance, true);
+  const maxTokenB = adjustForSlippage(estTokenB, slippageTolerance, true);
 
   return {
     maxTokenA,
     maxTokenB,
+    estTokenA,
+    estTokenB,
     liquidity,
   };
 }
@@ -159,6 +161,8 @@ function getAddLiquidityQuoteWhenPositionIsAboveRange(
     return {
       maxTokenA: ZERO,
       maxTokenB: ZERO,
+      estTokenA: ZERO,
+      estTokenB: ZERO,
       liquidity: ZERO,
     };
   }
@@ -172,16 +176,14 @@ function getAddLiquidityQuoteWhenPositionIsAboveRange(
     false
   );
 
-  const maxTokenA = ZERO;
-  const maxTokenB = adjustForSlippage(
-    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true),
-    slippageTolerance,
-    true
-  );
+  const estTokenB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, true);
+  const maxTokenB = adjustForSlippage(estTokenB, slippageTolerance, true);
 
   return {
-    maxTokenA,
+    maxTokenA: ZERO,
     maxTokenB,
+    estTokenA: ZERO,
+    estTokenB,
     liquidity,
   };
 }

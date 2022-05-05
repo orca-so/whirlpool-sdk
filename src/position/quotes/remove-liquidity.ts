@@ -52,16 +52,15 @@ function getRemoveLiquidityQuoteWhenPositionIsBelowRange(
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const minTokenA = adjustForSlippage(
-    getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false),
-    slippageTolerance,
-    false
-  );
+  const estTokenA = getTokenAFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
+  const minTokenA = adjustForSlippage(estTokenA, slippageTolerance, false);
 
   return {
     positionAddress,
     minTokenA,
     minTokenB: ZERO,
+    estTokenA,
+    estTokenB: ZERO,
     liquidity,
   };
 }
@@ -82,21 +81,18 @@ function getRemoveLiquidityQuoteWhenPositionIsInRange(
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const minTokenA = adjustForSlippage(
-    getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, false),
-    slippageTolerance,
-    false
-  );
-  const minTokenB = adjustForSlippage(
-    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, false),
-    slippageTolerance,
-    false
-  );
+  const estTokenA = getTokenAFromLiquidity(liquidity, sqrtPriceX64, sqrtPriceUpperX64, false);
+  const minTokenA = adjustForSlippage(estTokenA, slippageTolerance, false);
+
+  const estTokenB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceX64, false);
+  const minTokenB = adjustForSlippage(estTokenB, slippageTolerance, false);
 
   return {
     positionAddress,
     minTokenA,
     minTokenB,
+    estTokenA,
+    estTokenB,
     liquidity,
   };
 }
@@ -115,16 +111,15 @@ function getRemoveLiquidityQuoteWhenPositionIsAboveRange(
   const sqrtPriceLowerX64 = tickIndexToSqrtPriceX64(tickLowerIndex);
   const sqrtPriceUpperX64 = tickIndexToSqrtPriceX64(tickUpperIndex);
 
-  const minTokenB = adjustForSlippage(
-    getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false),
-    slippageTolerance,
-    false
-  );
+  const estTokenB = getTokenBFromLiquidity(liquidity, sqrtPriceLowerX64, sqrtPriceUpperX64, false);
+  const minTokenB = adjustForSlippage(estTokenB, slippageTolerance, false);
 
   return {
     positionAddress,
     minTokenA: ZERO,
     minTokenB,
+    estTokenA: ZERO,
+    estTokenB,
     liquidity,
   };
 }
