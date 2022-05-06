@@ -1,3 +1,4 @@
+import { resolveOrCreateATAs } from "@orca-so/common-sdk";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
 import {
@@ -23,7 +24,6 @@ import {
   NUM_REWARDS,
   getFeeTierPda,
 } from "@orca-so/whirlpool-client-sdk";
-import { resolveOrCreateATA, resolveOrCreateATAs } from "../utils/web3/ata-utils";
 
 export class OrcaAdmin {
   constructor(private readonly dal: OrcaDAL) {}
@@ -74,10 +74,10 @@ export class OrcaAdmin {
     invariant(!!whirlpool, "OrcaAdmin - whirlpool does not exist");
 
     const [ataA, ataB] = await resolveOrCreateATAs(
-      this.dal,
       provider.connection,
       provider.wallet.publicKey,
-      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }]
+      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }],
+      () => this.dal.getAccountRentExempt()
     );
     const { address: tokenDestinationA, ...createTokenAAtaIx } = ataA!;
     const { address: tokenDestinationB, ...createTokenBAtaIx } = ataB!;

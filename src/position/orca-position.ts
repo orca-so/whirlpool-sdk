@@ -1,3 +1,4 @@
+import { deriveATA, resolveOrCreateATAs } from "@orca-so/common-sdk";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
@@ -12,7 +13,6 @@ import { defaultSlippagePercentage } from "../constants/public/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
-import { deriveATA, resolveOrCreateATA, resolveOrCreateATAs } from "../utils/web3/ata-utils";
 import { getAddLiquidityQuote, InternalAddLiquidityQuoteParam } from "./quotes/add-liquidity";
 import { getRemoveLiquidityQuote } from "./quotes/remove-liquidity";
 import { Address, translateAddress } from "@project-serum/anchor";
@@ -76,13 +76,13 @@ export class OrcaPosition {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const [ataA, ataB] = await resolveOrCreateATAs(
-      this.dal,
       provider.connection,
       provider.wallet.publicKey,
       [
         { tokenMint: whirlpool.tokenMintA, wrappedSolAmountIn: quote.maxTokenA },
         { tokenMint: whirlpool.tokenMintB, wrappedSolAmountIn: quote.maxTokenB },
-      ]
+      ],
+      () => this.dal.getAccountRentExempt()
     );
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;
@@ -142,10 +142,10 @@ export class OrcaPosition {
     const txBuilder = new TransactionBuilder(ctx.provider);
 
     const [ataA, ataB] = await resolveOrCreateATAs(
-      this.dal,
       provider.connection,
       provider.wallet.publicKey,
-      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }]
+      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }],
+      () => this.dal.getAccountRentExempt()
     );
 
     const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;

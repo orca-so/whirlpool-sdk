@@ -1,3 +1,4 @@
+import { deriveATA, resolveOrCreateATA } from "@orca-so/common-sdk";
 import { MultiTransactionBuilder } from "../../utils/public/multi-transaction-builder";
 import {
   CollectFeesAndRewardsTxParam,
@@ -14,7 +15,6 @@ import {
   WhirlpoolContext,
 } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
-import { deriveATA, resolveOrCreateATA } from "../../utils/web3/ata-utils";
 import { toPubKey } from "../../utils/address";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -212,10 +212,10 @@ async function getTokenAtaAndPopulateATAMap(
 
   if (!mappedTokenAAddress) {
     const { address: _tokenOwnerAccount, ..._tokenOwnerAccountAIx } = await resolveOrCreateATA(
-      dal,
       provider.connection,
       provider.wallet.publicKey,
-      tokenMint
+      tokenMint,
+      () => dal.getAccountRentExempt()
     );
     tokenOwnerAccount = _tokenOwnerAccount;
     createTokenOwnerAccountIx = _tokenOwnerAccountAIx;
