@@ -1,3 +1,4 @@
+import { deriveATA, resolveOrCreateATAs } from "@orca-so/common-sdk";
 import {
   AddLiquidityQuote,
   AddLiquidityQuoteParam,
@@ -12,7 +13,6 @@ import { defaultSlippagePercentage } from "../constants/public/defaults";
 import { OrcaDAL } from "../dal/orca-dal";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
 import { TickUtil } from "../utils/whirlpool/tick-util";
-import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { getAddLiquidityQuote, InternalAddLiquidityQuoteParam } from "./quotes/add-liquidity";
 import { getRemoveLiquidityQuote } from "./quotes/remove-liquidity";
 import { Address, translateAddress } from "@project-serum/anchor";
@@ -75,18 +75,18 @@ export class OrcaPosition {
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+    const [ataA, ataB] = await resolveOrCreateATAs(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA,
-      quote.maxTokenA
+      [
+        { tokenMint: whirlpool.tokenMintA, wrappedSolAmountIn: quote.maxTokenA },
+        { tokenMint: whirlpool.tokenMintB, wrappedSolAmountIn: quote.maxTokenB },
+      ],
+      () => this.dal.getAccountRentExempt()
     );
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB,
-      quote.maxTokenB
-    );
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = ataB!;
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
@@ -141,16 +141,15 @@ export class OrcaPosition {
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+    const [ataA, ataB] = await resolveOrCreateATAs(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }],
+      () => this.dal.getAccountRentExempt()
     );
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = ataB!;
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 

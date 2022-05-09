@@ -1,6 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
-import { AccountInfo, MintInfo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { AccountInfo, AccountLayout, MintInfo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   ParsableEntity,
   ParsableMintInfo,
@@ -61,6 +61,7 @@ export class OrcaDAL {
   private readonly connection: Connection;
   private readonly _cache: Record<string, CachedContent<CachedValue>> = {};
   private _userTokens: UserToken[] = [];
+  private _accountRentExempt: number | undefined;
 
   constructor(whirlpoolsConfig: Address, programId: Address, connection: Connection) {
     this.whirlpoolsConfig = toPubKey(whirlpoolsConfig);
@@ -231,6 +232,23 @@ export class OrcaDAL {
     }
 
     return this._userTokens;
+  }
+
+  /**
+   * Retrieve minimum balance for rent exemption of a Token Account;
+   *
+   * @param refresh force refresh of account rent exemption
+   * @returns minimum balance for rent exemption
+   */
+  public async getAccountRentExempt(refresh: boolean = false) {
+    // This value should be relatively static or at least not break according to spec
+    // https://docs.solana.com/developing/programming-model/accounts#rent-exemption
+    if (!this._accountRentExempt || refresh) {
+      this._accountRentExempt = await this.connection.getMinimumBalanceForRentExemption(
+        AccountLayout.span
+      );
+    }
+    return this._accountRentExempt;
   }
 
   /**

@@ -22,13 +22,16 @@ export async function convertPositionDataToUserPositionData(
   const result: Record<string, UserPositionData> = {};
   for (const address of positionAddresses) {
     const positionId = toPubKey(address).toBase58();
-    const position = await dal.getPosition(address, refresh);
+
+    // if `refresh` is true, then these position/pools are already refreshed in line 20
+    // so there is no need to refresh on each individual position/pool call following
+    const position = await dal.getPosition(address, false);
     if (!position) {
       console.error(`error - position not found`);
       continue;
     }
 
-    const whirlpool = await dal.getPool(position.whirlpool, refresh);
+    const whirlpool = await dal.getPool(position.whirlpool, false);
     if (!whirlpool) {
       console.error(`error - whirlpool not found`);
       continue;

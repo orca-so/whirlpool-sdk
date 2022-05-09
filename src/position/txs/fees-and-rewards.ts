@@ -1,3 +1,4 @@
+import { deriveATA, resolveOrCreateATA } from "@orca-so/common-sdk";
 import { MultiTransactionBuilder } from "../../utils/public/multi-transaction-builder";
 import {
   CollectFeesAndRewardsTxParam,
@@ -14,7 +15,6 @@ import {
   WhirlpoolContext,
 } from "@orca-so/whirlpool-client-sdk";
 import { TickUtil } from "../../utils/whirlpool/tick-util";
-import { deriveATA, resolveOrCreateATA } from "../../utils/web3/ata-utils";
 import { toPubKey } from "../../utils/address";
 import { PublicKey } from "@solana/web3.js";
 import invariant from "tiny-invariant";
@@ -34,14 +34,19 @@ export async function buildMultipleCollectFeesAndRewardsTx(
 
   const collectPositionTransactions: TransactionBuilder[] = [];
 
+  // If we don't create an empty map here when resolvedAssociatedTokenAddresses is undefined,
+  // then the ataMap ends up getting set in the buildSingleCollectFeeAndRewardsTx
+  // and not shared across the multiple fee collection txs
+  const ataMap = resolvedAssociatedTokenAddresses ?? {};
   for (const positionAddress of positionAddresses) {
     const txn = await buildSingleCollectFeeAndRewardsTx(
       positionAddress,
       dal,
       client,
       provider,
-      resolvedAssociatedTokenAddresses
+      ataMap
     );
+
     if (!txn.isEmpty()) {
       collectPositionTransactions.push(txn);
     }
@@ -119,11 +124,11 @@ async function buildSingleCollectFeeAndRewardsTx(
   const {
     tokenOwnerAccount: tokenOwnerAccountA,
     createTokenOwnerAccountIx: createTokenOwnerAccountAIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintA, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(dal, provider, whirlpool.tokenMintA, ataMap);
   const {
     tokenOwnerAccount: tokenOwnerAccountB,
     createTokenOwnerAccountIx: createTokenOwnerAccountBIx,
-  } = await getTokenAtaAndPopulateATAMap(provider, whirlpool.tokenMintB, ataMap);
+  } = await getTokenAtaAndPopulateATAMap(dal, provider, whirlpool.tokenMintB, ataMap);
   txn.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
 
   // If the position has zero liquidity, then the fees are already the most up to date.
@@ -169,7 +174,7 @@ async function buildSingleCollectFeeAndRewardsTx(
     const {
       tokenOwnerAccount: rewardOwnerAccount,
       createTokenOwnerAccountIx: createRewardTokenOwnerAccountIx,
-    } = await getTokenAtaAndPopulateATAMap(provider, rewardInfo.mint, ataMap);
+    } = await getTokenAtaAndPopulateATAMap(dal, provider, rewardInfo.mint, ataMap);
 
     if (createRewardTokenOwnerAccountIx) {
       txn.addInstruction(createRewardTokenOwnerAccountIx);
@@ -194,6 +199,7 @@ async function buildSingleCollectFeeAndRewardsTx(
 }
 
 async function getTokenAtaAndPopulateATAMap(
+  dal: OrcaDAL,
   provider: Provider,
   tokenMint: PublicKey,
   ataMap: Record<string, PublicKey>
@@ -208,7 +214,8 @@ async function getTokenAtaAndPopulateATAMap(
     const { address: _tokenOwnerAccount, ..._tokenOwnerAccountAIx } = await resolveOrCreateATA(
       provider.connection,
       provider.wallet.publicKey,
-      tokenMint
+      tokenMint,
+      () => dal.getAccountRentExempt()
     );
     tokenOwnerAccount = _tokenOwnerAccount;
     createTokenOwnerAccountIx = _tokenOwnerAccountAIx;

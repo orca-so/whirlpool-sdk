@@ -1,3 +1,4 @@
+import { deriveATA, resolveOrCreateATAs } from "@orca-so/common-sdk";
 import { Address, BN, Provider, translateAddress } from "@project-serum/anchor";
 import { u64 } from "@solana/spl-token";
 import { Keypair, PublicKey } from "@solana/web3.js";
@@ -25,7 +26,6 @@ import {
 import { getRemoveLiquidityQuote } from "../position/quotes/remove-liquidity";
 import { toPubKey } from "../utils/address";
 import { MultiTransactionBuilder } from "../utils/public/multi-transaction-builder";
-import { deriveATA, resolveOrCreateATA } from "../utils/web3/ata-utils";
 import { PoolUtil } from "../utils/whirlpool/pool-util";
 import { TickUtil } from "../utils/whirlpool/tick-util";
 import { getLiquidityDistribution, LiquidityDistribution } from "./ux/liquidity-distribution";
@@ -162,18 +162,18 @@ export class OrcaPool {
       .compressIx(false);
     txBuilder.addInstruction(positionIx).addSigner(positionMintKeypair);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+    const [ataA, ataB] = await resolveOrCreateATAs(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA,
-      maxTokenA
+      [
+        { tokenMint: whirlpool.tokenMintA, wrappedSolAmountIn: maxTokenA },
+        { tokenMint: whirlpool.tokenMintB, wrappedSolAmountIn: maxTokenB },
+      ],
+      () => this.dal.getAccountRentExempt()
     );
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB,
-      maxTokenB
-    );
+
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = ataB!;
     txBuilder.addInstruction(tokenOwnerAccountAIx);
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
@@ -301,16 +301,15 @@ export class OrcaPool {
     const txBuilder = new TransactionBuilder(provider);
 
     const resolvedAssociatedTokenAddresses: Record<string, PublicKey> = {};
-    const { address: tokenOwnerAccountA, ...createTokenOwnerAccountAIx } = await resolveOrCreateATA(
+
+    const [ataA, ataB] = await resolveOrCreateATAs(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA
+      [{ tokenMint: whirlpool.tokenMintA }, { tokenMint: whirlpool.tokenMintB }],
+      () => this.dal.getAccountRentExempt()
     );
-    const { address: tokenOwnerAccountB, ...createTokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB
-    );
+    const { address: tokenOwnerAccountA, ...createTokenOwnerAccountAIx } = ataA!;
+    const { address: tokenOwnerAccountB, ...createTokenOwnerAccountBIx } = ataB!;
     txBuilder.addInstruction(createTokenOwnerAccountAIx).addInstruction(createTokenOwnerAccountBIx);
     resolvedAssociatedTokenAddresses[whirlpool.tokenMintA.toBase58()] = tokenOwnerAccountA;
     resolvedAssociatedTokenAddresses[whirlpool.tokenMintB.toBase58()] = tokenOwnerAccountB;
@@ -517,20 +516,19 @@ export class OrcaPool {
 
     const txBuilder = new TransactionBuilder(ctx.provider);
 
-    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = await resolveOrCreateATA(
+    const [ataA, ataB] = await resolveOrCreateATAs(
       provider.connection,
       provider.wallet.publicKey,
-      whirlpool.tokenMintA,
-      aToB ? amountIn : ZERO
+      [
+        { tokenMint: whirlpool.tokenMintA, wrappedSolAmountIn: aToB ? amountIn : ZERO },
+        { tokenMint: whirlpool.tokenMintB, wrappedSolAmountIn: !aToB ? amountIn : ZERO },
+      ],
+      () => this.dal.getAccountRentExempt()
     );
+    const { address: tokenOwnerAccountA, ...tokenOwnerAccountAIx } = ataA!;
     txBuilder.addInstruction(tokenOwnerAccountAIx);
 
-    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = await resolveOrCreateATA(
-      provider.connection,
-      provider.wallet.publicKey,
-      whirlpool.tokenMintB,
-      !aToB ? amountIn : ZERO
-    );
+    const { address: tokenOwnerAccountB, ...tokenOwnerAccountBIx } = ataB!;
     txBuilder.addInstruction(tokenOwnerAccountBIx);
 
     const targetSqrtPriceLimitX64 = sqrtPriceLimitX64 || this.getDefaultSqrtPriceLimit(aToB);
