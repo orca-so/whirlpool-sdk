@@ -40,6 +40,8 @@ export type AddLiquidityQuote = {
   positionAddress: Address;
   maxTokenA: BN;
   maxTokenB: BN;
+  estTokenA: BN;
+  estTokenB: BN;
   liquidity: BN;
 };
 
@@ -54,6 +56,8 @@ export type RemoveLiquidityQuote = {
   positionAddress: Address;
   minTokenA: BN;
   minTokenB: BN;
+  estTokenA: BN;
+  estTokenB: BN;
   liquidity: BN;
 };
 

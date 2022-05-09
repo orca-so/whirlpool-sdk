@@ -53,6 +53,8 @@ export type OpenPositionQuote = {
   tickUpperIndex: number;
   maxTokenA: u64;
   maxTokenB: u64;
+  estTokenA: u64;
+  estTokenB: u64;
   liquidity: BN;
 };
 
@@ -66,6 +68,8 @@ export type ClosePositionQuote = {
   positionAddress: Address;
   minTokenA: u64;
   minTokenB: u64;
+  estTokenA: u64;
+  estTokenB: u64;
   liquidity: BN;
 };
 
