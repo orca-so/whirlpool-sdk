@@ -42,6 +42,7 @@ npm install @orca-so/whirlpool-sdk
 ```typescript
   import { Provider } from "@project-serum/anchor";
   import { Connection, PublicKey } from "@solana/web3.js";
+  import {OrcaWhirlpoolClient} from "@orca-so/whirlpool-sdk";
   
   // NOTE: The following code will work currently but the API will change in upcoming releases.
 
