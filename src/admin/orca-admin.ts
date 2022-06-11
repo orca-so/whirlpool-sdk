@@ -13,6 +13,7 @@ import {
   SetRewardEmissionsBySuperAuthorityTxParam,
   SetFeeRateTxParam,
   SetProtocolFeeRateTxParam,
+  SetRewardSuperAuthorityTxParam,
 } from "./public/types";
 import { OrcaDAL } from "../dal/orca-dal";
 import { toPubKey } from "../utils/address";
@@ -249,6 +250,19 @@ export class OrcaAdmin {
       rewardEmissionsSuperAuthority: provider.wallet.publicKey,
       newRewardAuthority: toPubKey(newRewardAuthority),
       rewardIndex,
+    });
+  }
+
+  public getSetRewardSuperAuthorityTx(param: SetRewardSuperAuthorityTxParam): TransactionBuilder {
+    const { provider, newRewardSuperAuthority } = param;
+    const { programId, whirlpoolsConfig } = this.dal;
+    const ctx = WhirlpoolContext.withProvider(provider, programId);
+    const client = new WhirlpoolClient(ctx);
+
+    return client.setRewardEmissionsSuperAuthorityTx({
+      whirlpoolsConfig,
+      rewardEmissionsSuperAuthority: provider.wallet.publicKey,
+      newRewardEmissionsSuperAuthority: toPubKey(newRewardSuperAuthority),
     });
   }
 

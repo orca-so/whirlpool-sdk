@@ -64,6 +64,11 @@ export type SetRewardAuthorityBySuperAuthorityTxParam = {
   rewardIndex: number;
 };
 
+export type SetRewardSuperAuthorityTxParam = {
+  provider: Provider;
+  newRewardSuperAuthority: Address;
+};
+
 export type SetRewardEmissionsBySuperAuthorityTxParam = {
   provider: Provider;
   rewardEmissionsSuperAuthority: Address;
