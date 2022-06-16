@@ -1,4 +1,5 @@
-> Note: This is a pre-release SDK for the Orca Whirlpool Program and will be deprecated soon. If you are new here, please use the new [Whirlpool SDK](https://github.com/orca-so/whirlpools). 
+# Deprecated
+> Note: This is a pre-release SDK for the Orca Whirlpool Program and is **deprecated**. Please use the new [Whirlpool SDK](https://github.com/orca-so/whirlpools). 
 > If you are migrating to the new Whirlpool SDK, [Read this document](https://orca-so.gitbook.io/orca-developer-portal/whirlpools/environment-setup/migrating-from-v0-sdk)
 
 
