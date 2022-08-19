@@ -24,7 +24,11 @@ export class OrcaZooplankton {
         return cachedResponse as Record<string, OffchainTokenData>;
       }
 
-      const response = await this._request.request({ url: "/tokens", method: "get" });
+      const response = await this._request.request({
+        url: "/token/list",
+        method: "get",
+        params: { whitelisted: true },
+      });
       const data = response?.data;
       if (!data) {
         return null;
@@ -39,7 +43,6 @@ export class OrcaZooplankton {
           logoURI: token.logoURI,
           whitelisted: token.whitelisted,
           coingeckoId: token.coingeckoId,
-          ftxId: token.ftxId,
         };
       });
 
@@ -58,7 +61,11 @@ export class OrcaZooplankton {
         return cachedResponse as Record<string, OffchainPoolData>;
       }
 
-      const response = await this._request.request({ url: "/pools", method: "get" });
+      const response = await this._request.request({
+        url: "/whirlpool/list",
+        method: "get",
+        params: { whitelisted: true },
+      });
       const data = response?.data;
       if (!data) {
         return null;
@@ -69,15 +76,13 @@ export class OrcaZooplankton {
         result[pool.address] = {
           address: pool.address,
           whitelisted: pool.whitelisted,
-          tokenMintA: pool.tokenMintA,
-          tokenMintB: pool.tokenMintB,
+          tokenMintA: pool.tokenA.mint,
+          tokenMintB: pool.tokenB.mint,
           stable: pool.stable,
           price: pool.price,
-          lpsFeeRate: pool.lpsFeeRate,
+          lpsFeeRate: pool.lpFeeRate,
           protocolFeeRate: pool.protocolFeeRate,
-          priceHistory: pool.priceHistory,
-          tokenAPriceUSD: pool.tokenAPriceUSD,
-          tokenBPriceUSD: pool.tokenBPriceUSD,
+          priceHistory: pool.priceRange,
           tvl: pool.tvl,
           volume: pool.volume,
           feeApr: pool.feeApr,
