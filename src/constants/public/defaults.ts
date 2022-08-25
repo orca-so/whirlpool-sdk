@@ -21,9 +21,9 @@ export function getDefaultConnection(network: OrcaNetwork): Connection {
 export function getDefaultOffchainDataURI(network: OrcaNetwork): string {
   switch (network) {
     case OrcaNetwork.MAINNET:
-      return "https://mainnet-zp2-v2.orca.so";
+      return "https://api.mainnet.orca.so/v1";
     case OrcaNetwork.DEVNET:
-      return "https://devnet-zp2-v2.orca.so";
+      return "https://api.devnet.orca.so/v1";
     default:
       throw new Error(`type ${network} is an Unknown network`);
   }

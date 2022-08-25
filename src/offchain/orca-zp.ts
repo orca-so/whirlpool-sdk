@@ -24,14 +24,18 @@ export class OrcaZooplankton {
         return cachedResponse as Record<string, OffchainTokenData>;
       }
 
-      const response = await this._request.request({ url: "/tokens", method: "get" });
-      const data = response?.data;
-      if (!data) {
+      const response = await this._request.request({
+        url: "/token/list",
+        method: "get",
+        params: { whitelisted: true },
+      });
+      const tokens = response?.data?.tokens;
+      if (!tokens) {
         return null;
       }
 
       const result: Record<string, OffchainTokenData> = {};
-      data.forEach((token: any) => {
+      tokens.forEach((token: any) => {
         result[token.mint] = {
           mint: token.mint,
           name: token.name,
@@ -39,7 +43,6 @@ export class OrcaZooplankton {
           logoURI: token.logoURI,
           whitelisted: token.whitelisted,
           coingeckoId: token.coingeckoId,
-          ftxId: token.ftxId,
         };
       });
 
@@ -58,26 +61,28 @@ export class OrcaZooplankton {
         return cachedResponse as Record<string, OffchainPoolData>;
       }
 
-      const response = await this._request.request({ url: "/pools", method: "get" });
-      const data = response?.data;
-      if (!data) {
+      const response = await this._request.request({
+        url: "/whirlpool/list",
+        method: "get",
+        params: { whitelisted: true },
+      });
+      const whirlpools = response?.data?.whirlpools;
+      if (!whirlpools) {
         return null;
       }
 
       const result: Record<string, OffchainPoolData> = {};
-      data.forEach((pool: any) => {
+      whirlpools.forEach((pool: any) => {
         result[pool.address] = {
           address: pool.address,
           whitelisted: pool.whitelisted,
-          tokenMintA: pool.tokenMintA,
-          tokenMintB: pool.tokenMintB,
+          tokenMintA: pool.tokenA.mint,
+          tokenMintB: pool.tokenB.mint,
           stable: pool.stable,
           price: pool.price,
-          lpsFeeRate: pool.lpsFeeRate,
+          lpsFeeRate: pool.lpFeeRate,
           protocolFeeRate: pool.protocolFeeRate,
-          priceHistory: pool.priceHistory,
-          tokenAPriceUSD: pool.tokenAPriceUSD,
-          tokenBPriceUSD: pool.tokenBPriceUSD,
+          priceHistory: pool.priceRange,
           tvl: pool.tvl,
           volume: pool.volume,
           feeApr: pool.feeApr,
