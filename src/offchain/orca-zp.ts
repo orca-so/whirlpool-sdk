@@ -29,13 +29,13 @@ export class OrcaZooplankton {
         method: "get",
         params: { whitelisted: true },
       });
-      const data = response?.data;
-      if (!data) {
+      const tokens = response?.data?.tokens;
+      if (!tokens) {
         return null;
       }
 
       const result: Record<string, OffchainTokenData> = {};
-      data.forEach((token: any) => {
+      tokens.forEach((token: any) => {
         result[token.mint] = {
           mint: token.mint,
           name: token.name,
@@ -66,13 +66,13 @@ export class OrcaZooplankton {
         method: "get",
         params: { whitelisted: true },
       });
-      const data = response?.data;
-      if (!data) {
+      const whirlpools = response?.data?.whirlpools;
+      if (!whirlpools) {
         return null;
       }
 
       const result: Record<string, OffchainPoolData> = {};
-      data.forEach((pool: any) => {
+      whirlpools.forEach((pool: any) => {
         result[pool.address] = {
           address: pool.address,
           whitelisted: pool.whitelisted,
