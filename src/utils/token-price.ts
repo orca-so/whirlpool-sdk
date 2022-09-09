@@ -12,20 +12,27 @@ type TokenGraph = Record<TokenMint, Record<TokenMint, PoolData>>;
 
 export type TokenUSDPrices = Record<TokenMint, Decimal>;
 
+export type BaseTokenInfo = {
+  mint: Address;
+  usdPrice?: Decimal;
+};
+
+export const DEFAULT_OTHER_BASE_TOKENS = [{ mint: NATIVE_MINT }];
+
 /**
  * Use on-chain dex data to derive usd prices for tokens.
  *
  * @param pools pools to be used for price discovery
  * @param baseTokenMint a token mint with known stable usd price (e.g. USDC)
  * @param baseTokenUSDPrice baseTokenMint's usd price. defaults to 1, assuming `baseTokenMint` is a USD stable coin
- * @param otherBaseTokenMints optional list of token mints to prioritize as base
+ * @param otherBaseTokens optional list of token mints and USD prices to prioritize as base. If the price of an "other" base token is derivable from on-chain dex data, the on-chain price will be used instead of the provided price.
  */
 export async function getTokenUSDPrices(
   dal: OrcaDAL,
   pools: PoolData[],
   baseTokenMint: Address,
   baseTokenUSDPrice = new Decimal(1),
-  otherBaseTokenMints: Address[] = [NATIVE_MINT]
+  otherBaseTokens: BaseTokenInfo[] = DEFAULT_OTHER_BASE_TOKENS
 ): Promise<TokenUSDPrices> {
   // Create a bi-directional graph, where tokens are vertices and pairings are edges
   const tokenGraph: TokenGraph = {};
@@ -39,13 +46,13 @@ export async function getTokenUSDPrices(
   // Start with tokens paired with `baseTokenMint`, then prioritize tokens paired with SOL, then others.
   // For example, `baseTokenMint` could be USDC mint address.
   const base = toPubKey(baseTokenMint).toBase58();
-  const otherBases = toPubKeys(otherBaseTokenMints).map((pubKey) => pubKey.toBase58());
+  const otherBases = otherBaseTokens.map((otherBase) => toPubKey(otherBase.mint).toBase58());
 
   const result: TokenUSDPrices = { [base]: baseTokenUSDPrice };
   const queue: string[] = [base, ...otherBases];
   const visited: Set<string> = new Set();
 
-  // Traverse the graph breath-first
+  // Traverse the graph breadth-first
   while (queue.length > 0) {
     const vertex = queue.shift();
     if (!vertex || visited.has(vertex)) {
@@ -54,7 +61,12 @@ export async function getTokenUSDPrices(
       visited.add(vertex);
     }
 
-    const vertexPriceUSD = result[vertex];
+    const baseUSDPrice = otherBaseTokens.find(
+      (otherBase) => toPubKey(otherBase.mint).toBase58() === vertex
+    )?.usdPrice;
+
+    const vertexPriceUSD = result[vertex] ?? baseUSDPrice;
+
     if (!vertexPriceUSD) {
       continue;
     }

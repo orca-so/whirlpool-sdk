@@ -14,7 +14,12 @@ import { getWhirlpoolProgramId, getWhirlpoolsConfig } from "./constants/programs
 import { OrcaDAL } from "./dal/orca-dal";
 import { OrcaPool } from "./pool/orca-pool";
 import { OrcaPosition } from "./position/orca-position";
-import { getTokenUSDPrices, TokenUSDPrices } from "./utils/token-price";
+import {
+  BaseTokenInfo,
+  DEFAULT_OTHER_BASE_TOKENS,
+  getTokenUSDPrices,
+  TokenUSDPrices,
+} from "./utils/token-price";
 import { convertWhirlpoolDataToPoolData } from "./pool/convert-data";
 import { UserPositionData } from "./types";
 import { convertPositionDataToUserPositionData } from "./position/convert-data";
@@ -63,25 +68,19 @@ export class OrcaWhirlpoolClient {
    * @param poolAddresses pools to be used for price discovery
    * @param baseTokenMint a token mint with known stable usd price (e.g. USDC)
    * @param baseTokenUSDPrice baseTokenMint's usd price. defaults to 1, assuming `baseTokenMint` is a USD stable coin
-   * @param otherBaseTokenMints optional list of token mints to prioritize as base
+   * @param otherBaseTokens optional list of token mints and USD prices to prioritize as base. If the price of an "other" base token is derivable from on-chain dex data, the on-chain price will be used instead of the provided price.
    * @param refresh defaults to refreshing the cache
    */
   public async getTokenPrices(
     poolAddresses: Address[],
     baseTokenMint: Address,
     baseTokenUSDPrice = new Decimal(1),
-    otherBaseTokenMints: Address[] = [NATIVE_MINT],
+    otherBaseTokens: BaseTokenInfo[] = DEFAULT_OTHER_BASE_TOKENS,
     refresh = true
   ): Promise<TokenUSDPrices> {
     const allPools = await this.data.listPools(poolAddresses, refresh);
     const pools = allPools.filter((pool): pool is WhirlpoolData => pool !== null);
-    return getTokenUSDPrices(
-      this.data,
-      pools,
-      baseTokenMint,
-      baseTokenUSDPrice,
-      otherBaseTokenMints
-    );
+    return getTokenUSDPrices(this.data, pools, baseTokenMint, baseTokenUSDPrice, otherBaseTokens);
   }
 
   /**
