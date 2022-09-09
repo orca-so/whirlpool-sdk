@@ -70,12 +70,12 @@ export async function getTokenUSDPrices(
       }
 
       const tokenDecimalsA = (await dal.getMintInfo(pool.tokenMintA, false))?.decimals;
-      if (!tokenDecimalsA) {
+      if (tokenDecimalsA === undefined) {
         throw new Error(`Token mint not found: ${pool.tokenMintA.toBase58()}`);
       }
 
       const tokenDecimalsB = (await dal.getMintInfo(pool.tokenMintB, false))?.decimals;
-      if (!tokenDecimalsB) {
+      if (tokenDecimalsB === undefined) {
         throw new Error(`Token mint not found: ${pool.tokenMintB.toBase58()}`);
       }
 
