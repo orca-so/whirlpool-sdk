@@ -64,7 +64,6 @@ export class OrcaZooplankton {
       const response = await this._request.request({
         url: "/whirlpool/list",
         method: "get",
-        params: { whitelisted: true },
       });
       const whirlpools = response?.data?.whirlpools;
       if (!whirlpools) {
